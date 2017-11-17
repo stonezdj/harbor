@@ -137,11 +137,7 @@ func MakeFilter(username string, ldapFilter string, ldapUID string) string {
 	if ldapFilter == "" {
 		ldapFilter = "(" + ldapUID + "=" + filterTag + ")"
 	} else {
-		if !strings.Contains(ldapFilter, ldapUID+"=") {
-			ldapFilter = "(&" + ldapFilter + "(" + ldapUID + "=" + filterTag + "))"
-		} else {
-			ldapFilter = strings.Replace(ldapFilter, ldapUID+"=*", ldapUID+"="+filterTag, -1)
-		}
+		ldapFilter = "(&" + ldapFilter + "(" + ldapUID + "=" + filterTag + "))"
 	}
 
 	log.Debug("one or more ldapFilter: ", ldapFilter)
