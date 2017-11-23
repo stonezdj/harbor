@@ -17,13 +17,10 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/vmware/harbor/src/common/dao"
 	"github.com/vmware/harbor/src/common/models"
-	ldapUtils "github.com/vmware/harbor/src/common/utils/ldap"
 	"github.com/vmware/harbor/src/common/utils/log"
-	"github.com/vmware/harbor/src/ui/config"
 )
 
 // ProjectMemberAPI handles request to /api/projects/{}/members/{}
@@ -161,26 +158,12 @@ func (pma *ProjectMemberAPI) Post() {
 
 	var req memberReq
 	pma.DecodeJSONReq(&req)
-	username := strings.TrimSpace(req.Username)
+	username := req.Username
 	userID := checkUserExists(username)
 	if userID <= 0 {
-		//check current authorization mode
-		authMode, err := config.AuthMode()
-		if err != nil || authMode != "ldap_auth" {
-			log.Warningf("User does not exist, user name: %s", username)
-			pma.RenderError(http.StatusNotFound, "User does not exist")
-			return
-		}
-
-		//search and import user
-		newUserID, err := ldapUtils.SearchAndImportUser(username)
-		if err == nil || newUserID > 0 {
-			userID = int(newUserID)
-		} else {
-			log.Warningf("User does not exist, user name: %s", username)
-			pma.RenderError(http.StatusNotFound, "User does not exist")
-			return
-		}
+		log.Warningf("User does not exist, user name: %s", username)
+		pma.RenderError(http.StatusNotFound, "User does not exist")
+		return
 	}
 	rolelist, err := dao.GetUserProjectRoles(userID, projectID)
 	if err != nil {
