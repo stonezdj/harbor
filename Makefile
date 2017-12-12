@@ -327,7 +327,7 @@ build: build_$(BASEIMAGE)
 modify_composefile:
 	@echo "preparing docker-compose file..."
 	@cp $(DOCKERCOMPOSEFILEPATH)/$(DOCKERCOMPOSETPLFILENAME) $(DOCKERCOMPOSEFILEPATH)/$(DOCKERCOMPOSEFILENAME)
-	@$(SEDCMD) -i 's/__version__/$(VERSIONTAG)/g' $(DOCKERCOMPOSEFILEPATH)/$(DOCKERCOMPOSEFILENAME)
+	@$(SEDCMD) -i'' -e 's/__version__/$(VERSIONTAG)/g' $(DOCKERCOMPOSEFILEPATH)/$(DOCKERCOMPOSEFILENAME)
 
 modify_sourcefiles:
 	@echo "change mode of source files."
@@ -343,7 +343,7 @@ package_online: modify_composefile
 	@echo "packing online package ..."
 	@cp -r make $(HARBORPKG)
 	@if [ -n "$(REGISTRYSERVER)" ] ; then \
-		$(SEDCMD) -i 's/image\: vmware/image\: $(REGISTRYSERVER)\/$(REGISTRYPROJECTNAME)/' \
+		$(SEDCMD) -i'' -e 's/image\: vmware/image\: $(REGISTRYSERVER)\/$(REGISTRYPROJECTNAME)/' \
 		$(HARBORPKG)/docker-compose.yml ; \
 	fi
 	@cp LICENSE $(HARBORPKG)/LICENSE
@@ -395,9 +395,9 @@ refresh_clarity_builder:
 	@if [ "$(REBUILDCLIATRYFLAG)" = "true" ] ; then \
 		echo "set http proxy.."; \
 		if [ "$(HTTPPROXY)" != "" ] ; then \
-			$(SEDCMD) -i 's/__proxy__/--proxy $(HTTPPROXY)/g' $(DOCKERFILE_CLARITY) ; \
+			$(SEDCMD) -i'' -e 's/__proxy__/--proxy $(HTTPPROXY)/g' $(DOCKERFILE_CLARITY) ; \
 		else \
-			$(SEDCMD) -i 's/__proxy__/ /g' $(DOCKERFILE_CLARITY) ; \
+			$(SEDCMD) -i'' -e 's/__proxy__/ /g' $(DOCKERFILE_CLARITY) ; \
 		fi ; \
 		echo "build new clarity image.."; \
 		$(DOCKERBUILD) -f $(DOCKERFILE_CLARITY) -t $(DOCKERIMAGENAME_CLARITY):$(NEWCLARITYVERSION) . ; \

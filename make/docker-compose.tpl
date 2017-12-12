@@ -5,7 +5,7 @@ services:
     container_name: harbor-log 
     restart: always
     volumes:
-      - /var/log/harbor/:/var/log/docker/:z
+      - /private/var/log/harbor/:/var/log/docker/:z
       - ./common/config/log/:/etc/logrotate.d/:z
     ports:
       - 127.0.0.1:1514:10514
