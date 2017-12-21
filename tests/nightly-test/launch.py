@@ -65,6 +65,7 @@ if build_type == "ova" :
     cnt = 1
     fqdn = ""
     while fqdn != "" and fqdn != "photon-machine" and cnt < 10 :
+        print "wait 60 seconds to get fqdn"
         time.sleep(60)
         cnt = cnt + 1
         fqdn = govc_utils.getvmip(vcenterUrl, vc_user, vc_password, ova_name)
