@@ -5,6 +5,7 @@ import ConfigParser
 from subprocess import call
 import ova_utils
 import govc_utils
+import time
 from datetime import datetime 
 
 import buildweb_utils
@@ -61,7 +62,7 @@ if build_type == "ova" :
                 ova_password,
                 dry_run)
     vcenterUrl = "https://%s" % vc_host
-
+    time.sleep(20)
     fqdn = govc_utils.getvmip(vcenterUrl, vc_user, vc_password, ova_name)
     print "OVA install complete, start to test now, fqdn=" + fqdn    
     print "run test now"
