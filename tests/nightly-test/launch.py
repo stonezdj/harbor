@@ -65,7 +65,7 @@ if build_type == "ova" :
     cnt = 1
     while fqdn != "" and fqdn != "photon-machine" and cnt < 10 :
         time.sleep(60)
-        cnt++
+        cnt = cnt + 1
         fqdn = govc_utils.getvmip(vcenterUrl, vc_user, vc_password, ova_name)
     print "OVA install complete, start to test now, fqdn=" + fqdn    
     print "run test now"
