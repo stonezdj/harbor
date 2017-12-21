@@ -64,7 +64,7 @@ if build_type == "ova" :
     vcenterUrl = "https://%s" % vc_host
     cnt = 1
     fqdn = ""
-    while fqdn != "" and fqdn != "photon-machine" and cnt < 10 :
+    while (fqdn == "" or fqdn == "photon-machine") and cnt < 10 :
         print "wait 60 seconds to get fqdn"
         time.sleep(60)
         cnt = cnt + 1
