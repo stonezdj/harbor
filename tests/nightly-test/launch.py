@@ -62,7 +62,7 @@ if build_type == "ova" :
                 ova_password,
                 dry_run)
     vcenterUrl = "https://%s" % vc_host
-    time.sleep(20)
+    time.sleep(60)
     fqdn = govc_utils.getvmip(vcenterUrl, vc_user, vc_password, ova_name)
     print "OVA install complete, start to test now, fqdn=" + fqdn    
     print "run test now"
