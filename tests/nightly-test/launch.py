@@ -63,6 +63,7 @@ if build_type == "ova" :
                 dry_run)
     vcenterUrl = "https://%s" % vc_host
     cnt = 1
+    fqdn = ""
     while fqdn != "" and fqdn != "photon-machine" and cnt < 10 :
         time.sleep(60)
         cnt = cnt + 1
