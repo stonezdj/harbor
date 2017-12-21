@@ -6,12 +6,16 @@ SHELL_SCRIPT_DIR = '/harbor/workspace/harbor_nightly_test/tests/nightly-test/she
 
 def getvmip(vc_url, vc_user, vc_password, vm_name) :
     cmd = (SHELL_SCRIPT_DIR+'getvmip.sh %s %s %s %s ' % (vc_url, vc_user, getPasswordInShell(vc_password), vm_name))
+    print "Command:"+cmd 
     result = subprocess.check_output(cmd,shell=True)
+    print "Result:"+result 
     return result
 
 def destroyvm(vc_url, vc_user, vc_password, vm_name) :
+    print "Command:"+cmd 
     cmd = (SHELL_SCRIPT_DIR+'destroyvm.sh %s %s %s %s ' % (vc_url, vc_user, getPasswordInShell(vc_password), vm_name))  
     result = subprocess.check_output(cmd, shell=True)
+    print "Result:"+result 
     return result
 
 def getPasswordInShell(password) :
