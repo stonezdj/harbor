@@ -68,6 +68,7 @@ if build_type == "ova" :
         time.sleep(60)
         cnt = cnt + 1
         fqdn = govc_utils.getvmip(vcenterUrl, vc_user, vc_password, ova_name)
+        fqdn = fqdn.strip()
     print "OVA install complete, start to test now, fqdn=" + fqdn    
     print "run test now"
     print "test done"
