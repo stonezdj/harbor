@@ -17,7 +17,7 @@ import test_executor
 from deployer import *
 
 if len(sys.argv)!=7 :
-    logger.info("python launch.py <build_type> <image_url> <test suitename> <config_file> <dry_run>")
+    logger.info("python launch.py <build_type> <image_url> <test suitename> <config_file> <deploy_count> <dry_run>")
     logger.info("Wrong parameters, quit test")
     quit()
 
@@ -27,7 +27,7 @@ test_suite = sys.argv[3]
 config_file = sys.argv[4]
 deploy_count = int(sys.argv[5])
 dry_run = sys.argv[6]
-config_file = "/harbor/workspace/harbor_nightly_test_yan/harbor_nightly_test/testenv.ini"
+#config_file = "/harbor/workspace/harbor_nightly_test_yan/harbor_nightly_test/testenv.ini"
 config = ConfigParser.ConfigParser()
 config.read(config_file)
 harbor_endpoints = []
