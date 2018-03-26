@@ -15,8 +15,6 @@
 package group
 
 import (
-	"fmt"
-
 	"github.com/vmware/harbor/src/common/dao"
 	"github.com/vmware/harbor/src/common/models"
 	"github.com/vmware/harbor/src/common/utils/log"
@@ -30,15 +28,7 @@ const (
 // AddUserGroup - Add User Group
 func AddUserGroup(userGroup models.UserGroup) (int, error) {
 	o := dao.GetOrmer()
-	query := models.UserGroup{GroupType: userGroup.GroupType, LdapGroupDN: userGroup.LdapGroupDN}
-	result, err := QueryUserGroup(query)
-	if err != nil {
-		return 0, err
-	}
-	if len(result) > 0 {
-		log.Debugf("Already exist same group type and group property")
-		return result[0].ID, fmt.Errorf(DupLDAPGroupMessage+":%v", userGroup.LdapGroupDN)
-	}
+
 	id, err := o.Insert(&userGroup)
 
 	if err != nil {
