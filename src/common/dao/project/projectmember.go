@@ -74,7 +74,6 @@ func GetProjectMember(queryMember models.Member) ([]*models.Member, error) {
 func AddProjectMember(member models.Member) (int, error) {
 
 	log.Debugf("Adding project member %+v", member)
-
 	o := dao.GetOrmer()
 
 	if member.EntityID <= 0 {
@@ -99,7 +98,6 @@ func AddProjectMember(member models.Member) (int, error) {
 
 // UpdateProjectMemberRole updates the record in table project_member, only role can be changed
 func UpdateProjectMemberRole(pmID int, role int) error {
-
 	o := dao.GetOrmer()
 	sql := "update project_member set role = ? where id = ? "
 	_, err := o.Raw(sql, role, pmID).Exec()

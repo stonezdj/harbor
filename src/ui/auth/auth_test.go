@@ -85,18 +85,18 @@ func TestDefaultOnBoardUser(t *testing.T) {
 func TestDefaultMethods(t *testing.T) {
 	authHelper := DefaultAuthenticateHelper{}
 	_, err := authHelper.SearchUser("sample")
-	if err == nil {
-		t.Fatal("Default implementation should return error")
+	if err != nil {
+		t.Fatal("Default implementation should return nil")
 	}
 
 	_, err = authHelper.SearchGroup("sample")
-	if err == nil {
-		t.Fatal("Default implementation should return error")
+	if err != nil {
+		t.Fatal("Default implementation should return nil")
 	}
 
 	err = authHelper.OnBoardGroup(&models.UserGroup{}, "sample")
-	if err == nil {
-		t.Fatal("Default implementation should return error")
+	if err != nil {
+		t.Fatal("Default implementation should return nil")
 	}
 }
 

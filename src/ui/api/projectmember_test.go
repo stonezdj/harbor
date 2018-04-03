@@ -94,7 +94,7 @@ func TestProjectMemberAPI_Post(t *testing.T) {
 		&codeCheckingCase{
 			request: &testingRequest{
 				method: http.MethodPost,
-				url:    "/api/projects/1/projectmembers",
+				url:    "/api/projects/1/members",
 				bodyJSON: &models.MemberReq{
 					Role: 1,
 					MemberUser: models.User{
