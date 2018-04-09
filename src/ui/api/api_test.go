@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmware/harbor/src/common/dao"
+	"github.com/vmware/harbor/src/common/dao/project"
 	common_http "github.com/vmware/harbor/src/common/http"
 	"github.com/vmware/harbor/src/common/models"
 )
@@ -226,7 +227,14 @@ func prepare() error {
 	}
 	projAdminID = int(id)
 
-	if _, err = dao.AddProjectMember(1, projAdminID, models.PROJECTADMIN, common.UserMember); err != nil {
+	projectMember := models.Member{
+		ProjectID:  1,
+		Role:       models.PROJECTADMIN,
+		EntityID:   int(id),
+		EntityType: common.UserMember,
+	}
+
+	if projAdminID, err = project.AddProjectMember(projectMember); err != nil {
 		return err
 	}
 
@@ -239,9 +247,13 @@ func prepare() error {
 	if err != nil {
 		return err
 	}
-	projDeveloperID = int(id)
 
-	if _, err = dao.AddProjectMember(1, projDeveloperID, models.DEVELOPER, common.UserMember); err != nil {
+	if projDeveloperID, err = project.AddProjectMember(models.Member{
+		ProjectID:  1,
+		Role:       models.DEVELOPER,
+		EntityID:   int(id),
+		EntityType: common.UserMember,
+	}); err != nil {
 		return err
 	}
 
@@ -256,14 +268,21 @@ func prepare() error {
 	}
 	projGuestID = int(id)
 
-	_, err = dao.AddProjectMember(1, projGuestID, models.GUEST, common.UserMember)
+	if projGuestID, err = project.AddProjectMember(models.Member{
+		ProjectID:  1,
+		Role:       models.GUEST,
+		EntityID:   int(id),
+		EntityType: common.UserMember,
+	}); err != nil {
+		return err
+	}
 	return err
 }
 
 func clean() {
 	ids := []int{projAdminID, projDeveloperID, projGuestID}
 	for _, id := range ids {
-		if err := dao.DeleteProjectMember(1, id, common.UserMember); err != nil {
+		if err := project.DeleteProjectMemberByID(id); err != nil {
 			fmt.Printf("failed to clean up member %d from project library: %v", id, err)
 		}
 	}
