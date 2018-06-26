@@ -406,8 +406,6 @@ if rcp.has_option("configuration", "email_server"):
     envFile.write("EMAIL_HOST="+rcp.get("configuration", "email_server"))
 envFile.close()
 
-if 
-
 render(os.path.join(templates_dir, "ui", "env"), 
         ui_conf_env, 
         ui_secret=ui_secret,

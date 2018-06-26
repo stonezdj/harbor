@@ -162,6 +162,7 @@ var (
 			env:   "READ_ONLY",
 			parse: parseStringToBool,
 		},
+		common.ReloadKey: "RELOAD_KEY",
 	}
 
 	// configurations need read from environment variables
@@ -249,7 +250,7 @@ func Init() (err error) {
 	loadAll := false
 	cfgs := map[string]interface{}{}
 
-	reloadKey := os.Getenv(common.ReloadKey)
+	reloadKey := os.Getenv("RELOAD_KEY")
 	curCfgs, err := CfgStore.Read()
 	if err != nil {
 		return err
@@ -257,7 +258,7 @@ func Init() (err error) {
 	curReloadKey := curCfgs[common.ReloadKey]
 
 	if os.Getenv("RESET") == "true" && reloadKey != curReloadKey {
-		log.Info("RESET is set, will load all configurations from environment variables")
+		log.Info("RESET is set, will load all configurations from environment variables, reloadKey=%v, curReloadKey=%v", reloadKey, curReloadKey)
 		loadAll = true
 	}
 
