@@ -24,7 +24,6 @@ LDAP_GROUP_GID=$ldap_group_gid
 LDAP_GROUP_SCOPE=$ldap_group_scope
 REGISTRY_URL=$registry_url
 TOKEN_SERVICE_URL=$token_service_url
-EMAIL_HOST=$email_host
 EMAIL_PORT=$email_port
 EMAIL_USR=$email_usr
 EMAIL_PWD=$email_pwd

@@ -249,7 +249,14 @@ func Init() (err error) {
 	loadAll := false
 	cfgs := map[string]interface{}{}
 
-	if os.Getenv("RESET") == "true" {
+	reloadKey := os.Getenv(common.ReloadKey)
+	curCfgs, err := CfgStore.Read()
+	if err != nil {
+		return err
+	}
+	curReloadKey := curCfgs[common.ReloadKey]
+
+	if os.Getenv("RESET") == "true" && reloadKey != curReloadKey {
 		log.Info("RESET is set, will load all configurations from environment variables")
 		loadAll = true
 	}
@@ -365,17 +372,22 @@ func LoadFromEnv(cfgs map[string]interface{}, all bool) error {
 
 	for k, v := range envs {
 		if str, ok := v.(string); ok {
-			cfgs[k] = os.Getenv(str)
+			if strVal, exist := os.LookupEnv(str); exist {
+				cfgs[k] = strVal
+			}
 			continue
 		}
 
 		if parser, ok := v.(*parser); ok {
-			i, err := parser.parse(os.Getenv(parser.env))
-			if err != nil {
-				return err
+
+			if val, exist := os.LookupEnv(parser.env); exist {
+				i, err := parser.parse(val)
+				if err != nil {
+					return err
+				}
+				cfgs[k] = i
+				continue
 			}
-			cfgs[k] = i
-			continue
 		}
 
 		return fmt.Errorf("%v is not string or parse type", v)

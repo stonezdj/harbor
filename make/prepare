@@ -200,13 +200,17 @@ rcp = ConfigParser.RawConfigParser()
 rcp.readfp(conf)
 validate(rcp, args)
 
+reload_key = ""
+
 reload_config = rcp.get("configuration", "reload_config") if rcp.has_option(
     "configuration", "reload_config") else "false"
+if reload_config == "true":
+    reload_key = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
 hostname = rcp.get("configuration", "hostname")
 protocol = rcp.get("configuration", "ui_url_protocol")
 public_url = protocol + "://" + hostname
 email_identity = rcp.get("configuration", "email_identity")
-email_host = rcp.get("configuration", "email_server")
+# email_host = rcp.get("configuration", "email_server")
 email_port = rcp.get("configuration", "email_server_port")
 email_usr = rcp.get("configuration", "email_username")
 email_pwd = rcp.get("configuration", "email_password")
@@ -362,7 +366,7 @@ render(os.path.join(templates_dir, "adminserver", "env"),
         db_host=db_host,
         db_user=db_user,
         db_port=db_port,
-        email_host=email_host,
+        # email_host=email_host,
         email_port=email_port,
         email_usr=email_usr,
         email_pwd=email_pwd,
@@ -395,6 +399,13 @@ render(os.path.join(templates_dir, "adminserver", "env"),
         clair_url=clair_url,
         notary_url=notary_url
 	)
+#Append env
+envFile = open(adminserver_conf_env, 'a')
+if rcp.has_option("configuration", "email_server"):
+    envFile.write("EMAIL_HOST="+rcp.get("configuration", "email_server"))
+envFile.close()
+
+if 
 
 render(os.path.join(templates_dir, "ui", "env"), 
         ui_conf_env, 
