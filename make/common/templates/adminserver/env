@@ -58,3 +58,4 @@ CLAIR_URL=$clair_url
 NOTARY_URL=$notary_url
 REGISTRY_STORAGE_PROVIDER_NAME=$storage_provider_name
 READ_ONLY=false
+RELOAD_KEY=$reload_key
