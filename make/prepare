@@ -167,6 +167,12 @@ def render(src, dest, **kw):
         f.write(t.substitute(**kw))
     print("Generated configuration file: %s" % dest)
 
+def add_env_from_cfg(env_file, env_key, cfg, cfg_key, use_default=False):
+    if cfg.has_option("configuration", cfg_key):
+        env_file.write(env_key+"="+cfg.get("configuration", cfg_key))
+    elif use_default :
+        env_file.write(env_key+"=")
+    
 base_dir = os.path.dirname(__file__)
 config_dir = os.path.join(base_dir, "common/config")
 templates_dir = os.path.join(base_dir, "common/templates")
@@ -209,38 +215,10 @@ if reload_config == "true":
 hostname = rcp.get("configuration", "hostname")
 protocol = rcp.get("configuration", "ui_url_protocol")
 public_url = protocol + "://" + hostname
-email_identity = rcp.get("configuration", "email_identity")
-# email_host = rcp.get("configuration", "email_server")
-email_port = rcp.get("configuration", "email_server_port")
-email_usr = rcp.get("configuration", "email_username")
-email_pwd = rcp.get("configuration", "email_password")
-email_from = rcp.get("configuration", "email_from")
-email_ssl = rcp.get("configuration", "email_ssl")
-email_insecure = rcp.get("configuration", "email_insecure")
+
 harbor_admin_password = rcp.get("configuration", "harbor_admin_password")
 auth_mode = rcp.get("configuration", "auth_mode")
-ldap_url = rcp.get("configuration", "ldap_url")
-# this two options are either both set or unset
-if rcp.has_option("configuration", "ldap_searchdn"):
-    ldap_searchdn = rcp.get("configuration", "ldap_searchdn")
-    ldap_search_pwd = rcp.get("configuration", "ldap_search_pwd")
-else:
-    ldap_searchdn = ""
-    ldap_search_pwd = ""
-ldap_basedn = rcp.get("configuration", "ldap_basedn")
-# ldap_filter is null by default
-if rcp.has_option("configuration", "ldap_filter"):
-    ldap_filter = rcp.get("configuration", "ldap_filter")
-else:
-    ldap_filter = ""
-ldap_uid = rcp.get("configuration", "ldap_uid")
-ldap_scope = rcp.get("configuration", "ldap_scope")
-ldap_timeout = rcp.get("configuration", "ldap_timeout")
-ldap_verify_cert = rcp.get("configuration", "ldap_verify_cert")
-ldap_group_basedn = rcp.get("configuration", "ldap_group_basedn")
-ldap_group_filter = rcp.get("configuration", "ldap_group_filter")
-ldap_group_gid = rcp.get("configuration", "ldap_group_gid")
-ldap_group_scope = rcp.get("configuration", "ldap_group_scope")
+
 db_password = rcp.get("configuration", "db_password")
 db_host = rcp.get("configuration", "db_host")
 db_user = rcp.get("configuration", "db_user")
@@ -349,32 +327,11 @@ render(os.path.join(templates_dir, "adminserver", "env"),
         ui_url=ui_url,
         auth_mode=auth_mode,
         self_registration=self_registration,
-        ldap_url=ldap_url,
-        ldap_searchdn =ldap_searchdn, 
-        ldap_search_pwd =ldap_search_pwd,
-        ldap_basedn=ldap_basedn,
-        ldap_filter=ldap_filter,
-        ldap_uid=ldap_uid,
-        ldap_scope=ldap_scope,
-        ldap_verify_cert=ldap_verify_cert,
-        ldap_timeout=ldap_timeout,
-        ldap_group_basedn=ldap_group_basedn,
-        ldap_group_filter=ldap_group_filter,
-        ldap_group_gid=ldap_group_gid,
-        ldap_group_scope=ldap_group_scope,
         db_password=db_password,
         db_host=db_host,
         db_user=db_user,
         db_port=db_port,
-        # email_host=email_host,
         reload_key=reload_key,
-        email_port=email_port,
-        email_usr=email_usr,
-        email_pwd=email_pwd,
-        email_ssl=email_ssl,
-        email_insecure=email_insecure,
-        email_from=email_from,
-        email_identity=email_identity,
         harbor_admin_password=harbor_admin_password,
         project_creation_restriction=proj_cre_restriction,
         max_job_workers=max_job_workers,
@@ -400,11 +357,36 @@ render(os.path.join(templates_dir, "adminserver", "env"),
         clair_url=clair_url,
         notary_url=notary_url
 	)
-#Append env
+# append env
 envFile = open(adminserver_conf_env, 'a')
-if rcp.has_option("configuration", "email_server"):
-    envFile.write("EMAIL_HOST="+rcp.get("configuration", "email_server"))
+# email settings
+add_env_from_cfg(envFile, "EMAIL_HOST", rcp, "email_server")
+add_env_from_cfg(envFile, "EMAIL_USR", rcp, "email_user")
+add_env_from_cfg(envFile, "EMAIL_PWD", rcp, "email_password")
+add_env_from_cfg(envFile, "EMAIL_SSL", rcp, "email_ssl")
+add_env_from_cfg(envFile, "EMAIL_FROM", rcp, "email_from")
+add_env_from_cfg(envFile, "EMAIL_IDENTITY", rcp, "email_identity")
+add_env_from_cfg(envFile, "EMAIL_INSECURE", rcp, "email_insecure")
+add_env_from_cfg(envFile, "EMAIL_PORT", rcp, "email_server_port")
+
+# LDAP settings
+add_env_from_cfg(envFile, "LDAP_URL", rcp, "ldap_url")
+add_env_from_cfg(envFile, "LDAP_SEARCH_DN", rcp, "ldap_searchdn", True)
+add_env_from_cfg(envFile, "LDAP_SEARCH_PWD", rcp, "ldap_search_pwd", True)
+add_env_from_cfg(envFile, "LDAP_BASE_DN", rcp, "ldap_basedn")
+add_env_from_cfg(envFile, "LDAP_FILTER", rcp, "ldap_filter", True)
+add_env_from_cfg(envFile, "LDAP_UID", rcp, "ldap_uid")
+add_env_from_cfg(envFile, "LDAP_SCOPE", rcp, "ldap_scope")
+add_env_from_cfg(envFile, "LDAP_TIMEOUT", rcp, "ldap_timeout")
+add_env_from_cfg(envFile, "LDAP_VERIFY_CERT", rcp, "ldap_verify_cert")
+add_env_from_cfg(envFile, "LDAP_GROUP_BASEDN", rcp, "ldap_group_basedn")
+add_env_from_cfg(envFile, "LDAP_GROUP_FILTER", rcp, "ldap_group_filter")
+add_env_from_cfg(envFile, "LDAP_GROUP_GID", rcp, "ldap_group_gid")
+add_env_from_cfg(envFile, "LDAP_GROUP_SCOPE", rcp, "ldap_group_scope")
+
 envFile.close()
+
+
 
 render(os.path.join(templates_dir, "ui", "env"), 
         ui_conf_env, 
