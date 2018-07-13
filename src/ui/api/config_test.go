@@ -118,3 +118,32 @@ func TestResetConfig(t *testing.T) {
 	}
 	t.Logf("%v", ccc)
 }
+
+func Test_addMissingKey(t *testing.T) {
+
+	cfg := map[string]interface{}{
+		common.LDAPURL:        "sampleurl",
+		common.EmailPort:      555,
+		common.LDAPVerifyCert: true,
+	}
+
+	type args struct {
+		cfg map[string]interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"Add default value", args{cfg}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			addMissingKey(tt.args.cfg)
+		})
+	}
+
+	if _, ok := cfg[common.LDAPBaseDN]; !ok {
+		t.Errorf("Can not found default value for %v", common.LDAPBaseDN)
+	}
+
+}

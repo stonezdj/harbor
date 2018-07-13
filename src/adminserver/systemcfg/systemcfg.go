@@ -30,6 +30,7 @@ import (
 	comcfg "github.com/vmware/harbor/src/common/config"
 	"github.com/vmware/harbor/src/common/dao"
 	"github.com/vmware/harbor/src/common/models"
+	"github.com/vmware/harbor/src/common/utils"
 	"github.com/vmware/harbor/src/common/utils/log"
 )
 
@@ -403,16 +404,16 @@ func LoadFromEnv(cfgs map[string]interface{}, all bool) error {
 // GetDatabaseFromCfg Create database object from config
 func GetDatabaseFromCfg(cfg map[string]interface{}) *models.Database {
 	database := &models.Database{}
-	database.Type = cfg[common.DatabaseType].(string)
+	database.Type = utils.SafeCastString(cfg[common.DatabaseType])
 	mysql := &models.MySQL{}
-	mysql.Host = cfg[common.MySQLHost].(string)
-	mysql.Port = int(cfg[common.MySQLPort].(int))
-	mysql.Username = cfg[common.MySQLUsername].(string)
-	mysql.Password = cfg[common.MySQLPassword].(string)
-	mysql.Database = cfg[common.MySQLDatabase].(string)
+	mysql.Host = utils.SafeCastString(cfg[common.MySQLHost])
+	mysql.Port = utils.SafeCastInt(cfg[common.MySQLPort])
+	mysql.Username = utils.SafeCastString(cfg[common.MySQLUsername])
+	mysql.Password = utils.SafeCastString(cfg[common.MySQLPassword])
+	mysql.Database = utils.SafeCastString(cfg[common.MySQLDatabase])
 	database.MySQL = mysql
 	sqlite := &models.SQLite{}
-	sqlite.File = cfg[common.SQLiteFile].(string)
+	sqlite.File = utils.SafeCastString(cfg[common.SQLiteFile])
 	database.SQLite = sqlite
 	return database
 }

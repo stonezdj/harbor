@@ -63,42 +63,43 @@ var (
 		common.ReadOnly,
 	}
 
-	stringKeys = []string{
-		common.AUTHMode,
-		common.LDAPURL,
-		common.LDAPSearchDN,
-		common.LDAPSearchPwd,
-		common.LDAPBaseDN,
-		common.LDAPUID,
-		common.LDAPFilter,
-		common.LDAPGroupAttributeName,
-		common.LDAPGroupBaseDN,
-		common.LDAPGroupSearchFilter,
-		common.EmailHost,
-		common.EmailUsername,
-		common.EmailPassword,
-		common.EmailFrom,
-		common.EmailIdentity,
-		common.ProjectCreationRestriction,
-		common.UAAClientID,
-		common.UAAEndpoint,
+	//value is default value
+	stringKeysMap = map[string]string{
+		common.AUTHMode:                   "",
+		common.LDAPURL:                    "",
+		common.LDAPSearchDN:               "",
+		common.LDAPSearchPwd:              "",
+		common.LDAPBaseDN:                 "",
+		common.LDAPUID:                    "",
+		common.LDAPFilter:                 "",
+		common.LDAPGroupAttributeName:     "",
+		common.LDAPGroupBaseDN:            "",
+		common.LDAPGroupSearchFilter:      "",
+		common.EmailHost:                  "examplemailserver.com",
+		common.EmailUsername:              "admin",
+		common.EmailPassword:              "admin",
+		common.EmailFrom:                  "example@mailserver.com",
+		common.EmailIdentity:              "example@mailserver.com",
+		common.ProjectCreationRestriction: "",
+		common.UAAClientID:                "",
+		common.UAAEndpoint:                "",
 	}
 
-	numKeys = []string{
-		common.EmailPort,
-		common.LDAPScope,
-		common.LDAPTimeout,
-		common.LDAPGroupSearchScope,
-		common.TokenExpiration,
+	numKeysMap = map[string]int{
+		common.EmailPort:            25,
+		common.LDAPScope:            2,
+		common.LDAPTimeout:          5,
+		common.LDAPGroupSearchScope: 2,
+		common.TokenExpiration:      30,
 	}
 
-	boolKeys = []string{
-		common.EmailSSL,
-		common.EmailInsecure,
-		common.SelfRegistration,
-		common.LDAPVerifyCert,
-		common.UAAVerifyCert,
-		common.ReadOnly,
+	boolKeysMap = map[string]bool{
+		common.EmailSSL:         false,
+		common.EmailInsecure:    false,
+		common.SelfRegistration: false,
+		common.LDAPVerifyCert:   false,
+		common.UAAVerifyCert:    false,
+		common.ReadOnly:         false,
 	}
 
 	passwordKeys = []string{
@@ -205,7 +206,7 @@ func (c *ConfigAPI) Reset() {
 
 func validateCfg(c map[string]interface{}) (bool, error) {
 	strMap := map[string]string{}
-	for _, k := range stringKeys {
+	for k := range stringKeysMap {
 		if _, ok := c[k]; !ok {
 			continue
 		}
@@ -215,7 +216,7 @@ func validateCfg(c map[string]interface{}) (bool, error) {
 		strMap[k] = c[k].(string)
 	}
 	numMap := map[string]int{}
-	for _, k := range numKeys {
+	for k := range numKeysMap {
 		if _, ok := c[k]; !ok {
 			continue
 		}
@@ -225,7 +226,7 @@ func validateCfg(c map[string]interface{}) (bool, error) {
 		numMap[k] = int(c[k].(float64))
 	}
 	boolMap := map[string]bool{}
-	for _, k := range boolKeys {
+	for k := range boolKeysMap {
 		if _, ok := c[k]; !ok {
 			continue
 		}
@@ -323,9 +324,33 @@ func validateCfg(c map[string]interface{}) (bool, error) {
 	return false, nil
 }
 
+func addMissingKey(cfg map[string]interface{}) {
+
+	for k, v := range stringKeysMap {
+		if _, exist := cfg[k]; !exist {
+			cfg[k] = v
+		}
+	}
+
+	for k, v := range numKeysMap {
+		if _, exist := cfg[k]; !exist {
+			cfg[k] = v
+		}
+	}
+
+	for k, v := range boolKeysMap {
+		if _, exist := cfg[k]; !exist {
+			cfg[k] = v
+		}
+	}
+
+}
+
 // delete sensitive attrs and add editable field to every attr
 func convertForGet(cfg map[string]interface{}) (map[string]*value, error) {
 	result := map[string]*value{}
+
+	addMissingKey(cfg)
 
 	for _, k := range passwordKeys {
 		if _, ok := cfg[k]; ok {
