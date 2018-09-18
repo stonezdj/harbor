@@ -85,8 +85,8 @@ func (iu *ImageUtil) ScanTag(repoName string, tagName string) error {
 	select {
 	case <-done:
 		return nil
-	case <-time.After(20 * time.Second):
-		return errors.New("Scan timeout after 30 seconds")
+	case <-time.After(60 * time.Second):
+		return errors.New("Scan timeout after 60 seconds")
 	}
 }
 
