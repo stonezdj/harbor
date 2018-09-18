@@ -49,3 +49,5 @@ src/portal/src/**/*.js.map
 **/aot
 **/dist
 **/.bin
+harborclient/
+swagger-codegen-cli.jar

@@ -51,7 +51,7 @@ func (l *LdapAPI) Prepare() {
 		l.HandleForbidden(l.SecurityCtx.GetUsername())
 		return
 	}
-	if l.useTestConfig {
+	if !l.useTestConfig {
 		ldapCfg, err := ldapUtils.LoadSystemLdapConfig()
 		if err != nil {
 			l.HandleInternalServerError(fmt.Sprintf("Can't load system configuration, error: %v", err))
