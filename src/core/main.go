@@ -24,6 +24,7 @@ import (
 	"github.com/astaxie/beego"
 	_ "github.com/astaxie/beego/session/redis"
 
+	"github.com/goharbor/harbor/src/adminserver/systemcfg"
 	"github.com/goharbor/harbor/src/common/dao"
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/common/notifier"
@@ -83,19 +84,31 @@ func main() {
 	}
 	beego.AddTemplateExt("htm")
 
+	envCfgs := map[string]interface{}{}
+	if err := systemcfg.LoadFromEnv(envCfgs, true); err != nil {
+		log.Fatalf("failed to initialize configuration")
+	}
+	db := systemcfg.GetDatabaseFromCfg(envCfgs)
+	if err := dao.InitDatabase(db); err != nil {
+		log.Fatalf("Failed to initialize configuration")
+	}
+	if err := dao.InitDatabase(db); err != nil {
+		log.Fatalf("failed to initialize database: %v", err)
+	}
+
 	log.Info("initializing configurations...")
 	if err := config.Init(); err != nil {
 		log.Fatalf("failed to initialize configurations: %v", err)
 	}
 	log.Info("configurations initialization completed")
 	token.InitCreators()
-	database, err := config.Database()
-	if err != nil {
-		log.Fatalf("failed to get database configuration: %v", err)
-	}
-	if err := dao.InitDatabase(database); err != nil {
-		log.Fatalf("failed to initialize database: %v", err)
-	}
+	// database, err := config.Database()
+	// if err != nil {
+	// 	log.Fatalf("failed to get database configuration: %v", err)
+	// }
+	// if err := dao.InitDatabase(database); err != nil {
+	// 	log.Fatalf("failed to initialize database: %v", err)
+	// }
 
 	password, err := config.InitialAdminPassword()
 	if err != nil {

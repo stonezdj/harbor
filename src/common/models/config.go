@@ -106,3 +106,16 @@ type ConfigEntry struct {
 func (ce *ConfigEntry) TableName() string {
 	return "properties"
 }
+
+type UserConfigItem struct {
+	Name      string
+	Type      string
+	Default   interface{}
+	Validator func(entry ConfigEntry) (bool, error)
+	Parser    func(str string) (interface{}, error)
+}
+
+func (uce *UserConfigItem) Validate(value ConfigEntry) (bool, error) {
+	return uce.Validator(value)
+}
+

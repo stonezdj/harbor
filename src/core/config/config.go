@@ -29,6 +29,7 @@ import (
 	"github.com/goharbor/harbor/src/adminserver/client"
 	"github.com/goharbor/harbor/src/common"
 	comcfg "github.com/goharbor/harbor/src/common/config"
+	"github.com/goharbor/harbor/src/common/config/usersetting"
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/common/secret"
 	"github.com/goharbor/harbor/src/common/utils"
@@ -52,7 +53,7 @@ var (
 	AdminserverClient client.Client
 	// GlobalProjectMgr is initialized based on the deploy mode
 	GlobalProjectMgr promgr.ProjectManager
-	mg               *comcfg.Manager
+	mg               comcfg.API
 	keyProvider      comcfg.KeyProvider
 	// AdmiralClient is initialized only under integration deploy mode
 	// and can be passed to project manager as a parameter
@@ -87,7 +88,12 @@ func InitByURL(adminServerURL string) error {
 		return fmt.Errorf("failed to ping adminserver: %v", err)
 	}
 
-	mg = comcfg.NewManager(AdminserverClient, true)
+	// mg = comcfg.NewManager(AdminserverClient, true)
+	mg = &usersetting.Manager{}
+	err := mg.Init()
+	if err!= nil {
+		return err
+	}
 
 	if err := Load(); err != nil {
 		return err

@@ -24,6 +24,15 @@ import (
 	"github.com/goharbor/harbor/src/common"
 )
 
+// API api for configure
+type API interface {
+	Load() (map[string]interface{}, error)
+	Get() (map[string]interface{}, error)
+	Upload(cfgs map[string]interface{}) error
+	Reset() error
+	Init() error
+}
+
 // Manager manages configurations
 type Manager struct {
 	client client.Client
@@ -45,6 +54,11 @@ func NewManager(client client.Client, enableCache bool) *Manager {
 	}
 
 	return m
+}
+
+// Init ...
+func (m *Manager) Init() error {
+	return nil
 }
 
 // Load configurations, if cache is enabled, cache the configurations
