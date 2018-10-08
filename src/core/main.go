@@ -24,7 +24,6 @@ import (
 	"github.com/astaxie/beego"
 	_ "github.com/astaxie/beego/session/redis"
 
-	"github.com/goharbor/harbor/src/adminserver/systemcfg"
 	"github.com/goharbor/harbor/src/common/dao"
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/common/notifier"
@@ -94,9 +93,9 @@ func main() {
 	// }
 
 	log.Info("initializing configurations...")
-	if err := config.Init(); err != nil {
-		log.Fatalf("failed to initialize configurations: %v", err)
-	}
+	// if err := config.Init(); err != nil {
+	// 	log.Fatalf("failed to initialize configurations: %v", err)
+	// }
 	log.Info("configurations initialization completed")
 	token.InitCreators()
 	// database, err := config.Database()
