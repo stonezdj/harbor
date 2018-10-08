@@ -133,8 +133,9 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to load clair database information: %v", err)
 		}
-		dao.InitClairDB(clairDB)
 		if err := dao.InitClairDB(clairDB); err != nil {
+			log.Errorf("db pasword:%v", db.PostGreSQL.Password)
+			log.Errorf("clair db pasword:%v", clairDB.Password)
 			log.Fatalf("failed to initialize clair database: %v", err)
 		}
 		// Get policy configuration.
