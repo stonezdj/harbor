@@ -92,11 +92,6 @@ func main() {
 	if err := dao.InitDatabase(db); err != nil {
 		log.Fatalf("Failed to initialize configuration")
 	}
-	if err := dao.InitDatabase(db); err != nil {
-		log.Errorf("envCfgs %+v", envCfgs)
-		log.Errorf("database %+v", db)
-		log.Fatalf("failed to initialize database: %v", err)
-	}
 
 	log.Info("initializing configurations...")
 	if err := config.Init(); err != nil {
