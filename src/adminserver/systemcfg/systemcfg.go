@@ -260,10 +260,13 @@ func parseStringToBool(str string) (interface{}, error) {
 func Init() (err error) {
 	// init database
 	envCfgs := map[string]interface{}{}
+
 	if err := LoadFromEnv(envCfgs, true); err != nil {
 		return err
 	}
+	log.Errorf("envCfgs %+v", envCfgs)
 	db := GetDatabaseFromCfg(envCfgs)
+	log.Errorf("db %+v", *db.PostGreSQL)
 	if err := dao.InitDatabase(db); err != nil {
 		return err
 	}

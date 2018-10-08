@@ -84,14 +84,14 @@ func main() {
 	}
 	beego.AddTemplateExt("htm")
 
-	envCfgs := map[string]interface{}{}
-	if err := systemcfg.LoadFromEnv(envCfgs, true); err != nil {
-		log.Fatalf("failed to initialize configuration")
-	}
-	db := systemcfg.GetDatabaseFromCfg(envCfgs)
-	if err := dao.InitDatabase(db); err != nil {
-		log.Fatalf("Failed to initialize configuration")
-	}
+	// envCfgs := map[string]interface{}{}
+	// if err := systemcfg.LoadFromEnv(envCfgs, true); err != nil {
+	// 	log.Fatalf("failed to initialize configuration")
+	// }
+	// db := systemcfg.GetDatabaseFromCfg(envCfgs)
+	// if err := dao.InitDatabase(db); err != nil {
+	// 	log.Fatalf("Failed to initialize configuration")
+	// }
 
 	log.Info("initializing configurations...")
 	if err := config.Init(); err != nil {
