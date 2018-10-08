@@ -93,9 +93,9 @@ func main() {
 	// }
 
 	log.Info("initializing configurations...")
-	// if err := config.Init(); err != nil {
-	// 	log.Fatalf("failed to initialize configurations: %v", err)
-	// }
+	if err := config.Init(); err != nil {
+		log.Fatalf("failed to initialize configurations: %v", err)
+	}
 	log.Info("configurations initialization completed")
 	token.InitCreators()
 	// database, err := config.Database()
