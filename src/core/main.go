@@ -133,9 +133,10 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to load clair database information: %v", err)
 		}
-		if err := dao.InitClairDB(clairDB); err != nil {
-			log.Fatalf("failed to initialize clair database: %v", err)
-		}
+		dao.InitClairDB(clairDB)
+		// if err := dao.InitClairDB(clairDB); err != nil {
+		// 	log.Fatalf("failed to initialize clair database: %v", err)
+		// }
 		// Get policy configuration.
 		scanAllPolicy := config.ScanAllPolicy()
 		if scanAllPolicy.Type == notifier.PolicyTypeDaily {
