@@ -54,6 +54,7 @@ func InitClairDB(clairDB *models.PostGreSQL) error {
 		database: clairDB.Database,
 		sslmode:  clairDB.SSLMode,
 	}
+	log.Errorf("connect to db %v, user:%v, password: %v",clairDB.Database, clairDB.Username, clairDB.Password )
 	if err := p.Register(ClairDBAlias); err != nil {
 		return err
 	}
