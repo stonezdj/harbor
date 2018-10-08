@@ -67,13 +67,15 @@ func NewPGSQL(host string, port string, usr string, pwd string, database string,
 
 // Register registers pgSQL to orm with the info wrapped by the instance.
 func (p *pgsql) Register(alias ...string) error {
+	log.Error("testtcpconn")
 	if err := utils.TestTCPConn(fmt.Sprintf("%s:%s", p.host, p.port), 60, 2); err != nil {
 		return err
 	}
-
+	log.Error("register driver")
 	if err := orm.RegisterDriver("postgres", orm.DRPostgres); err != nil {
 		return err
 	}
+	log.Error("register")
 
 	an := "default"
 	if len(alias) != 0 {
@@ -81,7 +83,6 @@ func (p *pgsql) Register(alias ...string) error {
 	}
 	info := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		p.host, p.port, p.usr, p.pwd, p.database, p.sslmode)
-
 	log.Errorf("Registering zdj!")
 	return orm.RegisterDataBase(an, "postgres", info)
 }
