@@ -82,6 +82,7 @@ func (p *pgsql) Register(alias ...string) error {
 	info := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		p.host, p.port, p.usr, p.pwd, p.database, p.sslmode)
 
+	log.Errorf("Registering zdj!")
 	return orm.RegisterDataBase(an, "postgres", info)
 }
 
