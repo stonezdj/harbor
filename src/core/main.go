@@ -133,7 +133,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to load clair database information: %v", err)
 		}
-		clairDB.Password = db.PostGreSQL.Password
+		// clairDB.Password = db.PostGreSQL.Password
 		if err := dao.InitClairDB(clairDB); err != nil {
 			log.Errorf("db pasword:%v", db.PostGreSQL.Password)
 			log.Errorf("clair db pasword:%v", clairDB.Password)

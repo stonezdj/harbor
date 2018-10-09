@@ -3,6 +3,7 @@ package usersetting
 import (
 	"fmt"
 
+	"github.com/goharbor/harbor/src/adminserver/systemcfg"
 	"github.com/goharbor/harbor/src/adminserver/systemcfg/store/database"
 )
 
@@ -13,7 +14,7 @@ type Manager struct {
 // Init ...
 func (usm *Manager) Init() error {
 	// return systemcfg.Init()
-	return nil
+	return systemcfg.InitStore()
 }
 
 // Load ...

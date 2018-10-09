@@ -299,6 +299,11 @@ func Init() (err error) {
 	return CfgStore.Write(curCfgs)
 }
 
+// InitStore ...
+func InitStore() (err error) {
+	return initCfgStore()
+}
+
 func isLoadAll(cfg map[string]interface{}) bool {
 	return cfg == nil || strings.EqualFold(os.Getenv("RESET"), "true") && os.Getenv("RELOAD_KEY") != cfg[common.ReloadKey]
 }
