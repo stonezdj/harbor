@@ -23,6 +23,7 @@ func (usm *Manager) Load() (map[string]interface{}, error) {
 	if err != nil {
 		fmt.Errorf("Error occurred when Create store: %v", err)
 	}
+	cfgStore = systemcfg.WrapCfgStore(cfgStore)
 	resultMap, err := cfgStore.Read()
 	fmt.Printf("Dump resultMap %+v", resultMap)
 	return resultMap, err
@@ -39,6 +40,7 @@ func (usm *Manager) Upload(cfgs map[string]interface{}) error {
 	if err != nil {
 		fmt.Errorf("Error occurred when Create store: %v", err)
 	}
+	cfgStore = systemcfg.WrapCfgStore(cfgStore)
 	return cfgStore.Write(cfgs)
 }
 

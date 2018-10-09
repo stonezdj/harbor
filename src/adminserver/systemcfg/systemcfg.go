@@ -372,6 +372,21 @@ func initCfgStore() (err error) {
 	return nil
 }
 
+// WrapCfgStore ...
+func WrapCfgStore(cfgStore store.Driver) store.Driver {
+	kp := os.Getenv("KEY_PATH")
+	if len(kp) == 0 {
+		kp = defaultKeyPath
+	}
+	log.Infof("the path of key used by key provider: %s", kp)
+
+	encryptor := enpt.NewAESEncryptor(
+		comcfg.NewFileKeyProvider(kp), nil)
+
+	wrappedCfgStore := encrypt.NewCfgStore(encryptor, attrs, cfgStore)
+	return wrappedCfgStore
+}
+
 // LoadFromEnv loads the configurations from allEnvs, if all is false, it just loads
 // the repeatLoadEnvs and the env which is absent in cfgs
 func LoadFromEnv(cfgs map[string]interface{}, all bool) error {
