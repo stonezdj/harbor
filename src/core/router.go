@@ -99,6 +99,7 @@ func initRouters() {
 	beego.Router("/api/logs", &api.LogAPI{})
 	beego.Router("/api/configurations", &api.ConfigAPI{})
 	beego.Router("/api/configurations/reset", &api.ConfigAPI{}, "post:Reset")
+	beego.Router("/api/internal/configurations", &api.ConfigAPI{}, "get:GetInternalConfig")
 	beego.Router("/api/statistics", &api.StatisticAPI{})
 	beego.Router("/api/replications", &api.ReplicationAPI{})
 	beego.Router("/api/labels", &api.LabelAPI{}, "post:Post;get:List")
