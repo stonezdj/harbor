@@ -80,18 +80,18 @@ func Init() error {
 // InitByURL Init configurations with given url
 func InitByURL(adminServerURL string) error {
 	log.Infof("initializing client for adminserver %s ...", adminServerURL)
-	cfg := &client.Config{
-		Secret: CoreSecret(),
-	}
-	AdminserverClient = client.NewClient(adminServerURL, cfg)
-	if err := AdminserverClient.Ping(); err != nil {
-		return fmt.Errorf("failed to ping adminserver: %v", err)
-	}
+	// cfg := &client.Config{
+	// 	Secret: CoreSecret(),
+	// }
+	// AdminserverClient = client.NewClient(adminServerURL, cfg)
+	// if err := AdminserverClient.Ping(); err != nil {
+	// 	return fmt.Errorf("failed to ping adminserver: %v", err)
+	// }
 
 	// mg = comcfg.NewManager(AdminserverClient, true)
 	mg = &usersetting.Manager{}
 	err := mg.Init()
-	if err!= nil {
+	if err != nil {
 		return err
 	}
 
