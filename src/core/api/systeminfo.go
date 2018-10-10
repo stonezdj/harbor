@@ -21,6 +21,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/goharbor/harbor/src/adminserver/systeminfo"
 	"github.com/goharbor/harbor/src/adminserver/systeminfo/imagestorage"
 	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/common/dao"
@@ -120,8 +121,8 @@ func (sia *SystemInfoAPI) validate() {
 // GetVolumeInfo gets specific volume storage info.
 func (sia *SystemInfoAPI) GetVolumeInfo() {
 	sia.validate()
-
 	//capacity, err := config.AdminserverClient.Capacity()
+	systeminfo.Init()
 	capacity, err := imagestorage.GlobalDriver.Cap()
 	if err != nil {
 		log.Errorf("failed to get capacity: %v", err)
