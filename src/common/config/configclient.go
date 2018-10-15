@@ -5,8 +5,8 @@ type ValidateFunc func(string) (bool, error)
 
 // Item - Configure item include default value, type, env name
 type Item struct {
-	//true for system, false for user settings
-	SystemConfig bool
+	//The Scope of this configuration item: eg: system, user
+	Scope string
 	//email, ldapbasic, ldapgroup, uaa settings, used to retieve configure items by group, for example GetLDAPBasicSetting, GetLDAPGroupSetting settings
 	Group string
 	//environment key to retrieves this value when initialize, for example: POSTGRESQL_HOST, only used for system settings, for user settings no EnvironmentKey
@@ -31,18 +31,6 @@ type ConfigureInterface interface {
 	Validate() (bool, error)
 	// Set this configure item to configure store
 	Set(value string) error
-	// GetString value of this configure item
-	GetString() string
-	// GetName get the name of current configure item
-	GetName() string
-	// GetInt get the int value of current item.
-	GetInt() int
-	// GetPassword get the decrypted password value
-	GetPassword() string
-	// GetMap get the map value of current item.
-	GetMap() map[string]interface{}
-	// GetStringToStringMap get the string to string map of current value
-	GetStringToStringMap() map[string]string
 }
 
 // ConfigureSettings - to manage all configurations
@@ -50,15 +38,31 @@ type ConfigureSettings struct {
 	// ConfigureMetadata to store all metadata of configure items
 	ConfigureMetaData map[string]Item
 	// ConfigureValues to store all configure values
-	ConfigureValues map[string]string
+	ConfigureValues map[string]Value
+}
+
+// ConfigureValue - Configure values
+type ConfigureValue struct {
+	Key   string
+	Value string
+}
+
+// Value -- interface to operate configure value
+type Value interface {
+	GetConfigString(key string) (string, error)
+	GetConfigInt(key string) (int, error)
+	GetConfigBool(key string) (bool, error)
+	GetConfigStringToStringMap(key string) (map[string]string, error)
+	GetConfigMap(key string) (map[string]interface{}, error)
 }
 
 // StorageInterface - Internal interface to manage configuration
 type StorageInterface interface {
 	Init() error
+	//Load from store
 	Load() error
 	UpdateAll() error
-	// Get - get all configuration item from store
+	// Get - get all configuration item from the cached store
 	Get() error
 	// UpdateItem - Update a single item
 	UpdateItem(item Item) error
