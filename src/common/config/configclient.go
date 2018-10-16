@@ -71,3 +71,15 @@ type StorageInterface interface {
 	// Reset configure to default value
 	Reset()
 }
+
+// Configures ...
+var Configures ConfigureSettings
+
+// InitMetaData ...
+func (cfg *ConfigureSettings) InitMetaData() {
+	metaDataMap := make(map[string]Item)
+	for _, item := range ConfigList {
+		metaDataMap[item.Name] = item
+	}
+	Configures.ConfigureMetaData = metaDataMap
+}

@@ -10,6 +10,12 @@ const (
 	LdapGroupGroup = "ldapgroup"
 	EmailGroup     = "email"
 	UAAGroup       = "uaa"
+
+	//Type
+	IntType      = "int"
+	StringType   = "string"
+	BoolType     = "bool"
+	PasswordType = "password"
 )
 
 var (
@@ -18,10 +24,10 @@ var (
 	// 1. Add configure item in configlist.go
 	// 2. Get settings by ClientAPI
 	ConfigList = []Item{
-		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_base_dn", Type: "string", Editable: true},
-		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_scope", Type: "int", Editable: true},
-		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search", Type: "string", Editable: true},
-		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_base_dn", Type: "string", Editable: true},
-		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_dn", Type: "string", Editable: true},
+		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_base_dn", Type: StringType, Editable: true},
+		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_scope", Type: IntType, Editable: true},
+		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_password", Type: PasswordType, Editable: true},
+		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_search_dn", Type: StringType, Editable: true},
+		{Scope: UserScope, Group: LdapBasicGroup, EnvironmentKey: "", DefaultValue: "", Name: "ldap_verify_cert", Type: BoolType, Editable: true},
 	}
 )
