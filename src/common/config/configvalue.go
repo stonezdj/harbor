@@ -1,0 +1,139 @@
+package config
+
+import (
+	"encoding/json"
+	"errors"
+	"strconv"
+)
+
+var (
+	// ErrNotDefined ...
+	ErrNotDefined = errors.New("configure item is not defined in metadata")
+	// ErrTypeNotMatch ...
+	ErrTypeNotMatch = errors.New("the required value doesn't matched with metadata defined")
+	// ErrInvalidData ...
+	ErrInvalidData = errors.New("the data provided is invalid")
+)
+
+// ConfigureValue - Configure values
+type ConfigureValue struct {
+	Key   string
+	Value string
+}
+
+// Value -- interface to operate configure value
+type Value interface {
+	GetString() (string, error)
+	// GetInt - return the int value of current value
+	GetInt() (int, error)
+	// GetInt64 - return the int64 value of current value
+	GetInt64() (int64, error)
+	// GetBool - return the bool value of current setting
+	GetBool() (bool, error)
+	// GetStringToStringMap - return the string to string map of current value
+	GetStringToStringMap() (map[string]string, error)
+	// GetMap - return the map of current value
+	GetMap() (map[string]interface{}, error)
+	// Validator to validate configure items, if passed, return true, else return false and return error
+	Validate() error
+	// Set this configure item to configure store
+	Set(key, value string) error
+}
+
+// GetString - Get the string value of current configure
+func (c *ConfigureValue) GetString() (string, error) {
+	//Any type has the string value
+	if _, ok := ConfigureMetaData[c.Key]; ok {
+		return c.Value, nil
+	}
+	return "", ErrNotDefined
+}
+
+// GetInt - return the int value of current value
+func (c *ConfigureValue) GetInt() (int, error) {
+	if metaData, ok := ConfigureMetaData[c.Key]; ok {
+		if metaData.Type != IntType {
+			return 0, ErrTypeNotMatch
+		}
+		return strconv.Atoi(c.Value)
+
+	}
+	return 0, ErrNotDefined
+}
+
+// GetInt64 - return the int64 value of current value
+func (c *ConfigureValue) GetInt64() (int64, error) {
+	if metaData, ok := ConfigureMetaData[c.Key]; ok {
+		if (metaData.Type == IntType) || (metaData.Type == Int64Type) {
+			return strconv.ParseInt(c.Value, 10, 64)
+		}
+		return 0, ErrTypeNotMatch
+
+	}
+	return 0, ErrNotDefined
+}
+
+// GetBool - return the bool value of current setting
+func (c *ConfigureValue) GetBool() (bool, error) {
+	if metaData, ok := ConfigureMetaData[c.Key]; ok {
+		if metaData.Type != BoolType {
+			return false, ErrTypeNotMatch
+		}
+		return strconv.ParseBool(c.Value)
+
+	}
+	return false, ErrNotDefined
+}
+
+// GetStringToStringMap - return the string to string map of current value
+func (c *ConfigureValue) GetStringToStringMap() (map[string]string, error) {
+	result := map[string]string{}
+	if metaData, ok := ConfigureMetaData[c.Key]; ok {
+		if metaData.Type != MapType {
+			return map[string]string{}, ErrTypeNotMatch
+		}
+		err := json.Unmarshal([]byte(c.Value), &result)
+		return result, err
+	}
+	return result, ErrNotDefined
+}
+
+// GetMap - return the map of current value
+func (c *ConfigureValue) GetMap() (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+	if metaData, ok := ConfigureMetaData[c.Key]; ok {
+		if metaData.Type != MapType {
+			return map[string]interface{}{}, ErrTypeNotMatch
+		}
+		err := json.Unmarshal([]byte(c.Value), &result)
+		return result, err
+	}
+	return result, ErrNotDefined
+}
+
+// Validate - to validate configure items, if passed, return true, else return false and return error
+func (c *ConfigureValue) Validate() error {
+	if metaData, ok := ConfigureMetaData[c.Key]; ok {
+		if metaData.Validator != nil {
+			return metaData.Validator(c.Key, c.Value)
+		}
+		return nil
+	}
+	return ErrNotDefined
+}
+
+// Set - set this configure item to configure store
+func (c *ConfigureValue) Set(key, value string) error {
+	if metaData, ok := ConfigureMetaData[key]; ok {
+		if metaData.Validator != nil {
+			err := metaData.Validator(key, value)
+			if err != nil {
+				return ErrInvalidData
+			}
+		}
+		c.Key = key
+		c.Value = value
+		return nil
+	}
+	return ErrNotDefined
+}

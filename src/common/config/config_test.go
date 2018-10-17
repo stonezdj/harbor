@@ -20,8 +20,8 @@ import "testing"
 
 func TestInitMetaData(t *testing.T) {
 
-	Configures.InitMetaData()
-	if item, ok := Configures.ConfigureMetaData["ldap_search_base_dn"]; !ok {
+	InitMetaData()
+	if item, ok := ConfigureMetaData["ldap_search_base_dn"]; !ok {
 		t.Error("Failed to find key ldap_search_base_dn after initial")
 	} else {
 		if item.Type != StringType {
@@ -29,21 +29,21 @@ func TestInitMetaData(t *testing.T) {
 		}
 	}
 
-	if item, ok := Configures.ConfigureMetaData["ldap_search_scope"]; !ok {
+	if item, ok := ConfigureMetaData["ldap_search_scope"]; !ok {
 		t.Error("Failed to find key ldap_search_scope after initial")
 	} else {
 		if item.Type != IntType {
 			t.Error("Wrong Type for this item!")
 		}
 	}
-	if item, ok := Configures.ConfigureMetaData["ldap_search_password"]; !ok {
+	if item, ok := ConfigureMetaData["ldap_search_password"]; !ok {
 		t.Error("Failed to find key ldap_search_password after initial")
 	} else {
 		if item.Type != PasswordType {
 			t.Error("Wrong Type for this item!")
 		}
 	}
-	if item, ok := Configures.ConfigureMetaData["ldap_verify_cert"]; !ok {
+	if item, ok := ConfigureMetaData["ldap_verify_cert"]; !ok {
 		t.Error("Failed to find key ldap_verify_cert after initial")
 	} else {
 		if item.Type != BoolType {

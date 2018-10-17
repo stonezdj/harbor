@@ -1,22 +1,5 @@
 package config
 
-// Constant for configure item
-const (
-	//Scope
-	UserScope   = "user"
-	SystemScope = "system"
-	//Group
-	LdapBasicGroup = "ldapbasic"
-	LdapGroupGroup = "ldapgroup"
-	EmailGroup     = "email"
-	UAAGroup       = "uaa"
-
-	//Type
-	IntType      = "int"
-	StringType   = "string"
-	BoolType     = "bool"
-	PasswordType = "password"
-)
 
 var (
 	//ConfigList - All configure items used in harbor

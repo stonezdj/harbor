@@ -6,6 +6,7 @@ import (
 )
 
 func TestCreateInMemoryConfig(t *testing.T) {
-	cfg := InMemoryCfg{}
+	cfg := ConfigInMemory{}
+	cfg.Init()
 	fmt.Printf("message need to print,%+v\n", cfg)
 }
