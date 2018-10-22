@@ -1,12 +1,5 @@
 package config
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"github.com/goharbor/harbor/src/common/utils/log"
-)
-
 // Constant for configure item
 const (
 	//Scope
@@ -66,17 +59,10 @@ func InitMetaData() {
 	ConfigureMetaData = metaDataMap
 }
 
-// InitMetaDataFromJSONString ...
-func InitMetaDataFromJSONString(jsonString string) {
-	var resultList []Item
+// InitMetaDataFromArray - used for testing
+func InitMetaDataFromArray(items []Item) {
 	resultMap := map[string]Item{}
-	err := json.Unmarshal([]byte(jsonString), &resultList)
-	if err != nil {
-		fmt.Printf("Error occurred when loading json data from string: %v", err)
-		log.Errorf("Error occurred when loading json data from string: %v", err)
-		return
-	}
-	for _, item := range resultList {
+	for _, item := range items {
 		resultMap[item.Name] = item
 	}
 	ConfigureMetaData = resultMap

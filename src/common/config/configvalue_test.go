@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-const testingMetaDataJSONString = `[
-	{"name":"ldap_search_scope", "type":"int", "scope":"system", "group":"ldapbasic"},
-	{"name":"ldap_search_dn", "type":"string", "scope":"user", "group":"ldapbasic"},
-	{"name":"ulimit", "type":"int64", "scope":"user", "group":"ldapbasic"},
-	{"name":"ldap_verify_cert", "type":"bool", "scope":"user", "group":"ldapbasic"},
-	{"name":"sample_map_setting", "type":"map", "scope":"user", "group":"ldapgroup"}
-]`
+var testingMetaDataArray = []Item{
+	{Name: "ldap_search_scope", Type: "int", Scope: "system", Group: "ldapbasic"},
+	{Name: "ldap_search_dn", Type: "string", Scope: "user", Group: "ldapbasic"},
+	{Name: "ulimit", Type: "int64", Scope: "user", Group: "ldapbasic"},
+	{Name: "ldap_verify_cert", Type: "bool", Scope: "user", Group: "ldapbasic"},
+	{Name: "sample_map_setting", Type: "map", Scope: "user", Group: "ldapbasic"},
+}
 
 func TestConfigureValue_GetString(t *testing.T) {
 
@@ -29,7 +29,7 @@ func TestConfigureValue_GetString(t *testing.T) {
 		{"normal", fields{"ldap_search_dn", "cn=admin,dc=example,dc=com"}, "cn=admin,dc=example,dc=com", false},
 	}
 
-	InitMetaDataFromJSONString(testingMetaDataJSONString)
+	InitMetaDataFromArray(testingMetaDataArray)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestConfigureValue_GetInt64(t *testing.T) {
 	}{
 		{"normal", fields{"ulimit", "255534223"}, 255534223, false},
 	}
-	InitMetaDataFromJSONString(testingMetaDataJSONString)
+	InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
@@ -94,7 +94,7 @@ func TestConfigureValue_GetBool(t *testing.T) {
 	}{
 		{"normal", fields{"ldap_verify_cert", "true"}, true, false},
 	}
-	InitMetaDataFromJSONString(testingMetaDataJSONString)
+	InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
@@ -126,7 +126,7 @@ func TestConfigureValue_GetStringToStringMap(t *testing.T) {
 	}{
 		{"normal", fields{"sample_map_setting", `{ "value1":"abc","value2":"def" }`}, map[string]string{"value1": "abc", "value2": "def"}, false},
 	}
-	InitMetaDataFromJSONString(testingMetaDataJSONString)
+	InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
@@ -158,7 +158,7 @@ func TestConfigureValue_GetMap(t *testing.T) {
 	}{
 		{"normal", fields{"sample_map_setting", `{ "value1":"abc","value2":"def" }`}, map[string]interface{}{"value1": "abc", "value2": "def"}, false},
 	}
-	InitMetaDataFromJSONString(testingMetaDataJSONString)
+	InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
@@ -198,7 +198,7 @@ func TestConfigureValue_Validate(t *testing.T) {
 		{"normal", fields{"ldap_search_scope", "3"}, false},
 	}
 
-	InitMetaDataFromJSONString(testingMetaDataJSONString)
+	InitMetaDataFromArray(testingMetaDataArray)
 
 	item := ConfigureMetaData["ldap_search_scope"]
 	item.Validator = LDAPScopeValidateFunc
@@ -235,7 +235,7 @@ func TestConfigureValue_Set(t *testing.T) {
 		{"normal", fields{"", ""}, args{"ldap_search_scope", "4"}, true},
 		{"normal", fields{"", ""}, args{"ldap_search_scope", "3"}, false},
 	}
-	InitMetaDataFromJSONString(testingMetaDataJSONString)
+	InitMetaDataFromArray(testingMetaDataArray)
 
 	item := ConfigureMetaData["ldap_search_scope"]
 	item.Validator = LDAPScopeValidateFunc

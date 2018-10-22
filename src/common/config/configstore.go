@@ -1,6 +1,8 @@
 package config
 
-import "github.com/goharbor/harbor/src/common/utils/log"
+import (
+	"github.com/goharbor/harbor/src/common/utils/log"
+)
 
 // ConfigureStore - to manage all configurations
 type ConfigureStore struct {
@@ -13,7 +15,7 @@ type StorageInterface interface {
 	// Init - init configurations with default value
 	Init() error
 	// InitFromString - used for testing
-	InitFromString(metadataJSONString string) error
+	InitFromString(testingMetaDataArray []Item) error
 	// Load from store
 	Load() error
 	// Save all configuration to store
@@ -33,9 +35,10 @@ func (s *ConfigureStore) Init() error {
 	return nil
 }
 
-// InitFromString ... Used for testing
-func (s *ConfigureStore) InitFromString(metadataJSONString string) error {
-	InitMetaDataFromJSONString(metadataJSONString)
+// InitFromArray ... Used for testing
+func (s *ConfigureStore) InitFromArray(testingMetaDataArray []Item) error {
+	InitMetaDataFromArray(testingMetaDataArray)
+	s.ConfigureValues = map[string]Value{}
 	for k, v := range ConfigureMetaData {
 		if v.HasDefaultValue {
 			s.ConfigureValues[k] = &ConfigureValue{k, v.DefaultValue}
@@ -69,25 +72,59 @@ func (s *ConfigureStore) Reset() {
 
 // GetSettingByGroup ...
 func (s *ConfigureStore) GetSettingByGroup(groupName string) ([]Value, error) {
-	panic("not implemented")
+	resultValues := []Value{}
+	for key, value := range s.ConfigureValues {
+		if item, ok := ConfigureMetaData[key]; ok {
+			if item.Group == groupName {
+				resultValues = append(resultValues, value)
+			}
+		}
+	}
+	return resultValues, nil
 }
 
 // GetSettingByScope ...
 func (s *ConfigureStore) GetSettingByScope(scope string) ([]Value, error) {
-	panic("not implemented")
+	resultValues := []Value{}
+	for key, value := range s.ConfigureValues {
+		if item, ok := ConfigureMetaData[key]; ok {
+			if item.Scope == scope {
+				resultValues = append(resultValues, value)
+			}
+		}
+	}
+	return resultValues, nil
 }
 
 // GetSetting ...
 func (s *ConfigureStore) GetSetting(keyName string) (Value, error) {
-	panic("not implemented")
+	if _, ok := ConfigureMetaData[keyName]; ok {
+		if value, exist := s.ConfigureValues[keyName]; exist {
+			return value, nil
+		} else {
+			return nil, ErrValueNotSet
+		}
+	}
+	return nil, ErrNotDefined
 }
 
 // UpdateConfig ...
 func (s *ConfigureStore) UpdateConfig(cfg map[string]string) error {
-	panic("not implemented")
+	for key, value := range cfg {
+		err := s.UpdateConfigValue(key, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // UpdateConfigValue ...
-func (s *ConfigureStore) UpdateConfigValue(key string, value string) error {
-	panic("not implemented")
+func (s *ConfigureStore) UpdateConfigValue(keyName string, value string) error {
+	if _, ok := ConfigureMetaData[keyName]; ok {
+		s.ConfigureValues[keyName] = &ConfigureValue{Key: keyName, Value: value}
+		return nil
+	} else {
+		return ErrNotDefined
+	}
 }
