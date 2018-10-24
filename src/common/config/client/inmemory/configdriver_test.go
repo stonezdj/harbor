@@ -2,21 +2,23 @@ package inmemory
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/goharbor/harbor/src/common/config"
 )
 
+var testingMetaDataArray = []config.Item{
+	{Name: "ldap_search_scope", Type: "int", Scope: "system", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "3"},
+	{Name: "ldap_search_dn", Type: "string", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "cn=admin,dc=example,dc=com"},
+	{Name: "ulimit", Type: "int64", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "99999"},
+	{Name: "ldap_verify_cert", Type: "bool", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "true"},
+	{Name: "sample_map_setting", Type: "map", Scope: "user", Group: "ldapbasic", HasDefaultValue: false},
+}
+
 func TestCreateInMemoryConfigInit(t *testing.T) {
-	var testingMetaDataArray = []config.Item{
-		{Name: "ldap_search_scope", Type: "int", Scope: "system", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "3"},
-		{Name: "ldap_search_dn", Type: "string", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "cn=admin,dc=example,dc=com"},
-		{Name: "ulimit", Type: "int64", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "99999"},
-		{Name: "ldap_verify_cert", Type: "bool", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "true"},
-		{Name: "sample_map_setting", Type: "map", Scope: "user", Group: "ldapbasic", HasDefaultValue: false},
-	}
-	cfg := ConfigInMemory{}
-	cfg.InitFromArray(testingMetaDataArray)
+
+	cfg := NewConfigInMemoryFromArray(testingMetaDataArray)
 	values, err := cfg.GetSettingByGroup("ldapbasic")
 	if err != nil {
 		t.Errorf("Error occurred when GetSettingByGroup: %v", err)
@@ -43,8 +45,7 @@ func TestCreateInMemoryConfigSet(t *testing.T) {
 		{Name: "ldap_verify_cert", Type: "bool", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "true"},
 		{Name: "sample_map_setting", Type: "map", Scope: "user", Group: "ldapbasic", HasDefaultValue: false},
 	}
-	cfg := ConfigInMemory{}
-	cfg.InitFromArray(testingMetaDataArray)
+	cfg := NewConfigInMemoryFromArray(testingMetaDataArray)
 	err := cfg.UpdateConfigValue("ldap_search_dn", "cn=test,dc=example,dc=com")
 	if err != nil {
 		t.Errorf("Error occurred when UpdateConfigValue: %v", err)
@@ -80,4 +81,24 @@ func TestCreateInMemoryConfigSet(t *testing.T) {
 		t.Error("Failed to set ulimit")
 	}
 
+}
+
+func TestSetSystemSettings(t *testing.T) {
+	var testingMetaDataArray = []config.Item{
+		{Name: "ldap_search_scope", Type: "int", Scope: "system", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "3"},
+		{Name: "ldap_search_dn", Type: "string", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "cn=admin,dc=example,dc=com"},
+		{Name: "ulimit", Type: "int64", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "99999"},
+		{Name: "ldap_verify_cert", Type: "bool", Scope: "user", Group: "ldapbasic", HasDefaultValue: true, DefaultValue: "true"},
+		{Name: "sample_map_setting", Type: "map", Scope: "user", Group: "ldapbasic", HasDefaultValue: false},
+		{Name: "auth_mode", Type: "map", Scope: "system", Group: "basic", EnvironmentKey: "AUTH_MODE", HasDefaultValue: true, DefaultValue: "ldap_auth"},
+	}
+	cfg := NewConfigInMemoryFromArray(testingMetaDataArray)
+	os.Setenv("AUTH_MODE", "db_auth")
+	value, err := cfg.GetSetting("auth_mode")
+	if err != nil {
+		t.Errorf("Error occurred when GetSetting: %v", err)
+	}
+	if value.GetString() != "db_auth" {
+		t.Errorf("The auth_mode is not set by environment !")
+	}
 }

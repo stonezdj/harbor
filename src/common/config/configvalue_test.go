@@ -29,7 +29,7 @@ func TestConfigureValue_GetString(t *testing.T) {
 		{"normal", fields{"ldap_search_dn", "cn=admin,dc=example,dc=com"}, "cn=admin,dc=example,dc=com", false},
 	}
 
-	InitMetaDataFromArray(testingMetaDataArray)
+	MetaData.InitMetaDataFromArray(testingMetaDataArray)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -37,11 +37,7 @@ func TestConfigureValue_GetString(t *testing.T) {
 				Key:   tt.fields.Key,
 				Value: tt.fields.Value,
 			}
-			got, err := c.GetString()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ConfigureValue.GetString() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := c.GetString()
 			if got != tt.want {
 				t.Errorf("ConfigureValue.GetString() = %v, want %v", got, tt.want)
 			}
@@ -62,18 +58,14 @@ func TestConfigureValue_GetInt64(t *testing.T) {
 	}{
 		{"normal", fields{"ulimit", "255534223"}, 255534223, false},
 	}
-	InitMetaDataFromArray(testingMetaDataArray)
+	MetaData.InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
 				Key:   tt.fields.Key,
 				Value: tt.fields.Value,
 			}
-			got, err := c.GetInt64()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ConfigureValue.GetInt64() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := c.GetInt64()
 			if got != tt.want {
 				t.Errorf("ConfigureValue.GetInt64() = %v, want %v", got, tt.want)
 			}
@@ -94,18 +86,14 @@ func TestConfigureValue_GetBool(t *testing.T) {
 	}{
 		{"normal", fields{"ldap_verify_cert", "true"}, true, false},
 	}
-	InitMetaDataFromArray(testingMetaDataArray)
+	MetaData.InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
 				Key:   tt.fields.Key,
 				Value: tt.fields.Value,
 			}
-			got, err := c.GetBool()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ConfigureValue.GetBool() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := c.GetBool()
 			if got != tt.want {
 				t.Errorf("ConfigureValue.GetBool() = %v, want %v", got, tt.want)
 			}
@@ -126,18 +114,14 @@ func TestConfigureValue_GetStringToStringMap(t *testing.T) {
 	}{
 		{"normal", fields{"sample_map_setting", `{ "value1":"abc","value2":"def" }`}, map[string]string{"value1": "abc", "value2": "def"}, false},
 	}
-	InitMetaDataFromArray(testingMetaDataArray)
+	MetaData.InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
 				Key:   tt.fields.Key,
 				Value: tt.fields.Value,
 			}
-			got, err := c.GetStringToStringMap()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ConfigureValue.GetStringToStringMap() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := c.GetStringToStringMap()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ConfigureValue.GetStringToStringMap() = %v, want %v", got, tt.want)
 			}
@@ -158,18 +142,14 @@ func TestConfigureValue_GetMap(t *testing.T) {
 	}{
 		{"normal", fields{"sample_map_setting", `{ "value1":"abc","value2":"def" }`}, map[string]interface{}{"value1": "abc", "value2": "def"}, false},
 	}
-	InitMetaDataFromArray(testingMetaDataArray)
+	MetaData.InitMetaDataFromArray(testingMetaDataArray)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &ConfigureValue{
 				Key:   tt.fields.Key,
 				Value: tt.fields.Value,
 			}
-			got, err := c.GetMap()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ConfigureValue.GetMap() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := c.GetMap()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ConfigureValue.GetMap() = %v, want %v", got, tt.want)
 			}
@@ -198,11 +178,13 @@ func TestConfigureValue_Validate(t *testing.T) {
 		{"normal", fields{"ldap_search_scope", "3"}, false},
 	}
 
-	InitMetaDataFromArray(testingMetaDataArray)
-
-	item := ConfigureMetaData["ldap_search_scope"]
+	MetaData.InitMetaDataFromArray(testingMetaDataArray)
+	item, err := MetaData.GetConfigMetaData("ldap_search_scope")
+	if err != nil {
+		t.Errorf("Error occurred when GetConfigMetaData: %v", err)
+	}
 	item.Validator = LDAPScopeValidateFunc
-	ConfigureMetaData["ldap_search_scope"] = item
+	MetaData.writeMap("ldap_search_scope", item)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -235,11 +217,14 @@ func TestConfigureValue_Set(t *testing.T) {
 		{"normal", fields{"", ""}, args{"ldap_search_scope", "4"}, true},
 		{"normal", fields{"", ""}, args{"ldap_search_scope", "3"}, false},
 	}
-	InitMetaDataFromArray(testingMetaDataArray)
+	MetaData.InitMetaDataFromArray(testingMetaDataArray)
 
-	item := ConfigureMetaData["ldap_search_scope"]
+	item, err := MetaData.GetConfigMetaData("ldap_search_scope")
+	if err != nil {
+		t.Errorf("Error occurred when GetConfigMetaData: %v", err)
+	}
 	item.Validator = LDAPScopeValidateFunc
-	ConfigureMetaData["ldap_search_scope"] = item
+	MetaData.writeMap("ldap_search_scope", item)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
