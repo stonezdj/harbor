@@ -26,7 +26,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/goharbor/harbor/src/adminserver/client"
 	"github.com/goharbor/harbor/src/common"
 	comcfg "github.com/goharbor/harbor/src/common/config"
 	"github.com/goharbor/harbor/src/common/config/client/db"
@@ -50,8 +49,6 @@ const (
 var (
 	// SecretStore manages secrets
 	SecretStore *secret.Store
-	// AdminserverClient is a client for adminserver
-	AdminserverClient client.Client
 	// GlobalProjectMgr is initialized based on the deploy mode
 	GlobalProjectMgr promgr.ProjectManager
 	mg               comcfg.ManagerInterface
