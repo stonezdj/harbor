@@ -371,3 +371,75 @@ func TestSession_SearchGroupByDN(t *testing.T) {
 		})
 	}
 }
+
+func TestSession_QueryGroupMemberDNList(t *testing.T) {
+	ldapConfig := models.LdapConf{
+		LdapURL:            adminServerLdapTestConfig[common.LDAPURL].(string) + ":389",
+		LdapSearchDn:       adminServerLdapTestConfig[common.LDAPSearchDN].(string),
+		LdapScope:          2,
+		LdapSearchPassword: adminServerLdapTestConfig[common.LDAPSearchPwd].(string),
+		LdapBaseDn:         adminServerLdapTestConfig[common.LDAPBaseDN].(string),
+	}
+	ldapGroupConfig := models.LdapGroupConf{
+		LdapGroupBaseDN:        "ou=group,dc=example,dc=com",
+		LdapGroupFilter:        "objectClass=groupOfNames",
+		LdapGroupNameAttribute: "cn",
+		LdapGroupSearchScope:   2,
+	}
+	type fields struct {
+		ldapConfig      models.LdapConf
+		ldapGroupConfig models.LdapGroupConf
+		ldapConn        *goldap.Conn
+	}
+	type args struct {
+		baseDN  string
+		groupDN string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{"normal case",
+			fields{ldapConfig: ldapConfig, ldapGroupConfig: ldapGroupConfig},
+			args{baseDN: ldapConfig.LdapBaseDn, groupDN: "cn=harbor_admin,ou=groups,dc=example,dc=com"},
+			[]string{"cn=admin_user,ou=people,dc=example,dc=com"},
+			false,
+		},
+		{
+			"more than one items case",
+			fields{ldapConfig: ldapConfig, ldapGroupConfig: ldapGroupConfig},
+			args{baseDN: ldapConfig.LdapBaseDn, groupDN: "cn=harbor_group,ou=groups,dc=example,dc=com"},
+			[]string{"cn=mike,ou=people,dc=example,dc=com", "cn=mike02,ou=people,dc=example,dc=com"},
+			false,
+		},
+		{
+			"not found",
+			fields{ldapConfig: ldapConfig, ldapGroupConfig: ldapGroupConfig},
+			args{baseDN: ldapConfig.LdapBaseDn, groupDN: "cn=harbor_group_notexist,ou=groups,dc=example,dc=com"},
+			[]string{},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			session := &Session{
+				ldapConfig:      tt.fields.ldapConfig,
+				ldapGroupConfig: tt.fields.ldapGroupConfig,
+				ldapConn:        tt.fields.ldapConn,
+			}
+			session.Open()
+			defer session.Close()
+			got, err := session.QueryGroupMemberDNList(tt.args.baseDN, tt.args.groupDN)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Session.QueryGroupMemberDNList() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Session.QueryGroupMemberDNList() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -90,3 +90,47 @@ func TestOnBoardUser(t *testing.T) {
 	assert.True(u.UserID == id)
 	CleanUser(int64(id))
 }
+
+func TestOnBoardUser2(t *testing.T) {
+	assert := assert.New(t)
+	u := &models.User{
+		Username: "user2",
+		Password: "password2",
+		Email:    "dummy@placehodler.com",
+		Realname: "daniel",
+		LDAPDN:   "cn=user2,dc=example,dc=com",
+	}
+	err := OnBoardUser(u)
+	assert.Nil(err)
+	id := u.UserID
+	assert.True(id > 0)
+	err = OnBoardUser(u)
+	assert.Nil(err)
+	assert.True(u.UserID == id)
+	CleanUserLdap(int64(id))
+	CleanUser(int64(id))
+}
+
+func TestFetchUserLDAPInfo(t *testing.T) {
+	assert := assert.New(t)
+	u := &models.User{
+		Username: "user3",
+		Password: "password2",
+		Email:    "user3@placehodler.com",
+		Realname: "user3",
+		LDAPDN:   "cn=user3,dc=example,dc=com",
+	}
+	err := OnBoardUser(u)
+	id := u.UserID
+	assert.Nil(err)
+
+	users, err := ListUsers(&models.UserQuery{Username: "user3"})
+	assert.Nil(err)
+	FetchUserLDAPInfo(users)
+	assert.True(len(users) > 0)
+	for _, usr := range users {
+		assert.Equal(u.LDAPDN, usr.LDAPDN)
+	}
+	CleanUserLdap(int64(id))
+	CleanUser(int64(id))
+}

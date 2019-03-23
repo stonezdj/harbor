@@ -27,6 +27,7 @@ import (
 	"github.com/goharbor/harbor/src/common/rbac"
 	"github.com/goharbor/harbor/src/common/rbac/project"
 	"github.com/goharbor/harbor/src/common/utils"
+	"github.com/goharbor/harbor/src/common/utils/ldap"
 	"github.com/goharbor/harbor/src/common/utils/log"
 	"github.com/goharbor/harbor/src/core/config"
 )
@@ -161,6 +162,43 @@ func (ua *UserAPI) List() {
 	}
 
 	users, err := dao.ListUsers(query)
+	// TODO: extract an API FixLDAPInfo, because it is more than a rest api
+	if active, groupDN := config.IsLDAPGroupAdminActive(); active {
+
+		dao.FetchUserLDAPInfo(users)
+		ldapConfig, err := config.LDAPConf()
+		if err != nil {
+			ua.HandleInternalServerError(fmt.Sprintf("failed to get ldap config, %v", err))
+			return
+		}
+		session, err := ldap.CreateWithConfig(*ldapConfig)
+		if err != nil {
+			ua.HandleInternalServerError(fmt.Sprintf("failed to create config, %v", err))
+			return
+		}
+		session.Open()
+		defer session.Close()
+
+		memberList, err := session.QueryGroupMemberDNList(ldapConfig.LdapBaseDn, groupDN)
+		if err != nil {
+			ua.HandleInternalServerError(fmt.Sprintf("failed to query group member dn, %v", err))
+			return
+		}
+		memberDNMap := map[string]string{}
+		for _, m := range memberList {
+			memberDNMap[m] = m
+		}
+
+		for i := range users {
+			adminRole := false
+			if _, ok := memberDNMap[users[i].LDAPDN]; ok {
+				adminRole = true
+			}
+			users[i].HasAdminRole = users[i].HasAdminRole || adminRole
+		}
+
+	}
+
 	if err != nil {
 		ua.HandleInternalServerError(fmt.Sprintf("failed to get users: %v", err))
 		return

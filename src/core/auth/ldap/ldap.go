@@ -87,6 +87,8 @@ func (l *Auth) Authenticate(m models.AuthModel) (*models.User, error) {
 		return nil, auth.NewErrAuth(err.Error())
 	}
 
+	u.LDAPDN = dn
+
 	// Retrieve ldap related info in login to avoid too many traffic with LDAP server.
 	// Get group admin dn
 	groupCfg, err := config.LDAPGroupConf()

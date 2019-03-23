@@ -113,6 +113,39 @@ func ListUsers(query *models.UserQuery) ([]models.User, error) {
 	return users, err
 }
 
+// FetchUserLDAPInfo Fetch User LDAP information and attach to user model
+func FetchUserLDAPInfo(users []models.User) error {
+
+	if len(users) == 0 {
+		return nil
+	}
+	var userIDs []interface{}
+	for _, u := range users {
+		userIDs = append(userIDs, u.UserID)
+	}
+
+	// fetch user ldap information
+	var userLdaps []models.UserLdap
+	userIDLdapMap := map[int]string{}
+	qs := GetOrmer().QueryTable(models.UserLdapTable)
+
+	qs.Filter("user_id__in", userIDs...)
+	_, err := qs.All(&userLdaps)
+	if err != nil {
+		return err
+	}
+	for _, userLdap := range userLdaps {
+		userIDLdapMap[userLdap.UserID] = userLdap.LDAPDN
+	}
+
+	for i := range users {
+		if _, ok := userIDLdapMap[users[i].UserID]; ok {
+			users[i].LDAPDN = userIDLdapMap[users[i].UserID]
+		}
+	}
+	return nil
+}
+
 func userQueryConditions(query *models.UserQuery) orm.QuerySeter {
 	qs := GetOrmer().QueryTable(&models.User{}).
 		Filter("deleted", 0).
@@ -202,6 +235,10 @@ func DeleteUser(userID int) error {
 	_, err = o.Raw(`update harbor_user 
 		set deleted = true, username = ?, email = ?
 		where user_id = ?`, name, email, userID).Exec()
+	if err != nil {
+		return err
+	}
+	_, err = o.Raw("delete from harbor_user_ldap where user_id = ? ", userID).Exec()
 	return err
 }
 
@@ -225,8 +262,17 @@ func ChangeUserProfile(user models.User, cols ...string) error {
 // This is used for ldap and uaa authentication, such the user can have an ID in Harbor.
 func OnBoardUser(u *models.User) error {
 	o := GetOrmer()
+	o.Begin()
+	HasAdminRole := u.HasAdminRole
+	// Not set has_admin_role when OnBoardUser
+	u.HasAdminRole = false
+	userLdap := &models.UserLdap{
+		LDAPDN: u.LDAPDN,
+	}
 	created, id, err := o.ReadOrCreate(u, "Username")
+
 	if err != nil {
+		o.Rollback()
 		return err
 	}
 	if created {
@@ -234,6 +280,7 @@ func OnBoardUser(u *models.User) error {
 	} else {
 		existing, err := GetUser(*u)
 		if err != nil {
+			o.Rollback()
 			return err
 		}
 		u.Email = existing.Email
@@ -241,6 +288,17 @@ func OnBoardUser(u *models.User) error {
 		u.Realname = existing.Realname
 		u.UserID = existing.UserID
 	}
+	userLdap.UserID = u.UserID
+	if len(userLdap.LDAPDN) > 0 {
+		_, err = o.InsertOrUpdate(userLdap, "user_id")
+		if err != nil {
+			o.Rollback()
+			return err
+		}
+	}
+
+	u.HasAdminRole = HasAdminRole
+	o.Commit()
 	return nil
 }
 
@@ -260,6 +318,15 @@ func IsSuperUser(username string) bool {
 // CleanUser - Clean this user information from DB
 func CleanUser(id int64) error {
 	if _, err := GetOrmer().QueryTable(&models.User{}).
+		Filter("UserID", id).Delete(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// CleanUserLdap - clean user ldap info
+func CleanUserLdap(id int64) error {
+	if _, err := GetOrmer().QueryTable(&models.UserLdap{}).
 		Filter("UserID", id).Delete(); err != nil {
 		return err
 	}

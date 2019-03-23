@@ -23,6 +23,7 @@ func init() {
 		new(RepPolicy),
 		new(RepJob),
 		new(User),
+		new(UserLdap),
 		new(Project),
 		new(Role),
 		new(AccessLog),

@@ -24,3 +24,9 @@ WHERE j.policy_id = p.id AND p.deleted = TRUE;
 /*delete replication policy which has been marked as "deleted"*/
 DELETE FROM replication_policy AS p
 WHERE p.deleted = TRUE;
+
+/*add harbor_user_ldap table*/
+CREATE TABLE harbor_user_ldap (
+  user_id int primary key not null,
+  ldap_dn varchar(1024)
+);

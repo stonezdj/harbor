@@ -477,3 +477,19 @@ func HTTPAuthProxySetting() (*models.HTTPAuthProxy, error) {
 	}, nil
 
 }
+
+// IsLDAPGroupAdminActive - check if LDAP group admin setting is effective
+func IsLDAPGroupAdminActive() (bool, string) {
+	authMode, err := AuthMode()
+	if err != nil {
+		log.Errorf("Failed to get auth_mod, error %v ", err)
+		return false, ""
+	}
+	if authMode == common.LDAPAuth {
+		ldapGroupAdmin := GetCfgManager().Get(common.LdapGroupAdminDn).GetString()
+		if len(strings.TrimSpace(ldapGroupAdmin)) > 0 {
+			return true, ldapGroupAdmin
+		}
+	}
+	return false, ""
+}

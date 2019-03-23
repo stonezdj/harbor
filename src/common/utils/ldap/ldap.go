@@ -416,6 +416,29 @@ func (session *Session) searchGroup(baseDN, filter, groupName, groupNameAttribut
 	return ldapGroups, nil
 }
 
+// QueryGroupMemberDNList query all members in LDAP group, if not found, it returns an empty string array
+func (session *Session) QueryGroupMemberDNList(baseDN, groupDN string) ([]string, error) {
+	var memberDNList []string
+	// Fetch all groups
+	ldapFilter := "objectclass=groupOfNames"
+	attributes := []string{"member"}
+	result, err := session.SearchLdapAttribute(baseDN, ldapFilter, attributes)
+	if err != nil {
+		return nil, err
+	}
+	for _, ldapEntry := range result.Entries {
+		if ldapEntry.DN != groupDN {
+			continue
+		}
+		for _, attr := range ldapEntry.Attributes {
+			if attr.Name == "member" {
+				memberDNList = attr.Values
+			}
+		}
+	}
+	return memberDNList, nil
+}
+
 func createGroupSearchFilter(oldFilter, groupName, groupNameAttribute string) string {
 	filter := ""
 	groupName = goldap.EscapeFilter(groupName)
