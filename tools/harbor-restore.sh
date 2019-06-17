@@ -72,18 +72,18 @@ restore_database() {
 }
 
 restore_registry() {
-    cp -rf harbor/registry/* /data/registry
+    cp -r harbor/registry/* /data/registry
     chown -R 10000 /data/registry
 }
 
 restore_redis() {
-    cp -rf harbor/redis/* /data/redis
+    cp -r harbor/redis/* /data/redis
     chown -R 10000 /data/redis
 }
 
 restore_chartmuseum() {
     if [ -d ./harbor/chart_museum ]; then
-        cp -rf ./harbor/chart_museum/* /data/chart_museum
+        cp -r ./harbor/chart_museum/* /data/chart_museum
     fi
 }
 
@@ -95,7 +95,7 @@ restore_secret() {
         cp -f harbor/secret/defaultalias /data/secretkey 
     fi
     if [ -d harbor/secret/keys ]; then
-        cp -rf harbor/secret/keys/ /data/secret/
+        cp -r harbor/secret/keys/ /data/secret/
     fi
 }
 
