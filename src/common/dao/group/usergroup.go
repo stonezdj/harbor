@@ -156,3 +156,60 @@ func GetGroupDNQueryCondition(userGroupList []*models.UserGroup) string {
 	}
 	return strings.Join(result, ",")
 }
+
+// DefaultGroupContext - dummy group
+type DefaultGroupContext struct {
+}
+
+// GetRoleInProject - dummy group return empty role
+func (c *DefaultGroupContext) GetRoleInProject(projectID int64) ([]int, error) {
+	log.Debug("DefaultGroupContext GetRoleInProject")
+	return []int{}, nil
+}
+
+// GetProjects - dummy group fetch all projects visiable
+func (c *DefaultGroupContext) GetProjects(query *models.ProjectQueryParam) (total int64, projects []*models.Project, err error) {
+	log.Debug("DefaultGroupContext GetProjects")
+	total, err = dao.GetTotalOfProjects(query)
+	if err != nil {
+		return total, nil, err
+	}
+	projects, err = dao.GetProjects(query)
+	if err != nil {
+		return total, nil, err
+	}
+	return total, projects, nil
+}
+
+// LDAPGroupContext ...
+type LDAPGroupContext []*models.UserGroup
+
+// GetRoleInProject ...
+func (c *LDAPGroupContext) GetRoleInProject(projectID int64) ([]int, error) {
+	log.Debug("LDAPGroupContext GetRoleInProject")
+	queryCondition := GetGroupDNQueryCondition([]*models.UserGroup(*c))
+	return dao.GetRolesByLDAPGroup(projectID, queryCondition)
+}
+
+// GetProjects ...
+func (c *LDAPGroupContext) GetProjects(query *models.ProjectQueryParam) (total int64, projects []*models.Project, err error) {
+	log.Debug("LDAPGroupContext GetProjects")
+	total, err = dao.GetTotalOfProjects(query)
+	if err != nil {
+		return total, nil, err
+	}
+	projects, err = dao.GetProjects(query)
+	if err != nil {
+		return total, nil, err
+	}
+	return total, projects, nil
+}
+
+/*
+// AuthProxyGroup ...
+type AuthProxyGroup struct {
+}
+
+// AuthProxyGroupContext ...
+type AuthProxyGroupContext []*AuthProxyGroup
+*/
