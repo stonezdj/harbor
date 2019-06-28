@@ -75,7 +75,9 @@ func (l *Auth) Authenticate(m models.AuthModel) (*models.User, error) {
 	}
 	log.Debugf("Found ldap user %+v", ldapUsers[0])
 
-	u := models.User{}
+	u := models.User{
+		GroupList: &group.DefaultGroupContext{},
+	}
 	u.Username = ldapUsers[0].Username
 	u.Email = strings.TrimSpace(ldapUsers[0].Email)
 	u.Realname = ldapUsers[0].Realname
@@ -112,14 +114,12 @@ func (l *Auth) Authenticate(m models.AuthModel) (*models.User, error) {
 		}
 		userGroups = append(userGroups, userGroupList[0])
 	}
-	if len(userGroups) == 0 {
-		u.GroupList = &group.DefaultGroupContext{}
-	} else {
-		log.Debug("Create ldapGroupContext")
-		ldapGroupContext := group.LDAPGroupContext(userGroups)
-		log.Debug("Attatch to groupList")
-		u.GroupList = &ldapGroupContext
-	}
+	// if len(userGroups) > 0 {
+	// 	log.Debug("Create ldapGroupContext")
+	// 	ldapGroupContext := group.LDAPGroupContext(userGroups)
+	// 	log.Debug("Attatch to groupList")
+	// 	u.GroupList = &ldapGroupContext
+	// }
 
 	return &u, nil
 }
