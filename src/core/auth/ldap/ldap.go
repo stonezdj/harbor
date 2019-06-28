@@ -76,7 +76,7 @@ func (l *Auth) Authenticate(m models.AuthModel) (*models.User, error) {
 	log.Debugf("Found ldap user %+v", ldapUsers[0])
 
 	u := models.User{
-		GroupList: &group.DefaultGroupContext{},
+	//GroupList: &group.DefaultGroupContext{},
 	}
 	u.Username = ldapUsers[0].Username
 	u.Email = strings.TrimSpace(ldapUsers[0].Email)
