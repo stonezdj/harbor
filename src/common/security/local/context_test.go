@@ -253,8 +253,13 @@ func TestHasPushPullPermWithGroup(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error occurred when GetUser: %v", err)
 	}
-	developer.GroupList = []*models.UserGroup{
+	userGroupList := []*models.UserGroup{
 		{GroupName: "test_group", GroupType: 1, LdapGroupDN: "cn=harbor_user,dc=example,dc=com"},
+	}
+
+	developer.GroupContext = models.GroupContext{
+		UserGroup: userGroupList,
+		GroupType: "ldap",
 	}
 
 	resource := rbac.NewProjectNamespace(project.Name).Resource(rbac.ResourceRepository)
@@ -332,8 +337,12 @@ func TestSecurityContext_GetRolesByGroup(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error occurred when GetUser: %v", err)
 	}
-	developer.GroupList = []*models.UserGroup{
+	groupList := []*models.UserGroup{
 		{GroupName: "test_group", GroupType: 1, LdapGroupDN: "cn=harbor_user,dc=example,dc=com"},
+	}
+	developer.GroupContext = models.GroupContext{
+		UserGroup: groupList,
+		GroupType: "ldap",
 	}
 	type fields struct {
 		user *models.User

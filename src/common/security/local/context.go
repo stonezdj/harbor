@@ -140,14 +140,13 @@ func (s *SecurityContext) GetRolesByGroup(projectIDOrName interface{}) []int {
 	user := s.user
 	project, err := s.pm.Get(projectIDOrName)
 	// No user, group or project info
-	if err != nil || project == nil || user == nil || len(user.GroupList) == 0 {
+	if err != nil || project == nil || user == nil {
 		return roles
 	}
-	// Get role by LDAP group
-	groupDNConditions := group.GetGroupDNQueryCondition(user.GroupList)
-	roles, err = dao.GetRolesByLDAPGroup(project.ProjectID, groupDNConditions)
+	gpi := group.CreatePrivilegeInterface(&user.GroupContext)
+	roles, err = gpi.GetRoleInProject(project.ProjectID)
 	if err != nil {
-		return nil
+		return []int{}
 	}
 	return roles
 }
@@ -157,8 +156,8 @@ func (s *SecurityContext) GetMyProjects() ([]*models.Project, error) {
 	result, err := s.pm.List(
 		&models.ProjectQueryParam{
 			Member: &models.MemberQuery{
-				Name:      s.GetUsername(),
-				GroupList: s.user.GroupList,
+				Name:         s.GetUsername(),
+				GroupContext: &s.user.GroupContext,
 			},
 		})
 	if err != nil {

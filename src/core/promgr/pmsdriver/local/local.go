@@ -132,23 +132,16 @@ func (d *driver) Update(projectIDOrName interface{},
 func (d *driver) List(query *models.ProjectQueryParam) (*models.ProjectQueryResult, error) {
 	var total int64
 	var projects []*models.Project
-	var groupDNCondition string
+	var gpi group.PrivilegeInterface
+	gpi = &group.DefaultGroupPrivilege{}
 
-	// List with LDAP group projects
-	if query != nil && query.Member != nil {
-		groupDNCondition = group.GetGroupDNQueryCondition(query.Member.GroupList)
+	if query != nil && query.Member != nil && query.Member.GroupContext != nil {
+		gpi = group.CreatePrivilegeInterface(query.Member.GroupContext)
 	}
-
-	count, err := dao.GetTotalGroupProjects(groupDNCondition, query)
+	total, projects, err := gpi.GetProjects(query)
 	if err != nil {
 		return nil, err
 	}
-	total = int64(count)
-	projects, err = dao.GetGroupProjects(groupDNCondition, query)
-	if err != nil {
-		return nil, err
-	}
-
 	return &models.ProjectQueryResult{
 		Total:    total,
 		Projects: projects,

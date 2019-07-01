@@ -21,6 +21,12 @@ import (
 // UserTable is the name of table in DB that holds the user object
 const UserTable = "harbor_user"
 
+// GroupContext ...
+type GroupContext struct {
+	UserGroup []*UserGroup
+	GroupType string
+}
+
 // User holds the details of a user.
 type User struct {
 	UserID   int    `orm:"pk;auto;column(user_id)" json:"user_id"`
@@ -40,7 +46,7 @@ type User struct {
 	Salt         string       `orm:"column(salt)" json:"-"`
 	CreationTime time.Time    `orm:"column(creation_time);auto_now_add" json:"creation_time"`
 	UpdateTime   time.Time    `orm:"column(update_time);auto_now" json:"update_time"`
-	GroupList    []*UserGroup `orm:"-" json:"-"`
+	GroupContext GroupContext `orm:"-" json:"-"`
 	OIDCUserMeta *OIDCUser    `orm:"-" json:"oidc_user_meta,omitempty"`
 }
 

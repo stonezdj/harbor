@@ -156,3 +156,28 @@ func GetGroupDNQueryCondition(userGroupList []*models.UserGroup) string {
 	}
 	return strings.Join(result, ",")
 }
+
+// LDAPGroupContext ...
+type LDAPGroupContext []*models.UserGroup
+
+// GetRoleInProject ...
+func (c *LDAPGroupContext) GetRoleInProject(projectID int64) ([]int, error) {
+	queryCondition := GetGroupDNQueryCondition([]*models.UserGroup(*c))
+	return dao.GetRolesByLDAPGroup(projectID, queryCondition)
+}
+
+// GetProjects ...
+func (c *LDAPGroupContext) GetProjects(query *models.ProjectQueryParam) (total int64, projects []*models.Project, err error) {
+	queryCondition := GetGroupDNQueryCondition([]*models.UserGroup(*c))
+	count, err := dao.GetTotalGroupProjects(queryCondition, query)
+	total = int64(count)
+	if err != nil {
+		return total, nil, err
+	}
+
+	projects, err = dao.GetGroupProjects(queryCondition, query)
+	if err != nil {
+		return total, nil, err
+	}
+	return total, projects, nil
+}

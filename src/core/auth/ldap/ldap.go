@@ -20,11 +20,11 @@ import (
 	"strings"
 
 	"github.com/goharbor/harbor/src/common"
+	"github.com/goharbor/harbor/src/common/dao"
+	"github.com/goharbor/harbor/src/common/dao/group"
 	"github.com/goharbor/harbor/src/common/utils"
 	goldap "gopkg.in/ldap.v2"
 
-	"github.com/goharbor/harbor/src/common/dao"
-	"github.com/goharbor/harbor/src/common/dao/group"
 	"github.com/goharbor/harbor/src/common/models"
 	ldapUtils "github.com/goharbor/harbor/src/common/utils/ldap"
 	"github.com/goharbor/harbor/src/common/utils/log"
@@ -112,8 +112,14 @@ func (l *Auth) Authenticate(m models.AuthModel) (*models.User, error) {
 		}
 		userGroups = append(userGroups, userGroupList[0])
 	}
-	u.GroupList = userGroups
-
+	if len(userGroups) == 0 {
+		u.GroupContext = models.GroupContext{}
+	} else {
+		u.GroupContext = models.GroupContext{
+			UserGroup: userGroups,
+			GroupType: common.LDAPGroupType,
+		}
+	}
 	return &u, nil
 }
 

@@ -107,6 +107,7 @@ const (
 	OIDCClientSecret                 = "oidc_client_secret"
 	OIDCVerifyCert                   = "oidc_verify_cert"
 	OIDCScope                        = "oidc_scope"
+	LDAPGroupType                    = "ldap"
 
 	DefaultClairEndpoint              = "http://clair:6060"
 	CfgDriverDB                       = "db"
