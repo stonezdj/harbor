@@ -317,3 +317,74 @@ func GetRolesByLDAPGroup(projectID int64, groupDNCondition string) ([]int, error
 	}
 	return roles, nil
 }
+
+// GetRolesByHTTPGroup - Get Project roles of the HTTP group
+func GetRolesByHTTPGroup(projectID int64, httpGroupCondition string) ([]int, error) {
+	var roles []int
+	if len(httpGroupCondition) == 0 {
+		return roles, nil
+	}
+	o := GetOrmer()
+	// the role is in descent order (1-admin, 2-developer, 3-guest, 4-master), use min to select the max privilege role.
+	sql := fmt.Sprintf(
+		`select min(pm.role) from project_member pm 
+		left join user_group ug on pm.entity_type = 'h' and pm.entity_id = ug.id 
+		where ug.group_name in ( %s ) and pm.project_id = ? and ug.type = 2 `,
+		httpGroupCondition)
+	log.Debugf("sql:%v", sql)
+	if _, err := o.Raw(sql, projectID).QueryRows(&roles); err != nil {
+		log.Warningf("Error in GetRolesByHTTPGroup, error: %v", err)
+		return nil, err
+	}
+	// If there is no row selected, the min returns an empty row, to avoid return 0 as role
+	if len(roles) == 1 && roles[0] == 0 {
+		return []int{}, nil
+	}
+	return roles, nil
+}
+
+// GetTotalHTTPGroupProjects ...
+func GetTotalHTTPGroupProjects(httpGroupCondition string, query *models.ProjectQueryParam) (int, error) {
+	var sql string
+	sqlCondition, params := projectQueryConditions(query)
+	if len(httpGroupCondition) == 0 {
+		sql = `select count(1) ` + sqlCondition
+	} else {
+		sql = fmt.Sprintf(
+			`select count(1) 
+			   from ( select  p.project_id %s  union select  p.project_id  
+			   from project p 
+			   left join project_member pm on p.project_id = pm.project_id
+			   left join user_group ug on ug.id = pm.entity_id and pm.entity_type = 'g' and ug.group_type = 2
+			   where ug.group_name in ( %s )) t`,
+			sqlCondition, httpGroupCondition)
+	}
+	log.Debugf("query sql:%v", sql)
+	var count int
+	if err := GetOrmer().Raw(sql, params).QueryRow(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// GetGroupProjects - Get user's all projects, including user is the user member of this project
+// and the user is in the group which is a group member of this project.
+func GetHTTPGroupProjects(httpGroupCondition string, query *models.ProjectQueryParam) ([]*models.Project, error) {
+	sql, params := projectQueryConditions(query)
+	sql = `select distinct p.project_id, p.name, p.owner_id, 
+				p.creation_time, p.update_time ` + sql
+	if len(httpGroupCondition) > 0 {
+		sql = fmt.Sprintf(
+			`%s union select distinct p.project_id, p.name, p.owner_id, p.creation_time, p.update_time  
+		     from project p 
+		     left join project_member pm on p.project_id = pm.project_id
+		     left join user_group ug on ug.id = pm.entity_id and pm.entity_type = 'g' and ug.group_type = 2
+			 where ug.group_name in ( %s ) order by name`,
+			sql, httpGroupCondition)
+	}
+	sqlStr, queryParams := CreatePagination(query, sql, params)
+	log.Debugf("query sql:%v", sql)
+	var projects []*models.Project
+	_, err := GetOrmer().Raw(sqlStr, queryParams).QueryRows(&projects)
+	return projects, err
+}
