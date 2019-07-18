@@ -190,15 +190,11 @@ func (a *Auth) SearchGroup(groupKey string) (*models.UserGroup, error) {
 // OnBoardGroup create user group entity in Harbor DB, altGroupName is not used.
 func (a *Auth) OnBoardGroup(u *models.UserGroup, altGroupName string) error {
 	// if group name provided, on board the user group
-	userGroup := &models.UserGroup{GroupName: u.GroupName, GroupType: common.HTTPGroupType}
+	u.GroupType = common.HTTPGroupType
 	err := group.OnBoardUserGroup(u, "GroupName", "GroupType")
 	if err != nil {
 		return err
 	}
-	if userGroup.ID == 0 {
-		log.Error("Onboard user group failed!")
-	}
-	u.ID = userGroup.ID
 	return nil
 }
 
