@@ -195,6 +195,9 @@ func (a *Auth) OnBoardGroup(u *models.UserGroup, altGroupName string) error {
 	if err != nil {
 		return err
 	}
+	if userGroup.ID == 0 {
+		log.Error("Onboard user group failed!")
+	}
 	u.ID = userGroup.ID
 	return nil
 }
