@@ -153,7 +153,7 @@ func OnBoardUserGroup(g *models.UserGroup, keyAttribute string, combinedKeyAttri
 
 	o := dao.GetOrmer()
 	created, ID, err := o.ReadOrCreate(g, keyAttribute, combinedKeyAttributes...)
-	log.Error("created user group id %v", ID)
+	log.Errorf("OnBoardUserGroup user group id %v, is created %v", ID, created)
 	if err != nil {
 		return err
 	}
