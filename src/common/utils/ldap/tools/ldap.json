@@ -1,0 +1,23 @@
+{
+    "ldap_conf":
+    {
+    "ldap_url":"10.193.17.113",
+    "ldap_search_dn":"cn=admin,dc=example,dc=com",
+    "ldap_search_password":"admin",
+    "ldap_base_dn":"dc=example,dc=com",
+    "ldap_filter":"(&(objectclass=inetorgperson)(memberof=cn=harbor_users,ou=groups,dc=example,dc=com))",
+    "ldap_uid":"cn",
+    "ldap_scope": 2,
+    "ldap_verify_cert": false
+    },
+
+    "ldap_group_conf":
+    {
+        "ldap_group_base_dn":"dc=example,dc=com",
+        "ldap_group_filter": "objectClass=groupOfNames",
+        "ldap_group_name_attribute":"cn",
+        "ldap_group_search_scope":2,
+        "ldap_group_admin_dn":"cn=harbor_users,ou=groups,dc=example,dc=com",
+        "ldap_group_membership_attribute": "memberof"
+    }
+}
