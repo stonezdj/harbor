@@ -79,6 +79,8 @@ func main() {
 			DumpResult(fmt.Sprintf("The user %v is not found!", *username))
 		} else {
 			DumpResult(fmt.Sprintf("User %v found!", *username))
+			DumpResult(fmt.Sprintf("User in the group: %+v", singleUser[0].GroupDNList))
+
 		}
 	}
 	fmt.Println("================================================")
