@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/goharbor/harbor/src/common/utils/log"
+	"runtime/debug"
 )
 
 // ParseEndpoint parses endpoint to a URL
@@ -163,6 +164,7 @@ func ParseProjectIDOrName(value interface{}) (int64, string, error) {
 		id = int64(i)
 	case int64:
 		id = value.(int64)
+		log.Debugf("debug trace: %+v", debug.Stack())
 	case string:
 		name = value.(string)
 	default:
