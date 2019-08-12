@@ -164,7 +164,7 @@ func ParseProjectIDOrName(value interface{}) (int64, string, error) {
 		id = int64(i)
 	case int64:
 		id = value.(int64)
-		log.Debugf("debug trace: %+v", debug.Stack())
+		log.Debugf("debug trace: %v", string(debug.Stack()))
 	case string:
 		name = value.(string)
 	default:
