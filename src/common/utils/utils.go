@@ -155,7 +155,7 @@ func ParseProjectIDOrName(value interface{}) (int64, string, error) {
 	if value == nil {
 		return 0, "", errors.New("harborIDOrName is nil")
 	}
-
+	log.Debugf("zdj: ParseProjectIDOrName: with value %#v", value)
 	var id int64
 	var name string
 	switch value.(type) {
