@@ -69,6 +69,7 @@ func (s *SecurityContext) IsSolutionUser() bool {
 // Can returns whether the user can do action on resource
 func (s *SecurityContext) Can(action rbac.Action, resource rbac.Resource) bool {
 	ns, err := resource.GetNamespace()
+	log.Debugf("Checking permission with %+v", resource)
 	if err == nil {
 		switch ns.Kind() {
 		case "project":
