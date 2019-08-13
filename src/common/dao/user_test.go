@@ -90,3 +90,21 @@ func TestOnBoardUser(t *testing.T) {
 	assert.True(u.UserID == id)
 	CleanUser(int64(id))
 }
+func TestOnBoardUser_NullEmail(t *testing.T) {
+	assert := assert.New(t)
+	u := &models.User{
+		Username: "null_email",
+		Password: "password1",
+		Email:    "",
+		Realname: "null_email",
+	}
+	err := OnBoardUser(u)
+	assert.Nil(err)
+	id := u.UserID
+	assert.True(id > 0)
+	err = OnBoardUser(u)
+	assert.Nil(err)
+	assert.True(u.UserID == id)
+	assert.Nil(u.EmailInDB)
+	CleanUser(int64(id))
+}

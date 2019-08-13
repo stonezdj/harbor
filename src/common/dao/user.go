@@ -71,6 +71,10 @@ func GetUser(query models.User) (*models.User, error) {
 		return nil, fmt.Errorf("got more than one user when executing: %s param: %v", sql, queryParam)
 	}
 
+	if u[0].EmailInDB != nil {
+		u[0].Email = *u[0].EmailInDB
+	}
+
 	return &u[0], nil
 }
 
@@ -227,6 +231,9 @@ func ChangeUserProfile(user models.User, cols ...string) error {
 // put the id in the pointer of user model, if it does exist, return the user's profile.
 // This is used for ldap and uaa authentication, such the user can have an ID in Harbor.
 func OnBoardUser(u *models.User) error {
+	if len(u.Email) > 0 {
+		u.EmailInDB = &u.Email
+	}
 	o := GetOrmer()
 	created, id, err := o.ReadOrCreate(u, "Username")
 	if err != nil {
@@ -243,6 +250,9 @@ func OnBoardUser(u *models.User) error {
 		u.HasAdminRole = existing.HasAdminRole
 		u.Realname = existing.Realname
 		u.UserID = existing.UserID
+		if u.EmailInDB != nil {
+			u.Email = *u.EmailInDB
+		}
 	}
 	return nil
 }
