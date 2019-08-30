@@ -128,7 +128,7 @@ func (m *DefaultManager) policyHTTPTest(address string, skipCertVerify bool, p [
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error("Failed in policyHttpTest")
+		log.Errorf("Failed in policyHttpTest %+v", err)
 		return err
 	}
 	defer resp.Body.Close()
