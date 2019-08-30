@@ -95,6 +95,7 @@ func (m *DefaultManager) Delete(policyID int64) error {
 
 // Test the specified notification policy, just test for network connection without request body
 func (m *DefaultManager) Test(policy *models.NotificationPolicy) error {
+	log.Errorf("testing webhook policy: %+v", policy)
 	p, err := json.Marshal(notifierModel.Payload{
 		Type: model.EventTypeTestEndpoint,
 	})
