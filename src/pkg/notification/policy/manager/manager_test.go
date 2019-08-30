@@ -25,7 +25,7 @@ func TestNewDefaultManger(t *testing.T) {
 }
 
 func TestExample(t *testing.T) {
-	skipCertVerify := false
+	skipCertVerify := true
 	address := "http://10.160.218.91:9999"
 	req, err := http.NewRequest(http.MethodPost, address, nil)
 	if err != nil {
@@ -43,6 +43,6 @@ func TestExample(t *testing.T) {
 		t.Error(err)
 	}
 	defer resp.Body.Close()
-	fmt.Printf("policy test success with address %s, skip cert verify :%v", address, skipCertVerify)
+	fmt.Printf("policy test success with address %s, skip cert verify :%v\n", address, skipCertVerify)
 
 }
