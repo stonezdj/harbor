@@ -119,7 +119,7 @@ func (m *DefaultManager) policyHTTPTest(address string, skipCertVerify bool, p [
 	if err != nil {
 		return err
 	}
-
+	req.Header.Add("Accept-Encoding", "identity")
 	req.Header.Set("Content-Type", "application/json")
 
 	client := http.Client{

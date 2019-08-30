@@ -31,7 +31,7 @@ func TestExample(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
+	req.Header.Add("Accept-Encoding", "identity")
 	req.Header.Set("Content-Type", "application/json")
 
 	client := http.Client{
