@@ -4,15 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
-	"strings"
-
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/common/rbac"
 	"github.com/goharbor/harbor/src/common/utils/log"
 	"github.com/goharbor/harbor/src/pkg/immutabletag"
 	"github.com/goharbor/harbor/src/pkg/retention/policy/rule"
+	"net/http"
+	"strconv"
 )
 
 // ImmutableTagRuleAPI ...
@@ -50,29 +48,29 @@ func (itr *ImmutableTagRuleAPI) Prepare() {
 	}
 
 	itr.manager = immutabletag.NewDefaultRuleManager()
-
-	if itr.SecurityCtx.IsSysAdmin() {
-		return
-	}
-
-	if strings.EqualFold(itr.Ctx.Request.Method, "get") {
-		if !itr.requireAccess(rbac.ActionList) {
-			return
-		}
-	} else if strings.EqualFold(itr.Ctx.Request.Method, "put") {
-		if !itr.requireAccess(rbac.ActionUpdate) {
-			return
-		}
-	} else if strings.EqualFold(itr.Ctx.Request.Method, "post") {
-		if !itr.requireAccess(rbac.ActionCreate) {
-			return
-		}
-
-	} else if strings.EqualFold(itr.Ctx.Request.Method, "delete") {
-		if !itr.requireAccess(rbac.ActionDelete) {
-			return
-		}
-	}
+	//
+	//if itr.SecurityCtx.IsSysAdmin() {
+	//	return
+	//}
+	//
+	//if strings.EqualFold(itr.Ctx.Request.Method, "get") {
+	//	if !itr.requireAccess(rbac.ActionList) {
+	//		return
+	//	}
+	//} else if strings.EqualFold(itr.Ctx.Request.Method, "put") {
+	//	if !itr.requireAccess(rbac.ActionUpdate) {
+	//		return
+	//	}
+	//} else if strings.EqualFold(itr.Ctx.Request.Method, "post") {
+	//	if !itr.requireAccess(rbac.ActionCreate) {
+	//		return
+	//	}
+	//
+	//} else if strings.EqualFold(itr.Ctx.Request.Method, "delete") {
+	//	if !itr.requireAccess(rbac.ActionDelete) {
+	//		return
+	//	}
+	//}
 }
 
 func (itr *ImmutableTagRuleAPI) requireAccess(action rbac.Action) bool {
@@ -81,6 +79,9 @@ func (itr *ImmutableTagRuleAPI) requireAccess(action rbac.Action) bool {
 
 // List list all immutable tag rules of current project
 func (itr *ImmutableTagRuleAPI) List() {
+	if !itr.requireAccess(rbac.ActionList) {
+		return
+	}
 	rules, err := itr.manager.QueryImmutableRuleByProjectID(itr.projectID)
 	if err != nil {
 		itr.SendInternalServerError(err)
@@ -91,6 +92,9 @@ func (itr *ImmutableTagRuleAPI) List() {
 
 // Post create immutable tag rule
 func (itr *ImmutableTagRuleAPI) Post() {
+	if !itr.requireAccess(rbac.ActionCreate) {
+		return
+	}
 	ir := &models.ImmutableRule{}
 	if err := itr.DecodeJSONReq(ir); err != nil {
 		itr.SendBadRequestError(fmt.Errorf("the filter must be a valid json, failed to parse json, error %+v", err))
@@ -114,6 +118,9 @@ func (itr *ImmutableTagRuleAPI) Post() {
 
 // Delete delete immutable tag rule
 func (itr *ImmutableTagRuleAPI) Delete() {
+	if !itr.requireAccess(rbac.ActionDelete) {
+		return
+	}
 	if itr.ID <= 0 {
 		itr.SendBadRequestError(fmt.Errorf("invalid immutable rule id %d", itr.ID))
 		return
@@ -127,6 +134,9 @@ func (itr *ImmutableTagRuleAPI) Delete() {
 
 // Put update an immutable tag rule
 func (itr *ImmutableTagRuleAPI) Put() {
+	if !itr.requireAccess(rbac.ActionUpdate) {
+		return
+	}
 	ir := &models.ImmutableRule{}
 	if err := itr.DecodeJSONReq(ir); err != nil {
 		itr.SendInternalServerError(err)
