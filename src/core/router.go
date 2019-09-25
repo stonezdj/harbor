@@ -199,6 +199,8 @@ func initRouters() {
 	// Add routes for project level scanner
 	beego.Router("/api/projects/:pid([0-9]+)/scanner", scannerAPI, "get:GetProjectScanner;put:SetProjectScanner")
 
+	beego.Router("/debug/pprof", &controllers.ProfController{})
+	beego.Router("/debug/pprof/:app([\\w]+)", &controllers.ProfController{})
 	// Error pages
 	beego.ErrorController(&controllers.ErrorController{})
 
