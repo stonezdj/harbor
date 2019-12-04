@@ -57,6 +57,9 @@ with_notary=$false
 with_clair=$false
 # chartmuseum is not enabled by default
 with_chartmuseum=$false
+# with_proxy is not enabled by default
+with_proxy=$false
+
 
 while [ $# -gt 0 ]; do
         case $1 in
@@ -69,6 +72,8 @@ while [ $# -gt 0 ]; do
             with_clair=true;;
 			--with-chartmuseum)
 			with_chartmuseum=true;;
+			--with-proxy)
+			with_proxy=true;;
             *)
             note "$usage"
             exit 1;;
@@ -170,6 +175,11 @@ fi
 if [ $with_chartmuseum ]
 then
     prepare_para="${prepare_para} --with-chartmuseum"
+fi
+
+if [ $with_proxy ]
+then
+    prepare_para="${prepare_para} --with-proxy"
 fi
 
 ./prepare $prepare_para

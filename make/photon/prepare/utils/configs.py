@@ -192,6 +192,12 @@ def parse_yaml_config(config_file_path):
     notification_config = configs.get('notification') or {}
     config_dict['notification_webhook_job_max_retry'] = notification_config["webhook_job_max_retry"]
 
+    # pull through proxy
+    pull_through_config = configs.get("pull_through_proxy") or {}
+    config_dict['pull_proxy_port'] = pull_through_config["port"] or 5000
+    config_dict['pull_proxy_username'] = pull_through_config["username"] or ''
+    config_dict['pull_proxy_password'] = pull_through_config["password"] or ''
+
     # Log configs
     allowed_levels = ['debug', 'info', 'warning', 'error', 'fatal']
     log_configs = configs.get('log') or {}

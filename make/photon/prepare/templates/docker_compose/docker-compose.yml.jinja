@@ -92,6 +92,43 @@ services:
       options:  
         syslog-address: "tcp://127.0.0.1:1514"
         tag: "registryctl"
+{%if with_proxy %}
+  registry-proxy:
+    image: goharbor/registry-photon:{{reg_version}}
+    container_name: registry-proxy
+    restart: always
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    ports:
+      - {{pull_proxy_port}}:5000
+    volumes:
+      - {{data_volume}}/registry-proxy:/storage:z
+      - /data/cert:/cert/:z
+      - ./common/config/registry-proxy/config.yml:/etc/registry/config.yml:z
+{% if protocol == 'https' %}
+      - type: bind
+        source: {{cert_key_path}}
+        target: /etc/cert/server.key
+      - type: bind
+        source: {{cert_path}}
+        target: /etc/cert/server.crt
+{% endif %}
+    networks:
+      - harbor
+      - harbor-clair
+    dns_search: .
+    depends_on:
+      - log
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://127.0.0.1:1514"
+        tag: "registry-proxy"
+{% endif %}
   postgresql:
     image: goharbor/harbor-db:{{version}}
     container_name: harbor-db

@@ -83,6 +83,7 @@ BUILDBIN=false
 MIGRATORFLAG=false
 # enable/disable chart repo supporting
 CHARTFLAG=false
+PROXYFLAG=false
 
 # version prepare
 # for docker image tag
@@ -177,6 +178,11 @@ endif
 ifeq ($(CHARTFLAG), true)
     PREPARECMD_PARA+= --with-chartmuseum
 endif
+
+ifeq ($(PROXYFLAG), true)
+    PREPARECMD_PARA+= --with-proxy
+endif
+
 
 # makefile
 MAKEFILEPATH_PHOTON=$(MAKEPATH)/photon

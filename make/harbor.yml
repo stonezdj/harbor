@@ -143,3 +143,8 @@ _version: 1.8.0
 # Uncomment uaa for trusting the certificate of uaa instance that is hosted via self-signed cert.
 # uaa:
 #   ca_file: /path/to/ca
+
+# pull_through_proxy:
+#   port: 5000
+#   username: <username>
+#   password: <password>

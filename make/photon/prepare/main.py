@@ -9,6 +9,7 @@ from utils.db import prepare_db
 from utils.jobservice import prepare_job_service
 from utils.registry import prepare_registry
 from utils.registry_ctl import prepare_registry_ctl
+from utils.registry_proxy import prepare_registry_proxy
 from utils.core import prepare_core
 from utils.notary import prepare_notary
 from utils.log import prepare_log_configs
@@ -26,7 +27,8 @@ old_private_key_pem_path, old_crt_path)
 @click.option('--with-notary', is_flag=True, help="the Harbor instance is to be deployed with notary")
 @click.option('--with-clair', is_flag=True, help="the Harbor instance is to be deployed with clair")
 @click.option('--with-chartmuseum', is_flag=True, help="the Harbor instance is to be deployed with chart repository supporting")
-def main(conf, with_notary, with_clair, with_chartmuseum):
+@click.option('--with-proxy', is_flag=True, help="the Harbor instance is to be deployed with pull through proxy")
+def main(conf, with_notary, with_clair, with_chartmuseum, with_proxy):
 
     delfile(config_dir)
     config_dict = parse_yaml_config(conf)
@@ -58,7 +60,10 @@ def main(conf, with_notary, with_clair, with_chartmuseum):
     if with_chartmuseum:
         prepare_chartmuseum(config_dict)
 
-    prepare_docker_compose(config_dict, with_clair, with_notary, with_chartmuseum)
+    if with_proxy:
+        prepare_registry_proxy(config_dict)
+
+    prepare_docker_compose(config_dict, with_clair, with_notary, with_chartmuseum, with_proxy)
 
 if __name__ == '__main__':
     main()

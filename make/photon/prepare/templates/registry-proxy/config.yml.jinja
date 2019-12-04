@@ -1,0 +1,27 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+  cache:
+    blobdescriptor: inmemory
+  filesystem:
+    rootdirectory: /storage
+http:
+  addr: :5000
+  headers:
+    X-Content-Type-Options: [nosniff]
+{% if protocol == 'https' %}
+  tls:
+    certificate: /etc/cert/server.crt
+    key: /etc/cert/server.key
+{% endif %}
+proxy:
+      remoteurl: https://registry-1.docker.io
+      username: {{pull_proxy_username}}
+      password: {{pull_proxy_password}}
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
