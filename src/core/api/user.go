@@ -151,6 +151,8 @@ func (ua *UserAPI) Get() {
 		}
 		u.Password = ""
 		if ua.userID == ua.currentUserID {
+			// Because UI is rendered with the condition of HasAdminRole,
+			// copy admin privilege to this field to REST response for UI to render it correctly
 			u.HasAdminRole = ua.SecurityCtx.IsSysAdmin()
 		}
 		if ua.AuthMode == common.OIDCAuth {
@@ -336,7 +338,7 @@ func (ua *UserAPI) Post() {
 		return
 	}
 
-	if !ua.IsAdmin && user.HasAdminRole {
+	if !ua.IsAdmin && user.HasAdminPrivilege() {
 		msg := "Non-admin cannot create an admin user."
 		log.Errorf(msg)
 		ua.SendForbiddenError(errors.New(msg))

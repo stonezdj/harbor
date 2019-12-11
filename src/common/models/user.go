@@ -34,15 +34,23 @@ type User struct {
 	Rolename        string `orm:"-" json:"role_name"`
 	// if this field is named as "RoleID", beego orm can not map role_id
 	// to it.
-	Role int `orm:"-" json:"role_id"`
-	//	RoleList     []Role `json:"role_list"`
-	HasAdminRole bool      `orm:"column(sysadmin_flag)" json:"has_admin_role"`
-	ResetUUID    string    `orm:"column(reset_uuid)" json:"reset_uuid"`
-	Salt         string    `orm:"column(salt)" json:"-"`
-	CreationTime time.Time `orm:"column(creation_time);auto_now_add" json:"creation_time"`
-	UpdateTime   time.Time `orm:"column(update_time);auto_now" json:"update_time"`
-	GroupIDs     []int     `orm:"-" json:"-"`
-	OIDCUserMeta *OIDCUser `orm:"-" json:"oidc_user_meta,omitempty"`
+	Role         int  `orm:"-" json:"role_id"`
+	HasAdminRole bool `orm:"column(sysadmin_flag)" json:"has_admin_role"`
+	// AdminRoleInAuth to store the admin privilege granted by external authentication provider
+	AdminRoleInAuth bool      `orm:"-" json:"-"`
+	ResetUUID       string    `orm:"column(reset_uuid)" json:"reset_uuid"`
+	Salt            string    `orm:"column(salt)" json:"-"`
+	CreationTime    time.Time `orm:"column(creation_time);auto_now_add" json:"creation_time"`
+	UpdateTime      time.Time `orm:"column(update_time);auto_now" json:"update_time"`
+	GroupIDs        []int     `orm:"-" json:"-"`
+	OIDCUserMeta    *OIDCUser `orm:"-" json:"oidc_user_meta,omitempty"`
+}
+
+// HasAdminPrivilege check if the current user has admin privilege,
+// combined with the db privilege and the auth provider privilege
+// Must call this method to check the admin privilege
+func (u *User) HasAdminPrivilege() bool {
+	return u.HasAdminRole || u.AdminRoleInAuth
 }
 
 // UserQuery ...

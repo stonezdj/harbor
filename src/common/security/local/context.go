@@ -58,7 +58,7 @@ func (s *SecurityContext) IsSysAdmin() bool {
 	if !s.IsAuthenticated() {
 		return false
 	}
-	return s.user.HasAdminRole
+	return s.user.HasAdminPrivilege()
 }
 
 // IsSolutionUser ...
