@@ -75,8 +75,8 @@ func copyArtifactList(list []*artifact.Artifact) []*models.Artifact {
 			MediaType: a.MediaType,
 			Size:      a.Size,
 			Type:      a.Type,
-			//UploadTime: a.PushTime,
 		}
+		artifact.UploadTime.Scan(a.PushTime)
 		artifactList = append(artifactList, artifact)
 	}
 	return artifactList
