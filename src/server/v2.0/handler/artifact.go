@@ -89,5 +89,5 @@ func (api *ArtifactAPI) ReadArtifact(ctx context.Context, params operation.ReadA
 
 // NewArtifactAPI returns API of artifacts
 func NewArtifactAPI() *ArtifactAPI {
-	return &ArtifactAPI{}
+	return &ArtifactAPI{Ctl: artifact.Ctl}
 }
