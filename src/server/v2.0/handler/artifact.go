@@ -47,9 +47,10 @@ func (api *ArtifactAPI) ListArtifacts(ctx context.Context, params operation.List
 		PageNumber: int64(*params.Page),
 		PageSize:   int64(*params.PageSize),
 	}
-
-	query.Keywords["ProjectID"] = params.ProjectID
-	query.Keywords["RepositoryID"] = params.RepositoryID
+	query.Keywords = map[string]interface{}{
+		"ProjectID":    params.ProjectID,
+		"RepositoryID": params.RepositoryID,
+	}
 
 	option := &artifact.Option{
 		WithTag:        true,
