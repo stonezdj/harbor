@@ -167,7 +167,7 @@ func initRouters() {
 	url, _ := url.Parse(regURL)
 	registryHandler := reg.New(url)
 	_ = registryHandler
-	// beego.Handler("/v2/*", registryHandler)
+	beego.Handler("/v2/*", registryHandler)
 	beego.Router("/v2/*", &controllers.RegistryProxy{}, "*:Handle")
 
 	// APIs for chart repository

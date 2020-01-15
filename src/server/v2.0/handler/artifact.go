@@ -18,22 +18,63 @@ import (
 	"context"
 
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/goharbor/harbor/src/api/artifact"
+	"github.com/goharbor/harbor/src/pkg/q"
+	"github.com/goharbor/harbor/src/server/v2.0/models"
 	operation "github.com/goharbor/harbor/src/server/v2.0/restapi/operations/artifact"
 )
 
 // ArtifactAPI the api implemention of artifacts
 type ArtifactAPI struct {
 	BaseAPI
+	Ctl artifact.Controller
 }
 
 // DeleteArtifact ...
 func (api *ArtifactAPI) DeleteArtifact(ctx context.Context, params operation.DeleteArtifactParams) middleware.Responder {
+	err := api.Ctl.Delete(ctx, params.ArtifactID)
+	if err == nil {
+		return operation.NewDeleteArtifactOK()
+	} else {
+		//???
+	}
 	return operation.NewDeleteArtifactOK()
 }
 
 // ListArtifacts ...
 func (api *ArtifactAPI) ListArtifacts(ctx context.Context, params operation.ListArtifactsParams) middleware.Responder {
-	return operation.NewListArtifactsOK()
+	query := &q.Query{
+		PageNumber: int64(*params.Page),
+		PageSize:   int64(*params.PageSize),
+	}
+	option := &artifact.Option{
+		WithTag:        true,
+		WithScanResult: true,
+		WithSignature:  true,
+	}
+	_, alist, err := api.Ctl.List(ctx, query, option)
+	if err != nil {
+		//log error and return error
+		operation.NewListArtifactsForbidden()
+	}
+
+	return operation.NewListArtifactsOK().WithPayload(copyArtifactList(alist))
+}
+
+func copyArtifactList(list []*artifact.Artifact) []*models.Artifact {
+	artifactList := make([]*models.Artifact, 0)
+	for _, a := range list {
+		artifact := &models.Artifact{
+			Digest:    a.Digest,
+			ID:        a.ID,
+			MediaType: a.MediaType,
+			Size:      a.Size,
+			Type:      a.Type,
+			//UploadTime: a.PushTime,
+		}
+		artifactList = append(artifactList, artifact)
+	}
+	return artifactList
 }
 
 // ReadArtifact ...

@@ -12,6 +12,7 @@ require (
 	github.com/Unknwon/goconfig v0.0.0-20160216183935-5f601ca6ef4d // indirect
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v0.0.0-20190726115642-cd293c93fd97
+	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
 	github.com/astaxie/beego v1.9.0
 	github.com/aws/aws-sdk-go v1.19.47
 	github.com/beego/i18n v0.0.0-20140604031826-e87155e8f0c0
@@ -35,13 +36,14 @@ require (
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
 	github.com/garyburd/redigo v1.6.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-openapi/errors v0.19.2
-	github.com/go-openapi/loads v0.19.3
-	github.com/go-openapi/runtime v0.19.5
-	github.com/go-openapi/spec v0.19.3
-	github.com/go-openapi/strfmt v0.19.3
-	github.com/go-openapi/swag v0.19.5
-	github.com/go-openapi/validate v0.19.3
+	github.com/go-openapi/analysis v0.19.7 // indirect
+	github.com/go-openapi/errors v0.19.3
+	github.com/go-openapi/loads v0.19.4
+	github.com/go-openapi/runtime v0.19.9
+	github.com/go-openapi/spec v0.19.5
+	github.com/go-openapi/strfmt v0.19.4
+	github.com/go-openapi/swag v0.19.6
+	github.com/go-openapi/validate v0.19.5
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocraft/work v0.5.1
@@ -75,7 +77,9 @@ require (
 	github.com/spf13/viper v1.4.0 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/theupdateframework/notary v0.6.1
+	go.mongodb.org/mongo-driver v1.2.1 // indirect
 	golang.org/x/crypto v0.0.0-20190617133340-57b3e21c3d56
+	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553 // indirect
 	golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421
 	gopkg.in/asn1-ber.v1 v1.0.0-20150924051756-4e86f4367175 // indirect
 	gopkg.in/dancannon/gorethink.v3 v3.0.5 // indirect
@@ -84,7 +88,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ldap.v2 v2.5.0
 	gopkg.in/square/go-jose.v2 v2.3.0 // indirect
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.7
 	k8s.io/api v0.0.0-20190222213804-5cb15d344471
 	k8s.io/apimachinery v0.0.0-20180704011316-f534d624797b
 	k8s.io/client-go v8.0.0+incompatible

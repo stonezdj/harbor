@@ -232,7 +232,7 @@ definitions:
         type: string
         description: The digest of the artifact
       size:
-        type: string
+        type: integer
         format: int64
         description: The size of the artifact
       upload_time:
