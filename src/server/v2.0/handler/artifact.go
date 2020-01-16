@@ -24,7 +24,7 @@ import (
 	operation "github.com/goharbor/harbor/src/server/v2.0/restapi/operations/artifact"
 )
 
-// ArtifactAPI the api implemention of artifacts
+// ArtifactAPI the api implementation of artifacts
 type ArtifactAPI struct {
 	BaseAPI
 	Ctl artifact.Controller
@@ -33,10 +33,8 @@ type ArtifactAPI struct {
 // DeleteArtifact ...
 func (api *ArtifactAPI) DeleteArtifact(ctx context.Context, params operation.DeleteArtifactParams) middleware.Responder {
 	err := api.Ctl.Delete(ctx, params.ArtifactID)
-	if err == nil {
-		return operation.NewDeleteArtifactOK()
-	} else {
-		//???
+	if err != nil {
+		return api.SendError(ctx, err)
 	}
 	return operation.NewDeleteArtifactOK()
 }
@@ -57,17 +55,16 @@ func (api *ArtifactAPI) ListArtifacts(ctx context.Context, params operation.List
 		WithScanResult: true,
 		WithSignature:  true,
 	}
-	_, alist, err := api.Ctl.List(ctx, query, option)
+	_, artifacts, err := api.Ctl.List(ctx, query, option)
 	if err != nil {
-		//log error and return error
-		operation.NewListArtifactsForbidden()
+		api.SendError(ctx, err)
 	}
 
-	return operation.NewListArtifactsOK().WithPayload(copyArtifactList(alist))
+	return operation.NewListArtifactsOK().WithPayload(copyArtifactList(artifacts))
 }
 
 func copyArtifactList(list []*artifact.Artifact) []*models.Artifact {
-	artifactList := make([]*models.Artifact, 0)
+	artifacts := make([]*models.Artifact, 0)
 	for _, a := range list {
 		artifact := &models.Artifact{
 			Digest:    a.Digest,
@@ -77,14 +74,30 @@ func copyArtifactList(list []*artifact.Artifact) []*models.Artifact {
 			Type:      a.Type,
 		}
 		artifact.UploadTime.Scan(a.PushTime)
-		artifactList = append(artifactList, artifact)
+		artifacts = append(artifacts, artifact)
 	}
-	return artifactList
+	return artifacts
 }
 
 // ReadArtifact ...
 func (api *ArtifactAPI) ReadArtifact(ctx context.Context, params operation.ReadArtifactParams) middleware.Responder {
-	return operation.NewReadArtifactOK()
+	option := &artifact.Option{
+		WithTag:        true,
+		WithScanResult: true,
+		WithSignature:  true,
+	}
+	artifact, err := api.Ctl.Get(ctx, int64(params.ArtifactID), option)
+	if err != nil {
+		api.SendError(ctx, err)
+	}
+
+	return operation.NewReadArtifactOK().WithPayload(&models.Artifact{
+		Digest:    artifact.Digest,
+		ID:        artifact.ID,
+		MediaType: artifact.MediaType,
+		Size:      artifact.Size,
+		Type:      artifact.Type,
+	})
 }
 
 // NewArtifactAPI returns API of artifacts
