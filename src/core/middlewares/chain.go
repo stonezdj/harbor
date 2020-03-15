@@ -24,6 +24,7 @@ import (
 	"github.com/goharbor/harbor/src/core/middlewares/immutable"
 	"github.com/goharbor/harbor/src/core/middlewares/listrepo"
 	"github.com/goharbor/harbor/src/core/middlewares/multiplmanifest"
+	imgProxy "github.com/goharbor/harbor/src/core/middlewares/proxy"
 	"github.com/goharbor/harbor/src/core/middlewares/readonly"
 	"github.com/goharbor/harbor/src/core/middlewares/regtoken"
 	"github.com/goharbor/harbor/src/core/middlewares/sizequota"
@@ -74,6 +75,7 @@ func (b *DefaultCreator) geMiddleware(mName string) alice.Constructor {
 		COUNTQUOTA:       func(next http.Handler) http.Handler { return countquota.New(next) },
 		IMMUTABLE:        func(next http.Handler) http.Handler { return immutable.New(next) },
 		REGTOKEN:         func(next http.Handler) http.Handler { return regtoken.New(next) },
+		PROXY:            func(next http.Handler) http.Handler { return imgProxy.New(next) },
 	}
 	return middlewares[mName]
 }
