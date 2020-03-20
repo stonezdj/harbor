@@ -40,7 +40,7 @@ func New(next http.Handler) http.Handler {
 
 // ServeHTTP ...
 func (cth contentTrustHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	log.Info("zdj: content trust handler enter ")
+	log.Infof("zdj: content trust handler enter ", req.RequestURI)
 	defer log.Info("zdj: content trust handler exit ")
 	doContentTrustCheck, image := validate(req)
 	if !doContentTrustCheck {
