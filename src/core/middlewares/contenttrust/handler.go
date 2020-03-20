@@ -61,6 +61,7 @@ func (cth contentTrustHandler) ServeHTTP(rw http.ResponseWriter, req *http.Reque
 			return
 		}
 	}
+	log.Info("Handled")
 	util.CopyResp(rec, rw)
 }
 
