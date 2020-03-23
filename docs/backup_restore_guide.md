@@ -23,13 +23,21 @@ docker ps
 ```
 ## Backup all data
 ```
+# For open source Harbor, run this command
 ./harbor-backup.sh 
+# For harbor tile, run this command
+./harbor-backup.sh --istile
 ```
 ## Or only backup database data when harbor storage is NFS, GCP or S3
 ```
-./harbor-backup.sh --dbonly
+# for open source Harbor, run this command
+./harbor-backup.sh --dbonly 
+# for Harbor tile, run this command
+./harbor-backup.sh --dbonly --istile
+
 ```
-5. After backup complete, there is a harbor.tgz file in /backup, it the backup data.
+
+5. After the backup complete, there is a harbor.tgz file in /backup, it is the backup data, copy it to the backup storage.
 ```
 ls /backup
 harbor-backup.sh    harbor.tgz
@@ -54,11 +62,20 @@ harbor-restore.sh   harbor.tgz
 ```
 # Check no container is running, if there is, stop and remove it
 ```
-docker ps
-# Restore all data
+# For open soruce Harbor, run this command
 ./harbor-restore.sh 
-# Or only restore database data when harbor storage is NFS, GCP or S3
+# For Harbor Tile run this command
+./harbor-restore.sh --istile
+
+```
+
+
+Or only restore database data when the Harbor registry storage is NFS, GCS, S3 or Azure.
+```
+# For open source Harbor, run this command
 ./harbor-restore.sh --dbonly
+# For Harbor Tile, run this command
+./harbor-restore.sh --dbonly --istile
 ```
 7. Start harbor
 ```
