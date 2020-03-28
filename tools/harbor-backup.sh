@@ -18,6 +18,8 @@ create_dir(){
     rm -rf harbor
     mkdir -p harbor/db
     mkdir -p harbor/secret
+    chmod 777 harbor/db
+    chmod 777 harbor/secret
 }
 
 launch_db() {
@@ -89,7 +91,9 @@ backup_secret() {
 }
 
 create_tarball() {
-    tar zcvf harbor.tgz harbor
+    timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
+    backup_filename=harbor-$timestamp.tgz
+    tar zcvf $backup_filename harbor
     rm -rf harbor
 }
 
@@ -144,4 +148,4 @@ backup_secret
 create_tarball
 clean_db
 
-echo "All Harbor data are backed up"
+echo "All Harbor data are backed up, backup file is $backup_filename."

@@ -15,7 +15,12 @@
 #
 
 extract_backup(){
-    tar xvf harbor.tgz
+    if [ -n "$backupfile" ]; then
+        tar xvf $backupfile
+    else
+        tar xvf harbor.tgz
+    fi
+   
 }
 
 launch_db() {
@@ -72,7 +77,7 @@ restore_database() {
 }
 
 restore_registry() {
-    cp -r harbor/registry/* /data/registry
+    cp -r harbor/registry/ /data/
     chown -R 10000 /data/registry
 }
 
@@ -102,11 +107,12 @@ restore_secret() {
 note() { printf "\nNote:%s\n" "$@"
 }
 
-usage=$'harbor-restore.sh -- Backup Harbor script
+usage=$'harbor-restore.sh -- Restore Harbor script
 ./harbor-restore.sh   [options]          Restore Harbor with database and registry data      
 Options: 
-    --istile    Run restore in Harbor tile env
-    --dbonly    Restore Harbor with database data only'
+    --istile      Run restore in Harbor tile env
+    --dbonly      Restore Harbor with database data only
+    --backupfile  <the backup file name>'
 
 dbonly=false
 istile=false
@@ -119,6 +125,9 @@ while [ $# -gt 0 ]; do
             dbonly=true;;
             --istile)
             istile=true;;
+            --backupfile)
+            backupfile=$2;;
+            shift || true
             *)
             note "$usage"
             exit 1;;
