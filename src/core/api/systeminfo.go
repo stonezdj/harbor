@@ -64,6 +64,7 @@ type GeneralInfo struct {
 	ReadOnly                    bool                  `json:"read_only"`
 	WithChartMuseum             bool                  `json:"with_chartmuseum"`
 	NotificationEnable          bool                  `json:"notification_enable"`
+	Host                        string                `json:"host"`
 }
 
 // GetVolumeInfo gets specific volume storage info.
@@ -131,6 +132,7 @@ func (sia *SystemInfoAPI) GetGeneralInfo() {
 	_, caStatErr := os.Stat(defaultRootCert)
 	enableCADownload := caStatErr == nil && strings.HasPrefix(extURL, "https://")
 	harborVersion := sia.getVersion()
+	host := sia.Ctx.Request.Header.Get("Host")
 	info := GeneralInfo{
 		WithNotary:                  config.WithNotary(),
 		AuthMode:                    utils.SafeCastString(cfg[common.AUTHMode]),
@@ -144,6 +146,7 @@ func (sia *SystemInfoAPI) GetGeneralInfo() {
 		ReadOnly:                    config.ReadOnly(),
 		WithChartMuseum:             config.WithChartMuseum(),
 		NotificationEnable:          utils.SafeCastBool(cfg[common.NotificationEnable]),
+		Host:                        host,
 	}
 
 	if info.AuthMode == common.HTTPAuth {
