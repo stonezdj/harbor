@@ -132,7 +132,10 @@ func (sia *SystemInfoAPI) GetGeneralInfo() {
 	_, caStatErr := os.Stat(defaultRootCert)
 	enableCADownload := caStatErr == nil && strings.HasPrefix(extURL, "https://")
 	harborVersion := sia.getVersion()
-	host := sia.Ctx.Request.Header.Get("Host")
+
+	log.Info("Request info: %#v", sia.Ctx.Request)
+	host := sia.Ctx.Request.RequestURI
+
 	info := GeneralInfo{
 		WithNotary:                  config.WithNotary(),
 		AuthMode:                    utils.SafeCastString(cfg[common.AUTHMode]),
