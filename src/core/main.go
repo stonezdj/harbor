@@ -50,6 +50,8 @@ import (
 	"github.com/goharbor/harbor/src/pkg/version"
 	"github.com/goharbor/harbor/src/replication"
 	"github.com/goharbor/harbor/src/server"
+	"net/http"
+	"crypto/tls"
 )
 
 const (
@@ -97,6 +99,7 @@ func gracefulShutdown(closing, done chan struct{}) {
 }
 
 func main() {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	beego.BConfig.WebConfig.Session.SessionOn = true
 	beego.BConfig.WebConfig.Session.SessionName = config.SessionCookieName
 

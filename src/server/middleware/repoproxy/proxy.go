@@ -1,0 +1,185 @@
+package repoproxy
+
+import (
+	"net/http"
+
+	"github.com/goharbor/harbor/src/controller/artifact"
+	"github.com/goharbor/harbor/src/controller/blob"
+	"github.com/goharbor/harbor/src/controller/project"
+	"github.com/goharbor/harbor/src/lib"
+	"github.com/goharbor/harbor/src/lib/errors"
+	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/server/middleware"
+	"strings"
+	"fmt"
+	"github.com/opencontainers/go-digest"
+	"strconv"
+	"time"
+)
+
+func Middleware() func(http.Handler) http.Handler {
+	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		if middleware.V2BlobURLRe.MatchString(r.URL.String()) && r.Method == http.MethodGet {
+			log.Infof("Getting blob with url: %v\n", r.URL.String())
+			ctx := r.Context()
+			projectName := parseProject(r.URL.String())
+			dig := parseBlob(r.URL.String())
+			repo := parseRepo(r.URL.String())
+			proj, err := project.Ctl.GetByName(ctx, projectName, project.Metadata(false))
+			if err != nil {
+				log.Error(err)
+			}
+			log.Infof("The project id is %v", proj.ProjectID)
+			log.Info(dig)
+			exist, err := blob.Ctl.Exist(ctx, dig, blob.IsAssociatedWithProject(proj.ProjectID))
+			if err == nil && exist {
+				log.Info("The blob exist!")
+			}
+
+			if !exist {
+				log.Info("The blob doesn't exist, proxy the request to the target server")
+				b, desc, err := GetBlobFromRemote(ctx,repo,dig)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				setResponseHeaders(w, desc.Size, desc.MediaType, digest.Digest(dig))
+				w.Write(b)
+				go func() {
+					err = PutBlobToLocal(ctx, repo, b, desc)
+					if err != nil {
+						log.Errorf("Error while puting blob to local, %v", err)
+					}
+				}()
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func setResponseHeaders(w http.ResponseWriter, length int64, mediaType string, digest digest.Digest) {
+	w.Header().Set("Content-Length", strconv.FormatInt(length, 10))
+	w.Header().Set("Content-Type", mediaType)
+	w.Header().Set("Docker-Content-Digest", digest.String())
+	w.Header().Set("Etag", digest.String())
+}
+// Middleware middleware which add logger to context
+func ManifestMiddleware() func(http.Handler) http.Handler {
+	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		ctx := r.Context()
+		art := lib.GetArtifactInfo(ctx)
+		log.Infof("Getting artifact %v", art)
+		_, err := artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
+		if errors.IsNotFoundErr(err) {
+			log.Infof("The artifact is not found! artifact: %v", art)
+			log.Info("Retrieve the artifact from proxy server")
+			repo := art.Repository
+			log.Infof("Repository name: %v", repo)
+			log.Infof("the tag is %v", string(art.Tag))
+			log.Infof("the digest is %v", string(art.Digest))
+			if len(string(art.Digest))>0 {
+
+				man, err := GetManifestFromRemoteWithDigest(ctx, repo, string(art.Digest))
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				ct, p, err :=man.Payload()
+				w.Header().Set("Content-Type", ct)
+				w.Header().Set("Content-Length", fmt.Sprint(len(p)))
+				w.Header().Set("Docker-Content-Digest", string(art.Digest))
+				w.Header().Set("Etag", fmt.Sprintf(`"%s"`, art.Digest))
+				w.Write(p)
+
+				go func(){
+					n:=0
+					for n < 30 {
+						time.Sleep(30*time.Second)
+						if CheckDependencies(ctx, man) {
+							break
+						}
+						n=n+1
+					}
+					err = PutManifestToLocal(ctx, repo, man, "")
+					if err != nil {
+						log.Fatal("error %v", err)
+					}
+				}()
+
+			}else if len(string(art.Tag))>0 {
+				man, desc, err:=GetManifestFromRemote(ctx, repo, string(art.Tag))
+				if err!= nil {
+					log.Error(err)
+					return
+				}
+				ct, p, err :=man.Payload()
+				w.Header().Set("Content-Type", ct)
+				w.Header().Set("Content-Length", fmt.Sprint(len(p)))
+				w.Header().Set("Docker-Content-Digest", desc.Digest.String())
+				w.Header().Set("Etag", fmt.Sprintf(`"%s"`, desc.Digest))
+				w.Write(p)
+
+				go func(){
+					n:=0
+					for n < 30 {
+						time.Sleep(30*time.Second)
+						if CheckDependencies(ctx, man) {
+							break
+						}
+						n=n+1
+					}
+					err = PutManifestToLocal(ctx, repo, man, art.Tag)
+					if err != nil {
+						log.Fatal("error %v", err)
+					}
+				}()
+
+
+				return
+			}else{
+				log.Errorf("Invalid artifact info: %v", art)
+			}
+
+			if err!= nil {
+				log.Errorf("Error when fetch manifest from remote %v", err)
+				return
+			}
+
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func parseProject(url string) string {
+	parts := strings.Split(url, ":")
+	if len(parts) == 2 {
+		paths := strings.Split(parts[0], "/")
+		if len(paths) > 2 {
+			return paths[2]
+		}
+	}
+	return ""
+}
+
+func parseRepo(url string) string {
+	parts := strings.Split(url, ":")
+	if len(parts) == 2 {
+		paths := strings.Split(parts[0], "/")
+		if len(paths) > 4 {
+			return paths[2]+"/"+paths[3]
+		}
+	}
+	return ""
+}
+
+func parseBlob(url string) string {
+
+	parts := strings.Split(url, ":")
+	if len(parts) == 2 {
+		return "sha256:" + parts[1]
+	}
+	return ""
+}
+
+
