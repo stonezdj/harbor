@@ -1,19 +1,23 @@
 package repoproxy
 
 import (
-	"github.com/docker/distribution/testutil"
-	"github.com/docker/distribution/registry/client"
+	"bytes"
+	"context"
+	"crypto/tls"
+	"fmt"
+	"github.com/docker/distribution"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/distribution/registry/client"
+	"github.com/docker/distribution/testutil"
+	"github.com/opencontainers/go-digest"
+	"net/http"
 	"net/http/httptest"
 	"testing"
-	"net/http"
 	"time"
-	"github.com/opencontainers/go-digest"
-	"fmt"
-	"context"
-	"bytes"
-	"crypto/tls"
-	"github.com/docker/distribution"
+
+	"github.com/goharbor/harbor/src/replication/model"
+	//"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
+	"github.com/goharbor/harbor/src/replication/adapter/native"
 )
 
 func testServer(rrm testutil.RequestResponseMap) (string, func()) {
@@ -63,8 +67,8 @@ func addTestFetch(repo string, dgst digest.Digest, content []byte, m *testutil.R
 		},
 	})
 }
-func TestCreateRepository(t *testing.T){
-	dgst, blob:= newRandomBlob(1024)
+func TestCreateRepository(t *testing.T) {
+	dgst, blob := newRandomBlob(1024)
 	var m testutil.RequestResponseMap
 	addTestFetch("library/hello-world", dgst, blob, &m)
 	e, c := testServer(m)
@@ -87,18 +91,18 @@ func TestCreateRepository(t *testing.T){
 
 }
 
-func TestConnectDockerhubRepository(t *testing.T){
+func TestConnectDockerhubRepository(t *testing.T) {
 
 	ctx := context.Background()
-	man, _, err:= GetManifestFromRemote(ctx, "firstfloor/hello-world", "latest")
-	if err!=nil {
+	man, _, err := GetManifestFromRemote(ctx, "firstfloor/hello-world", "latest")
+	if err != nil {
 		t.Error(err)
 	}
-	mediatype, content, err:=man.Payload()
+	mediatype, content, err := man.Payload()
 	fmt.Printf("The manifest mediatype is %v, payload:%v\n", mediatype, string(content))
 	for _, desc := range man.References() {
 		fmt.Printf("descriptor: %v\n", desc.Digest)
-		b, desc, err := GetBlobFromRemote(ctx,"firstfloor/hello-world", string(desc.Digest) )
+		b, desc, err := GetBlobFromRemote(ctx, "firstfloor/hello-world", string(desc.Digest))
 		if err != nil {
 			t.Error(err)
 		}
@@ -107,33 +111,33 @@ func TestConnectDockerhubRepository(t *testing.T){
 	}
 }
 
-func TestPullImageFromLocalRepository(t *testing.T){
+func TestPullImageFromLocalRepository(t *testing.T) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	ctx := context.Background()
-	proxyAuth:=ProxyAuth{
-		Username:"admin",
-		Password:"Harbor12345",
-		URL: "https://10.193.28.58",
+	proxyAuth := ProxyAuth{
+		Username: "admin",
+		Password: "Harbor12345",
+		URL:      "https://10.193.28.58",
 	}
 
-	r, err:= CreateLocalRepository(ctx, proxyAuth, "firstfloor/hello-world")
+	r, err := CreateLocalRepository(ctx, proxyAuth, "firstfloor/hello-world")
 
 	if err != nil {
 		t.Error(err)
 		//return
 	}
 
-	man, _, err:=GetManifestFromRepo(ctx, r, "latest")
+	man, _, err := GetManifestFromRepo(ctx, r, "latest")
 
-	if err!=nil {
+	if err != nil {
 		t.Error(err)
 	}
-	mediatype, content, err:=man.Payload()
+	mediatype, content, err := man.Payload()
 	fmt.Printf("The manifest mediatype is %v, payload:%v\n", mediatype, string(content))
 	for _, desc := range man.References() {
 		fmt.Printf("descriptor: %v\n", desc.Digest)
-		b, desc, err := GetBlobFromLocalRepo(ctx, r, string(desc.Digest) )
+		b, desc, err := GetBlobFromLocalRepo(ctx, r, string(desc.Digest))
 		if err != nil {
 			t.Error(err)
 		}
@@ -141,7 +145,7 @@ func TestPullImageFromLocalRepository(t *testing.T){
 		fmt.Printf("The blob descriptor is %+v\n", desc)
 	}
 }
-func TesBlob_PutOnLocalRepository(t *testing.T) {
+func TestBlobPutOnLocalRepository(t *testing.T) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	ctx := context.Background()
@@ -179,15 +183,36 @@ func TesBlob_PutOnLocalRepository(t *testing.T) {
 		Size:   int64(len(bl)),
 	})
 
-
-
 	if blob.Size != int64(len(bl)) {
 		t.Fatalf("Unexpected blob size: %d; expected: %d", blob.Size, len(bl))
 	}
 
 }
 
-func TestManifestTag_OnLocalRepository(t *testing.T){
+func TestBlobPutOnLocalRepositoryWithClient(t *testing.T) {
+
+	reg := &model.Registry{
+		URL: "http://registry:5000",
+		Credential: &model.Credential{
+			Type:         model.CredentialTypeBasic,
+			AccessKey:    "harbor_registry_user",
+			AccessSecret: "gTCJepHM0idg294jTniBM21E14L6bFoN",
+		},
+		Insecure: true,
+	}
+	adapter := native.NewAdapter(reg)
+
+	dig, bl := newRandomBlob(1024)
+
+	err := adapter.PushBlob("firstfloor/hello-world", string(dig), int64(len(bl)), bytes.NewReader(bl))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestManifestTag_OnLocalRepository(t *testing.T) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	ctx := context.Background()
@@ -206,8 +231,8 @@ func TestManifestTag_OnLocalRepository(t *testing.T){
 	ms, err := r.Manifests(ctx)
 	repo, _ := reference.WithName("10.193.28.58/firstfloor/hello-world")
 	m1, _, _ := newRandomSchemaV1Manifest(repo, "other", 6)
-	_, err= ms.Put(ctx, m1, distribution.WithTag(m1.Tag))
-	if err!= nil{
+	_, err = ms.Put(ctx, m1, distribution.WithTag(m1.Tag))
+	if err != nil {
 		t.Error(err)
 	}
 }
