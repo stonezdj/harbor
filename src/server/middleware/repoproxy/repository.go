@@ -1,32 +1,32 @@
 package repoproxy
 
 import (
-	"net/http"
+	"bytes"
+	"context"
+	"encoding/json"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/reference"
+	"github.com/docker/distribution/registry/api/errcode"
+	"github.com/docker/distribution/registry/api/v2"
 	"github.com/docker/distribution/registry/client"
 	"github.com/docker/distribution/registry/client/auth"
 	"github.com/docker/distribution/registry/client/auth/challenge"
-	"net/url"
-	"sync"
-	"context"
-	"strings"
-	"github.com/docker/distribution/registry/api/v2"
 	"github.com/opencontainers/go-digest"
-	"github.com/docker/distribution/registry/api/errcode"
 	"io"
 	"io/ioutil"
-	"encoding/json"
-	"bytes"
+	"net/http"
+	"net/url"
+	"strings"
+	"sync"
 )
 
 const challengeHeader = "Docker-Distribution-Api-Version"
 
 type RemoteRepository struct {
-	tr http.RoundTripper
-	cf ProxyAuth
+	tr     http.RoundTripper
+	cf     ProxyAuth
 	client http.Client
-	repo distribution.Repository
+	repo   distribution.Repository
 }
 
 // authChallenger encapsulates a request to the upstream to establish credential challenges
@@ -84,6 +84,7 @@ func (r *remoteAuthChallenger) tryEstablishChallenges(ctx context.Context) error
 
 	return nil
 }
+
 type userpass struct {
 	username string
 	password string
@@ -91,6 +92,7 @@ type userpass struct {
 type credentials struct {
 	creds map[string]userpass
 }
+
 func (c credentials) Basic(u *url.URL) (string, string) {
 	up := c.creds[u.String()]
 
@@ -103,6 +105,7 @@ func (c credentials) RefreshToken(u *url.URL, service string) string {
 
 func (c credentials) SetRefreshToken(u *url.URL, service, token string) {
 }
+
 // configureAuth stores credentials for challenge responses
 func configureAuth(username, password, remoteURL string) (auth.CredentialStore, error) {
 	creds := map[string]userpass{}
@@ -169,6 +172,7 @@ func (ms *manifests) Exists(ctx context.Context, dgst digest.Digest) (bool, erro
 	}
 	return false, HandleErrorResponse(resp)
 }
+
 type contentDigestOption struct{ digest *digest.Digest }
 
 func (o contentDigestOption) Apply(ms distribution.ManifestService) error {
@@ -453,23 +457,3 @@ func parseHTTPErrorResponse(statusCode int, r io.Reader) error {
 
 	return errors
 }
-//func NewRepository(){
-//	c := remoteAuthChallenger{}
-//	tkopts := auth.TokenHandlerOptions{
-//		Transport:   http.DefaultTransport,
-//		Credentials: c.credentialStore(),
-//		Scopes: []auth.Scope{
-//			auth.RepositoryScope{
-//				Repository: name.Name(),
-//				Actions:    []string{"pull"},
-//			},
-//		},
-//		Logger:
-//	}
-//
-//	repo, _ := reference.WithName("test.example.com/repo1")
-//	tr := transport.NewTransport(http.DefaultTransport,
-//		auth.NewAuthorizer(c.challengeManager(),
-//			auth.NewTokenHandlerWithOptions(tkopts)))
-//	remoteRepo, err := client.NewRepository(repo,"https://registry-1.docker.io", tr)
-//}

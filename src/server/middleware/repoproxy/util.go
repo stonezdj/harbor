@@ -14,6 +14,7 @@ import (
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/docker/distribution/registry/client/transport"
 	"github.com/docker/libtrust"
+	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/controller/repository"
@@ -24,6 +25,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 func CreateRemoteRepository(ctx context.Context, repository string) (distribution.Repository, error) {
@@ -229,6 +231,11 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 		log.Error(err)
 		return err
 	}
+	log.Infof("Pushing manifest to repo: %v, tag:%v", repo, tag)
+	if tag == "" {
+		tag = "latest"
+	}
+
 	dig, err := adapter.PushManifest(repo, tag, mediaType, payload)
 	if err != nil {
 		log.Error(err)
@@ -313,6 +320,7 @@ func newRandomSchemaV1Manifest(name reference.Named, tag string, blobCount int) 
 func CheckDependencies(ctx context.Context, man distribution.Manifest, dig string) bool {
 	descriptors := man.References()
 	for _, desc := range descriptors {
+		log.Infof("checking the blob depedency: %v", desc.Digest)
 		exist, err := blob.Ctl.Exist(ctx, string(desc.Digest))
 		if err != nil {
 			log.Info("Check dependency failed!")
@@ -327,4 +335,11 @@ func CheckDependencies(ctx context.Context, man distribution.Manifest, dig strin
 	log.Info("Check dependency success!")
 	return true
 
+}
+
+func TrimProxyPrefix(repo string) string {
+	if strings.HasPrefix(repo, common.ProxyNamespacePrefix) {
+		return strings.TrimPrefix(repo, common.ProxyNamespacePrefix)
+	}
+	return repo
 }

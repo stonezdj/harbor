@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"fmt"
+	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/controller/project"
@@ -21,12 +22,14 @@ import (
 
 func Middleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
+		log.Infof("Request url is %v", r.URL)
 		if middleware.V2BlobURLRe.MatchString(r.URL.String()) && r.Method == http.MethodGet {
 			log.Infof("Getting blob with url: %v\n", r.URL.String())
 			ctx := r.Context()
 			projectName := parseProject(r.URL.String())
 			dig := parseBlob(r.URL.String())
 			repo := parseRepo(r.URL.String())
+			repo = TrimProxyPrefix(repo)
 			proj, err := project.Ctl.GetByName(ctx, projectName, project.Metadata(false))
 			projIDstr := fmt.Sprintf("%v", proj.ProjectID)
 			if err != nil {
@@ -40,7 +43,7 @@ func Middleware() func(http.Handler) http.Handler {
 			}
 
 			if !exist {
-				log.Info("The blob doesn't exist, proxy the request to the target server")
+				log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
 				b, desc, err := GetBlobFromRemote(ctx, repo, dig)
 				if err != nil {
 					log.Error(err)
@@ -51,7 +54,7 @@ func Middleware() func(http.Handler) http.Handler {
 				go func() {
 					res := types.ResourceList{types.ResourceStorage: int64(len(b))}
 					err = quota.Ctl.Request(ctx, quota.ProjectReference, projIDstr, res, func() error {
-						return PutBlobToLocal(ctx, repo, b, desc, proj.ProjectID)
+						return PutBlobToLocal(ctx, common.ProxyNamespacePrefix+repo, b, desc, proj.ProjectID)
 					})
 
 					//err = PutBlobToLocal(ctx, repo, b, desc)
@@ -88,7 +91,7 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 		if errors.IsNotFoundErr(err) {
 			log.Infof("The artifact is not found! artifact: %v", art)
 			log.Info("Retrieve the artifact from proxy server")
-			repo := art.Repository
+			repo := TrimProxyPrefix(art.Repository)
 			log.Infof("Repository name: %v", repo)
 			log.Infof("the tag is %v", string(art.Tag))
 			log.Infof("the digest is %v", string(art.Digest))
@@ -118,12 +121,12 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 					res := types.ResourceList{types.ResourceStorage: int64(len(p))}
 
 					err = quota.Ctl.Request(ctx, quota.ProjectReference, projIDstr, res, func() error {
-						return PutManifestToLocalRepo(ctx, repo, man, "", proj.ProjectID)
+						return PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, "", proj.ProjectID)
 					})
 
 					//err = PutManifestToLocalRepo(ctx, repo, man, "")
 					if err != nil {
-						log.Fatal("error %v", err)
+						log.Errorf("error %v", err)
 					}
 				}()
 
@@ -151,12 +154,12 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 					}
 					res := types.ResourceList{types.ResourceStorage: int64(len(p))}
 					err = quota.Ctl.Request(ctx, quota.ProjectReference, projIDstr, res, func() error {
-						return PutManifestToLocalRepo(ctx, repo, man, art.Tag, proj.ProjectID)
+						return PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, art.Tag, proj.ProjectID)
 					})
 
 					//err = PutManifestToLocalRepo(ctx, repo, man, art.Tag)
 					if err != nil {
-						log.Fatal("error %v", err)
+						log.Errorf("error %v", err)
 					}
 				}()
 
@@ -187,14 +190,12 @@ func parseProject(url string) string {
 }
 
 func parseRepo(url string) string {
-	parts := strings.Split(url, ":")
-	if len(parts) == 2 {
-		paths := strings.Split(parts[0], "/")
-		if len(paths) > 4 {
-			return paths[2] + "/" + paths[3]
-		}
+	u := strings.TrimPrefix(url, "/v2/")
+	i := strings.LastIndex(u, "/blobs/")
+	if i <= 0 {
+		return url
 	}
-	return ""
+	return u[0:i]
 }
 
 func parseBlob(url string) string {
