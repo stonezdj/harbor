@@ -22,6 +22,7 @@ import (
 	"github.com/goharbor/harbor/src/server/middleware/contenttrust"
 	"github.com/goharbor/harbor/src/server/middleware/immutable"
 	"github.com/goharbor/harbor/src/server/middleware/quota"
+	"github.com/goharbor/harbor/src/server/middleware/repoproxy"
 	"github.com/goharbor/harbor/src/server/middleware/v2auth"
 	"github.com/goharbor/harbor/src/server/middleware/vulnerable"
 	"github.com/goharbor/harbor/src/server/router"
@@ -31,8 +32,10 @@ import (
 func RegisterRoutes() {
 	root := router.NewRoute().
 		Path("/v2").
+		Middleware(repoproxy.Middleware()).
 		Middleware(artifactinfo.Middleware()).
 		Middleware(v2auth.Middleware())
+
 	// catalog
 	root.NewRoute().
 		Method(http.MethodGet).
@@ -47,6 +50,7 @@ func RegisterRoutes() {
 	root.NewRoute().
 		Method(http.MethodGet).
 		Path("/*/manifests/:reference").
+		Middleware(repoproxy.ManifestMiddleware()).
 		Middleware(contenttrust.Middleware()).
 		Middleware(vulnerable.Middleware()).
 		HandlerFunc(getManifest)

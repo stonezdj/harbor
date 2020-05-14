@@ -313,9 +313,9 @@ func (c *clientTestSuite) TestPullBlob() {
 		})
 	defer server.Close()
 
-	size, blob, err := NewClient(server.URL, "", "", true).PullBlob("library/hello-world", "digest")
+	desc, blob, err := NewClient(server.URL, "", "", true).PullBlob("library/hello-world", "digest")
 	c.Require().Nil(err)
-	c.Equal(int64(len(data)), size)
+	c.Equal(int64(len(data)), desc.Size)
 
 	b, err := ioutil.ReadAll(blob)
 	c.Require().Nil(err)
