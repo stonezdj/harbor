@@ -31,15 +31,18 @@ import (
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter/native"
+	"github.com/goharbor/harbor/src/replication/dao"
 	"github.com/goharbor/harbor/src/replication/model"
+	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/opencontainers/go-digest"
 	"io/ioutil"
 	"strings"
 )
 
-func GetManifestFromTarget(ctx context.Context, repository string, tag string) (distribution.Manifest, distribution.Descriptor, error) {
+func GetManifestFromTarget(ctx context.Context, repository string, tag string, proxyRegID int64) (distribution.Manifest, distribution.Descriptor, error) {
 	desc := distribution.Descriptor{}
-	adapter, err := CreateRemoteRegistryAdapter(ProxyConfig)
+	//adapter, err := CreateRemoteRegistryAdapter(ProxyConfig)
+	adapter, err := CreateRegistryAdapter(proxyRegID)
 	if err != nil {
 		log.Error(err)
 		return nil, desc, nil
@@ -49,15 +52,15 @@ func GetManifestFromTarget(ctx context.Context, repository string, tag string) (
 	return man, desc, nil
 }
 
-func GetManifestFromTargetWithDigest(ctx context.Context, repository string, dig string) (distribution.Manifest, error) {
-	adapter, err := CreateRemoteRegistryAdapter(ProxyConfig)
+func GetManifestFromTargetWithDigest(ctx context.Context, repository string, dig string, proxyRegID int64) (distribution.Manifest, error) {
+	adapter, err := CreateRegistryAdapter(proxyRegID)
 	man, dig, err := adapter.PullManifest(repository, dig) //if tag is not provided, the digest also works
 	return man, err
 }
 
-func GetBlobFromTarget(ctx context.Context, repository string, dig string) ([]byte, distribution.Descriptor, error) {
+func GetBlobFromTarget(ctx context.Context, repository string, dig string, proxyRegID int64) ([]byte, distribution.Descriptor, error) {
 	d := distribution.Descriptor{}
-	adapter, err := CreateRemoteRegistryAdapter(ProxyConfig)
+	adapter, err := CreateRegistryAdapter(proxyRegID)
 	if err != nil {
 		return nil, d, err
 	}
@@ -122,17 +125,29 @@ func CreateLocalRegistryAdapter() (*native.Adapter, error) {
 	return native.NewAdapter(reg), nil
 }
 
-func CreateRemoteRegistryAdapter(proxyAuth *ProxyAuth) (*native.Adapter, error) {
-	reg := &model.Registry{
-		URL: proxyAuth.URL,
-		Credential: &model.Credential{
-			Type:         model.CredentialTypeBasic,
-			AccessKey:    proxyAuth.Username,
-			AccessSecret: proxyAuth.Password,
-		},
-		Insecure: true,
+//func CreateRemoteRegistryAdapter(proxyAuth *ProxyAuth) (*native.Adapter, error) {
+//	reg := &model.Registry{
+//		URL: proxyAuth.URL,
+//		Credential: &model.Credential{
+//			Type:         model.CredentialTypeBasic,
+//			AccessKey:    proxyAuth.Username,
+//			AccessSecret: proxyAuth.Password,
+//		},
+//		Insecure: true,
+//	}
+//	return native.NewAdapter(reg), nil
+//}
+func CreateRegistryAdapter(proxyRegID int64) (*native.Adapter, error) {
+	reg, err := dao.GetRegistry(proxyRegID)
+	if err != nil {
+		log.Error(err)
 	}
-	return native.NewAdapter(reg), nil
+	r, err := registry.FromDaoModel(reg)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Infof("The credential from registry is %v", r.Credential)
+	return native.NewAdapter(r), nil
 }
 
 func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.Manifest, tag string, projectID int64) error {

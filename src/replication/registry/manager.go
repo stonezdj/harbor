@@ -67,7 +67,7 @@ func (m *DefaultManager) Get(id int64) (*model.Registry, error) {
 		return nil, nil
 	}
 
-	return fromDaoModel(registry)
+	return FromDaoModel(registry)
 }
 
 // GetByName gets a registry by its name
@@ -81,7 +81,7 @@ func (m *DefaultManager) GetByName(name string) (*model.Registry, error) {
 		return nil, nil
 	}
 
-	return fromDaoModel(registry)
+	return FromDaoModel(registry)
 }
 
 // List lists registries according to query provided.
@@ -107,7 +107,7 @@ func (m *DefaultManager) List(query ...*model.RegistryQuery) (int64, []*model.Re
 
 	var results []*model.Registry
 	for _, r := range registries {
-		registry, err := fromDaoModel(r)
+		registry, err := FromDaoModel(r)
 		if err != nil {
 			return -1, nil, err
 		}
@@ -231,9 +231,9 @@ func encrypt(secret string) (string, error) {
 	return encrypted, nil
 }
 
-// fromDaoModel converts DAO layer registry model to replication model.
+// FromDaoModel converts DAO layer registry model to replication model.
 // Also, if access secret is provided, decrypt it.
-func fromDaoModel(registry *models.Registry) (*model.Registry, error) {
+func FromDaoModel(registry *models.Registry) (*model.Registry, error) {
 	r := &model.Registry{
 		ID:           registry.ID,
 		Name:         registry.Name,

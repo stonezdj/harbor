@@ -30,7 +30,6 @@ import (
 	"github.com/goharbor/harbor/src/pkg/types"
 	"github.com/goharbor/harbor/src/server/middleware"
 	"github.com/opencontainers/go-digest"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -42,6 +41,7 @@ func Middleware() func(http.Handler) http.Handler {
 			log.Infof("Getting blob with url: %v\n", r.URL.String())
 			ctx := r.Context()
 			projectName := parseProject(r.URL.String())
+			proxyRegID := int64(1)
 			dig := parseBlob(r.URL.String())
 			repo := parseRepo(r.URL.String())
 			repo = TrimProxyPrefix(repo)
@@ -59,21 +59,19 @@ func Middleware() func(http.Handler) http.Handler {
 
 			if !exist {
 				log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
-				b, desc, err := GetBlobFromTarget(ctx, repo, dig)
+				b, desc, err := GetBlobFromTarget(ctx, repo, dig, proxyRegID)
 				log.Infof("blob digest %v, blog digest from desc:%v, digest from byte:%v", dig, desc.Digest, digest.FromBytes(b))
 				if err != nil {
 					log.Error(err)
 					return
 				}
-				setResponseHeaders(w, desc.Size, desc.MediaType, digest.Digest(dig))
+				setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
 				w.Write(b)
 				go func(desc distribution.Descriptor) {
 					res := types.ResourceList{types.ResourceStorage: int64(len(b))}
 					err = quota.Ctl.Request(ctx, quota.ProjectReference, projIDstr, res, func() error {
 						return PutBlobToLocal(ctx, common.ProxyNamespacePrefix+repo, b, desc, proj.ProjectID)
 					})
-
-					//err = PutBlobToLocal(ctx, repo, b, desc)
 					if err != nil {
 						log.Errorf("Error while puting blob to local, %v", err)
 					}
@@ -85,11 +83,11 @@ func Middleware() func(http.Handler) http.Handler {
 	})
 }
 
-func setResponseHeaders(w http.ResponseWriter, length int64, mediaType string, digest digest.Digest) {
-	w.Header().Set("Content-Length", strconv.FormatInt(length, 10))
+func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string) {
+	w.Header().Set("Content-Length", fmt.Sprintf("%v", size))
 	w.Header().Set("Content-Type", mediaType)
-	w.Header().Set("Docker-Content-Digest", digest.String())
-	w.Header().Set("Etag", digest.String())
+	w.Header().Set("Docker-Content-Digest", dig)
+	w.Header().Set("Etag", dig)
 }
 
 // Middleware middleware which add logger to context
@@ -98,6 +96,7 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 		ctx := r.Context()
 		art := lib.GetArtifactInfo(ctx)
 		proj, err := project.Ctl.GetByName(ctx, art.ProjectName)
+		proxyRegID := int64(1)
 		if err != nil {
 			log.Error(err)
 		}
@@ -112,16 +111,13 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 			log.Infof("the tag is %v", string(art.Tag))
 			log.Infof("the digest is %v", string(art.Digest))
 			if len(string(art.Digest)) > 0 {
-				man, err := GetManifestFromTargetWithDigest(ctx, repo, string(art.Digest))
+				man, err := GetManifestFromTargetWithDigest(ctx, repo, string(art.Digest), 1)
 				if err != nil {
 					log.Error(err)
 					return
 				}
 				ct, p, err := man.Payload()
-				w.Header().Set("Content-Type", ct)
-				w.Header().Set("Content-Length", fmt.Sprint(len(p)))
-				w.Header().Set("Docker-Content-Digest", string(art.Digest))
-				w.Header().Set("Etag", fmt.Sprintf(`"%s"`, art.Digest))
+				setHeaders(w, int64(len(p)), ct, art.Digest)
 				w.Write(p)
 
 				go func() {
@@ -145,16 +141,13 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 				}()
 
 			} else if len(string(art.Tag)) > 0 {
-				man, desc, err := GetManifestFromTarget(ctx, repo, string(art.Tag))
+				man, _, err := GetManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
 				if err != nil {
 					log.Error(err)
 					return
 				}
 				ct, p, err := man.Payload()
-				w.Header().Set("Content-Type", ct)
-				w.Header().Set("Content-Length", fmt.Sprint(len(p)))
-				w.Header().Set("Docker-Content-Digest", desc.Digest.String())
-				w.Header().Set("Etag", fmt.Sprintf(`"%s"`, desc.Digest))
+				setHeaders(w, int64(len(p)), ct, art.Digest)
 				w.Write(p)
 
 				go func() {
