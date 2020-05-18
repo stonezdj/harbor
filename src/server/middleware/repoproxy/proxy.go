@@ -41,11 +41,16 @@ func Middleware() func(http.Handler) http.Handler {
 			log.Infof("Getting blob with url: %v\n", r.URL.String())
 			ctx := r.Context()
 			projectName := parseProject(r.URL.String())
-			proxyRegID := int64(1)
 			dig := parseBlob(r.URL.String())
 			repo := parseRepo(r.URL.String())
 			repo = TrimProxyPrefix(repo)
 			proj, err := project.Ctl.GetByName(ctx, projectName, project.Metadata(false))
+			proxyRegID := proj.ProxyRegistryID
+			if proxyRegID == 0 {
+				next.ServeHTTP(w, r)
+				return
+			}
+			//proxyRegID:= int64(1)
 			projIDstr := fmt.Sprintf("%v", proj.ProjectID)
 			if err != nil {
 				log.Error(err)
@@ -96,10 +101,16 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 		ctx := r.Context()
 		art := lib.GetArtifactInfo(ctx)
 		proj, err := project.Ctl.GetByName(ctx, art.ProjectName)
-		proxyRegID := int64(1)
 		if err != nil {
 			log.Error(err)
 		}
+		proxyRegID := proj.ProxyRegistryID
+		if proxyRegID == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		//proxyRegID:= int64(1)
+
 		projIDstr := fmt.Sprintf("%v", proj.ProjectID)
 		log.Infof("Getting artifact %v", art)
 		_, err = artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
