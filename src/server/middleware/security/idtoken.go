@@ -61,7 +61,7 @@ func (i *idToken) Generate(req *http.Request) security.Context {
 	}
 	if groupNames, ok := oidc.GroupsFromClaims(claims, settings.GroupsClaim); ok {
 		groups := models.UserGroupsFromName(groupNames, common.OIDCGroupType)
-		u.GroupIDs, err = group.PopulateGroup(groups)
+		u.GroupIDs, err = group.PopulateGroup(groups, true)
 		if err != nil {
 			log.Errorf("failed to get group ID list for OIDC user %s: %v", u.Username, err)
 			return nil

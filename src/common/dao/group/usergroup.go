@@ -95,16 +95,26 @@ func GetUserGroup(id int) (*models.UserGroup, error) {
 	return nil, nil
 }
 
-// PopulateGroup -  Return the group ID by given group name. if not exist in Harbor DB, create one
-func PopulateGroup(userGroups []models.UserGroup) ([]int, error) {
+// PopulateGroup -  Return the group ID by given group name. if not exist in Harbor DB and create is true, create one
+func PopulateGroup(userGroups []models.UserGroup, create bool) ([]int, error) {
 	ugList := make([]int, 0)
 	for _, group := range userGroups {
-		err := OnBoardUserGroup(&group)
-		if err != nil {
-			return ugList, err
-		}
-		if group.ID > 0 {
-			ugList = append(ugList, group.ID)
+		if create {
+			err := OnBoardUserGroup(&group)
+			if err != nil {
+				return ugList, err
+			}
+			if group.ID > 0 {
+				ugList = append(ugList, group.ID)
+			}
+		} else {
+			groups, err := QueryUserGroup(group)
+			if err != nil {
+				return ugList, err
+			}
+			if len(groups) > 0 {
+				ugList = append(ugList, groups[0].ID)
+			}
 		}
 	}
 	return ugList, nil

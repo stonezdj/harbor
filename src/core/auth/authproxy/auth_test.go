@@ -80,7 +80,7 @@ func TestAuth_Authenticate(t *testing.T) {
 		{GroupName: "vsphere.local\\everyone", GroupType: common.HTTPGroupType},
 	}
 
-	groupIDs, err := group.PopulateGroup(userGroups)
+	groupIDs, err := group.PopulateGroup(userGroups, true)
 	if err != nil {
 		t.Fatal("Failed to get groupIDs")
 	}

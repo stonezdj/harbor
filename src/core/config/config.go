@@ -174,6 +174,7 @@ func LDAPGroupConf() (*models.LdapGroupConf, error) {
 		LdapGroupSearchScope:         cfgMgr.Get(common.LDAPGroupSearchScope).GetInt(),
 		LdapGroupAdminDN:             cfgMgr.Get(common.LDAPGroupAdminDn).GetString(),
 		LdapGroupMembershipAttribute: cfgMgr.Get(common.LDAPGroupMembershipAttribute).GetString(),
+		LdapOnboardGroupAtLogin:      cfgMgr.Get(common.LDAPOnBoardGroupAtLogin).GetBool(),
 	}, nil
 }
 

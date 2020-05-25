@@ -117,7 +117,7 @@ func (dm *defaultManager) VerifySecret(ctx context.Context, username string, sec
 	if err != nil {
 		return nil, verifyError(err)
 	}
-	gids, err := group.PopulateGroup(models.UserGroupsFromName(info.Groups, common.OIDCGroupType))
+	gids, err := group.PopulateGroup(models.UserGroupsFromName(info.Groups, common.OIDCGroupType), true)
 	if err != nil {
 		log.Warningf("failed to get group ID, error: %v, skip populating groups", err)
 	} else {

@@ -477,7 +477,7 @@ func TestSyncGroupByGroupKey(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := PopulateGroup(tt.in)
+			got, err := PopulateGroup(tt.in, true)
 
 			if err != nil && !tt.want.wantError {
 				t.Errorf("error %v", err)

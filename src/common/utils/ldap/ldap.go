@@ -401,6 +401,23 @@ func (session *Session) searchGroup(baseDN, filter, groupName, groupNameAttribut
 	return ldapGroups, nil
 }
 
+// RetrieveGroupName - retrieve ldap group name
+func (session *Session) RetrieveGroupName(groupDN string) string {
+	if len(session.ldapGroupConfig.LdapGroupNameAttribute) == 0 {
+		return groupDN
+	}
+	groups, err := session.SearchGroupByDN(groupDN)
+	if err != nil {
+		log.Errorf("failed to retrieve group DN, error %v", err)
+		return groupDN
+	}
+	if len(groups) == 0 {
+		log.Errorf("failed to retrieve group by DN: %v", groupDN)
+		return groupDN
+	}
+	return groups[0].GroupName
+}
+
 func createGroupSearchFilter(oldFilter, groupName, groupNameAttribute string) string {
 	filter := ""
 	groupName = goldap.EscapeFilter(groupName)

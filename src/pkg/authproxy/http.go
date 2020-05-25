@@ -88,7 +88,7 @@ func UserFromReviewStatus(status k8s_api_v1beta1.TokenReviewStatus) (*models.Use
 	}
 	if len(status.User.Groups) > 0 {
 		userGroups := models.UserGroupsFromName(status.User.Groups, common.HTTPGroupType)
-		groupIDList, err := group.PopulateGroup(userGroups)
+		groupIDList, err := group.PopulateGroup(userGroups, true)
 		if err != nil {
 			return nil, err
 		}

@@ -86,12 +86,12 @@ func (l *Auth) Authenticate(m models.AuthModel) (*models.User, error) {
 	u.Email = strings.TrimSpace(ldapUsers[0].Email)
 
 	l.syncUserInfoFromDB(&u)
-	l.attachLDAPGroup(ldapUsers, &u)
+	l.attachLDAPGroup(ldapUsers, &u, ldapSession)
 
 	return &u, nil
 }
 
-func (l *Auth) attachLDAPGroup(ldapUsers []models.LdapUser, u *models.User) {
+func (l *Auth) attachLDAPGroup(ldapUsers []models.LdapUser, u *models.User, sess *ldapUtils.Session) {
 	// Retrieve ldap related info in login to avoid too many traffic with LDAP server.
 	// Get group admin dn
 	groupCfg, err := config.LDAPGroupConf()
@@ -112,9 +112,9 @@ func (l *Auth) attachLDAPGroup(ldapUsers []models.LdapUser, u *models.User) {
 	}
 	userGroups := make([]models.UserGroup, 0)
 	for _, dn := range ldapUsers[0].GroupDNList {
-		userGroups = append(userGroups, models.UserGroup{GroupName: dn, LdapGroupDN: dn, GroupType: common.LDAPGroupType})
+		userGroups = append(userGroups, models.UserGroup{GroupName: sess.RetrieveGroupName(dn), LdapGroupDN: dn, GroupType: common.LDAPGroupType})
 	}
-	u.GroupIDs, err = group.PopulateGroup(userGroups)
+	u.GroupIDs, err = group.PopulateGroup(userGroups, groupCfg.LdapOnboardGroupAtLogin)
 	if err != nil {
 		log.Warningf("Failed to fetch ldap group configuration:%v", err)
 	}

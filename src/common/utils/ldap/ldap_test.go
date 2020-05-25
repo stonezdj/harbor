@@ -388,3 +388,54 @@ func TestNormalizeFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestRetrieveLdapGroupName(t *testing.T) {
+	ldapGroupConfig1 := models.LdapGroupConf{
+		LdapGroupBaseDN:        "ou=group,dc=example,dc=com",
+		LdapGroupFilter:        "objectclass=groupOfNames",
+		LdapGroupNameAttribute: "cn",
+		LdapGroupSearchScope:   2,
+	}
+	ldapGroupConfig2 := models.LdapGroupConf{
+		LdapGroupBaseDN:        "ou=group,dc=example,dc=com",
+		LdapGroupFilter:        "objectclass=groupOfNames",
+		LdapGroupNameAttribute: "o",
+		LdapGroupSearchScope:   2,
+	}
+
+	type args struct {
+		groupDN         string
+		ldapGroupConfig models.LdapGroupConf
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"gid with cn", args{"cn=harbor_group,ou=groups,dc=example,dc=com", ldapGroupConfig1}, "harbor_group"},
+		{"gid with o", args{"cn=harbor_group,ou=groups,dc=example,dc=com", ldapGroupConfig2}, "hgroup"},
+	}
+	ldapConfig := models.LdapConf{
+		LdapURL:            ldapTestConfig[common.LDAPURL].(string) + ":389",
+		LdapSearchDn:       ldapTestConfig[common.LDAPSearchDN].(string),
+		LdapScope:          2,
+		LdapSearchPassword: ldapTestConfig[common.LDAPSearchPwd].(string),
+		LdapBaseDn:         ldapTestConfig[common.LDAPBaseDN].(string),
+	}
+
+	for _, tt := range tests {
+
+		session := &Session{
+			ldapConfig:      ldapConfig,
+			ldapGroupConfig: tt.args.ldapGroupConfig,
+		}
+		session.Open()
+		defer session.Close()
+
+		t.Run(tt.name, func(t *testing.T) {
+			if got := session.RetrieveGroupName(tt.args.groupDN); got != tt.want {
+				t.Errorf("normalizeFilter() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

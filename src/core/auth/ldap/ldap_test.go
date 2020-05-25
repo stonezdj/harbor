@@ -403,7 +403,7 @@ func TestAddProjectMemberWithLdapGroup(t *testing.T) {
 		t.Errorf("Error occurred when GetProjectByName: %v", err)
 	}
 	userGroups := []models.UserGroup{{GroupName: "cn=harbor_users,ou=groups,dc=example,dc=com", LdapGroupDN: "cn=harbor_users,ou=groups,dc=example,dc=com", GroupType: common.LDAPGroupType}}
-	groupIds, err := group.PopulateGroup(userGroups)
+	groupIds, err := group.PopulateGroup(userGroups, true)
 	member := models.MemberReq{
 		ProjectID: currentProject.ProjectID,
 		MemberGroup: models.UserGroup{

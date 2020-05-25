@@ -127,7 +127,7 @@ func (oc *OIDCController) Callback() {
 		oc.Controller.Redirect(fmt.Sprintf("/oidc-onboard?username=%s", strings.Replace(info.Username, " ", "_", -1)),
 			http.StatusFound)
 	} else {
-		gids, err := group.PopulateGroup(models.UserGroupsFromName(info.Groups, common.OIDCGroupType))
+		gids, err := group.PopulateGroup(models.UserGroupsFromName(info.Groups, common.OIDCGroupType), true)
 		if err != nil {
 			log.Warningf("Failed to populate groups, error: %v, user will have empty group list, username: %s", err, info.Username)
 		}
@@ -187,7 +187,7 @@ func (oc *OIDCController) Onboard() {
 		oc.SendInternalServerError(err)
 		return
 	}
-	gids, err := group.PopulateGroup(models.UserGroupsFromName(d.Groups, common.OIDCGroupType))
+	gids, err := group.PopulateGroup(models.UserGroupsFromName(d.Groups, common.OIDCGroupType), true)
 	if err != nil {
 		log.Warningf("Failed to populate group user will have empty group list. username: %s", username)
 	}

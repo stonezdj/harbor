@@ -35,6 +35,7 @@ type LdapGroupConf struct {
 	LdapGroupSearchScope         int    `json:"ldap_group_search_scope"`
 	LdapGroupAdminDN             string `json:"ldap_group_admin_dn,omitempty"`
 	LdapGroupMembershipAttribute string `json:"ldap_group_membership_attribute,omitempty"`
+	LdapOnboardGroupAtLogin      bool   `json:"ldap_onboard_group_at_login,omitempty"`
 }
 
 // LdapUser ...
