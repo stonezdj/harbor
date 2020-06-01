@@ -32,7 +32,7 @@ import (
 func RegisterRoutes() {
 	root := router.NewRoute().
 		Path("/v2").
-		Middleware(repoproxy.Middleware()).
+		Middleware(repoproxy.BlobGetMiddleware()).
 		Middleware(artifactinfo.Middleware()).
 		Middleware(v2auth.Middleware())
 
@@ -50,7 +50,7 @@ func RegisterRoutes() {
 	root.NewRoute().
 		Method(http.MethodGet).
 		Path("/*/manifests/:reference").
-		Middleware(repoproxy.ManifestMiddleware()).
+		Middleware(repoproxy.ManifestGetMiddleware()).
 		Middleware(contenttrust.Middleware()).
 		Middleware(vulnerable.Middleware()).
 		HandlerFunc(getManifest)

@@ -35,7 +35,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-func Middleware() func(http.Handler) http.Handler {
+func BlobGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		log.Infof("Request url is %v", r.URL)
 		if middleware.V2BlobURLRe.MatchString(r.URL.String()) && r.Method == http.MethodGet {
@@ -96,8 +96,8 @@ func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string)
 	w.Header().Set("Etag", dig)
 }
 
-// Middleware middleware which add logger to context
-func ManifestMiddleware() func(http.Handler) http.Handler {
+// BlobGetMiddleware middleware which add logger to context
+func ManifestGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		ctx := r.Context()
 		art := lib.GetArtifactInfo(ctx)
@@ -105,14 +105,14 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 		if err != nil {
 			log.Error(err)
 		}
-		proxyRegID := proj.ProxyRegistryID
-		if proxyRegID == 0 {
-			next.ServeHTTP(w, r)
-			return
-		}
-		//proxyRegID:= int64(1)
+		//proxyRegID := proj.ProxyRegistryID
+		//if proxyRegID == 0 {
+		//	next.ServeHTTP(w, r)
+		//	return
+		//}
+		proxyRegID := int64(1)
 
-		projIDstr := fmt.Sprintf("%v", proj.ProjectID)
+		//projIDstr := fmt.Sprintf("%v", proj.ProjectID)
 		log.Infof("Getting artifact %v", art)
 		_, err = artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
 		if errors.IsNotFoundErr(err) {
@@ -141,12 +141,8 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 						}
 						n = n + 1
 					}
-					res := types.ResourceList{types.ResourceStorage: int64(len(p))}
 
-					err = quota.Ctl.Request(ctx, quota.ProjectReference, projIDstr, res, func() error {
-						return PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, "", proj.ProjectID)
-					})
-
+					err = PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, "", proj.ProjectID)
 					if err != nil {
 						log.Errorf("error %v", err)
 					}
@@ -171,10 +167,8 @@ func ManifestMiddleware() func(http.Handler) http.Handler {
 						}
 						n = n + 1
 					}
-					res := types.ResourceList{types.ResourceStorage: int64(len(p))}
-					err = quota.Ctl.Request(ctx, quota.ProjectReference, projIDstr, res, func() error {
-						return PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, art.Tag, proj.ProjectID)
-					})
+
+					err = PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, art.Tag, proj.ProjectID)
 
 					if err != nil {
 						log.Errorf("error %v", err)

@@ -17,19 +17,14 @@ package repoproxy
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"fmt"
 	"github.com/docker/distribution"
-	"github.com/docker/distribution/manifest"
-	"github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/distribution/reference"
-	"github.com/docker/libtrust"
 	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/controller/repository"
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
 	"github.com/goharbor/harbor/src/replication/adapter/native"
 	"github.com/goharbor/harbor/src/replication/dao"
 	"github.com/goharbor/harbor/src/replication/model"
@@ -41,7 +36,6 @@ import (
 
 func GetManifestFromTarget(ctx context.Context, repository string, tag string, proxyRegID int64) (distribution.Manifest, distribution.Descriptor, error) {
 	desc := distribution.Descriptor{}
-	//adapter, err := CreateRemoteRegistryAdapter(ProxyConfig)
 	adapter, err := CreateRegistryAdapter(proxyRegID)
 	if err != nil {
 		log.Error(err)
@@ -107,36 +101,18 @@ func PutBlobToLocal(ctx context.Context, repo string, bl []byte, desc distributi
 
 // CreateLocalRegistryAdapter - current it only create a native adapter only,
 // it should expand to other adapters for different repos
-func CreateLocalRegistryAdapter() (*native.Adapter, error) {
-	username, password := config.RegistryCredential()
-	registryURL, err := config.RegistryURL()
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
+func CreateLocalRegistryAdapter() (*base.Adapter, error) {
+	registryURL := config.GetCoreURL()
 	reg := &model.Registry{
 		URL: registryURL,
 		Credential: &model.Credential{
-			Type:         model.CredentialTypeBasic,
-			AccessKey:    username,
-			AccessSecret: password,
+			Type:         model.CredentialTypeSecret,
+			AccessSecret: config.JobserviceSecret(),
 		},
 	}
-	return native.NewAdapter(reg), nil
+	return base.New(reg)
 }
 
-//func CreateRemoteRegistryAdapter(proxyAuth *ProxyAuth) (*native.Adapter, error) {
-//	reg := &model.Registry{
-//		URL: proxyAuth.URL,
-//		Credential: &model.Credential{
-//			Type:         model.CredentialTypeBasic,
-//			AccessKey:    proxyAuth.Username,
-//			AccessSecret: proxyAuth.Password,
-//		},
-//		Insecure: true,
-//	}
-//	return native.NewAdapter(reg), nil
-//}
 func CreateRegistryAdapter(proxyRegID int64) (*native.Adapter, error) {
 	reg, err := dao.GetRegistry(proxyRegID)
 	if err != nil {
@@ -200,53 +176,8 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 	return err
 }
 
-func newRandomBlob(size int) (digest.Digest, []byte) {
-	b := make([]byte, size)
-	if n, err := rand.Read(b); err != nil {
-		panic(err)
-	} else if n != size {
-		panic("unable to read enough bytes")
-	}
-
-	return digest.FromBytes(b), b
-}
-
-func newRandomSchemaV1Manifest(name reference.Named, tag string, blobCount int) (*schema1.SignedManifest, digest.Digest, []byte) {
-	blobs := make([]schema1.FSLayer, blobCount)
-	history := make([]schema1.History, blobCount)
-
-	for i := 0; i < blobCount; i++ {
-		dgst, blob := newRandomBlob((i % 5) * 16)
-
-		blobs[i] = schema1.FSLayer{BlobSum: dgst}
-		history[i] = schema1.History{V1Compatibility: fmt.Sprintf("{\"Hex\": \"%x\"}", blob)}
-	}
-
-	m := schema1.Manifest{
-		Name:         name.String(),
-		Tag:          tag,
-		Architecture: "x86",
-		FSLayers:     blobs,
-		History:      history,
-		Versioned: manifest.Versioned{
-			SchemaVersion: 1,
-		},
-	}
-
-	pk, err := libtrust.GenerateECP256PrivateKey()
-	if err != nil {
-		panic(err)
-	}
-
-	sm, err := schema1.Sign(&m, pk)
-	if err != nil {
-		panic(err)
-	}
-
-	return sm, digest.FromBytes(sm.Canonical), sm.Canonical
-}
-
 func CheckDependencies(ctx context.Context, man distribution.Manifest, dig string) bool {
+	// TODO: change blob.Ctl to use HEAD method
 	descriptors := man.References()
 	for _, desc := range descriptors {
 		log.Infof("checking the blob depedency: %v", desc.Digest)
