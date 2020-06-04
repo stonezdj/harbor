@@ -106,10 +106,10 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			log.Error(err)
 		}
 		//proxyRegID := proj.ProxyRegistryID
-		//if proxyRegID == 0 {
-		//	next.ServeHTTP(w, r)
-		//	return
-		//}
+		if proj.ProjectID <=1 {
+			next.ServeHTTP(w, r)
+			return
+		}
 		proxyRegID := int64(1)
 
 		//projIDstr := fmt.Sprintf("%v", proj.ProjectID)

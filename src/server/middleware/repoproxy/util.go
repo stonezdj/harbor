@@ -19,9 +19,7 @@ import (
 	"context"
 	"github.com/docker/distribution"
 	"github.com/goharbor/harbor/src/common"
-	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/blob"
-	"github.com/goharbor/harbor/src/controller/repository"
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
@@ -86,16 +84,6 @@ func PutBlobToLocal(ctx context.Context, repo string, bl []byte, desc distributi
 		return err
 	}
 	err = adapter.PushBlob(repo, string(desc.Digest), desc.Size, bytes.NewReader(bl))
-	if err == nil {
-		blobID, err := blob.Ctl.Ensure(ctx, string(desc.Digest), desc.MediaType, desc.Size)
-		if err != nil {
-			log.Error(err)
-		}
-		err = blob.Ctl.AssociateWithProjectByID(ctx, blobID, projID)
-		if err != nil {
-			log.Error(err)
-		}
-	}
 	return err
 }
 
@@ -141,38 +129,7 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 	if tag == "" {
 		tag = "latest"
 	}
-	dig, err := adapter.PushManifest(repo, tag, mediaType, payload)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	_, _, err = repository.Ctl.Ensure(ctx, repo)
-	if err != nil {
-		log.Error(err)
-	}
-	_, _, err = artifact.Ctl.Ensure(ctx, repo, dig, tag)
-	if err != nil {
-		log.Error(err)
-	}
-	blobDigests := make([]string, 0)
-	for _, des := range mfst.References() {
-		blobDigests = append(blobDigests, string(des.Digest))
-	}
-	blobDigests = append(blobDigests, dig)
-
-	log.Debugf("Blob digest %+v, %v", blobDigests, dig)
-	blobID, err := blob.Ctl.Ensure(ctx, dig, mediaType, int64(len(payload)))
-	blob.Ctl.AssociateWithProjectByID(ctx, blobID, projectID)
-
-	if err != nil {
-		log.Error("failed to create blob for manifest!")
-	}
-	err = blob.Ctl.AssociateWithArtifact(ctx, blobDigests, dig)
-
-	if err != nil {
-		log.Errorf("Failed to associate blob with artifact:%v", err)
-	}
-
+	_, err = adapter.PushManifest(repo, tag, mediaType, payload)
 	return err
 }
 
