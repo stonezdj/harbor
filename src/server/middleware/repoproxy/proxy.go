@@ -30,7 +30,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/distribution"
 	"github.com/goharbor/harbor/src/server/middleware"
-	"github.com/opencontainers/go-digest"
 )
 
 func BlobGetMiddleware() func(http.Handler) http.Handler {
@@ -54,6 +53,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			}
 			log.Infof("The project id is %v", proj.ProjectID)
 			log.Info(dig)
+			// TODO: use head to check exist
 			exist, err := blob.Ctl.Exist(ctx, dig, blob.IsAssociatedWithProject(proj.ProjectID))
 			if err == nil && exist {
 				log.Info("The blob exist!")
@@ -61,20 +61,21 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 
 			if !exist {
 				log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
-				b, desc, err := GetBlobFromTarget(ctx, repo, dig, proxyRegID)
-				log.Infof("blob digest %v, blog digest from desc:%v, digest from byte:%v", dig, desc.Digest, digest.FromBytes(b))
+				desc, err := GetBlobFromTarget(ctx, w, repo, dig, proxyRegID)
 				if err != nil {
 					log.Error(err)
 					return
 				}
 				setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
-				w.Write(b)
 				go func(desc distribution.Descriptor) {
-					err := PutBlobToLocal(ctx, common.ProxyNamespacePrefix+repo, b, desc, proj.ProjectID)
+
+					err := PutBlobToLocal(ctx, proxyRegID, repo, common.ProxyNamespacePrefix+repo, desc, proj.ProjectID)
+
 					if err != nil {
 						log.Errorf("Error while puting blob to local, %v", err)
 					}
 				}(desc)
+
 				return
 			}
 		}

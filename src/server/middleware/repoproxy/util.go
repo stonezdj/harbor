@@ -15,7 +15,6 @@
 package repoproxy
 
 import (
-	"bytes"
 	"context"
 	"github.com/docker/distribution"
 	"github.com/goharbor/harbor/src/common"
@@ -28,8 +27,8 @@ import (
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/opencontainers/go-digest"
-	"io/ioutil"
 	"strings"
+	"io"
 )
 
 func GetManifestFromTarget(ctx context.Context, repository string, tag string, proxyRegID int64) (distribution.Manifest, distribution.Descriptor, error) {
@@ -50,21 +49,25 @@ func GetManifestFromTargetWithDigest(ctx context.Context, repository string, dig
 	return man, err
 }
 
-func GetBlobFromTarget(ctx context.Context, repository string, dig string, proxyRegID int64) ([]byte, distribution.Descriptor, error) {
+func GetBlobFromTarget(ctx context.Context, w io.Writer, repository string, dig string, proxyRegID int64) (distribution.Descriptor, error) {
 	d := distribution.Descriptor{}
 	adapter, err := CreateRegistryAdapter(proxyRegID)
 	if err != nil {
-		return nil, d, err
+		return d, err
 	}
 
 	desc, bReader, err := adapter.PullBlob(repository, dig)
 	if err != nil {
 		log.Error(err)
 	}
-	blob, err := ioutil.ReadAll(bReader)
+	//blob, err := ioutil.ReadAll(bReader)
 	defer bReader.Close()
+	written, err :=io.CopyN(w, bReader, desc.Size)
 	if err != nil {
 		log.Error(err)
+	}
+	if written!=desc.Size {
+		log.Error("The size mismatch, actual:%d, expected: %d", written, desc.Size)
 	}
 	if string(desc.Digest) != dig {
 		log.Errorf("origin dig:%v actual: %v", dig, string(desc.Digest))
@@ -73,17 +76,39 @@ func GetBlobFromTarget(ctx context.Context, repository string, dig string, proxy
 	d.MediaType = desc.MediaType
 	d.Digest = digest.Digest(dig)
 
-	return blob, d, err
+	return d, err
 }
 
-func PutBlobToLocal(ctx context.Context, repo string, bl []byte, desc distribution.Descriptor, projID int64) error {
+func PutBlobToLocal(ctx context.Context, proxyRegID int64, orgRepo string, localRepo string, desc distribution.Descriptor, projID int64) error {
 	log.Debugf("Put bl to local registry!, digest: %v", desc.Digest)
 	adapter, err := CreateLocalRegistryAdapter()
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	err = adapter.PushBlob(repo, string(desc.Digest), desc.Size, bytes.NewReader(bl))
+	orgAdapter, err := CreateRegistryAdapter(proxyRegID)
+	if err!=nil {
+		log.Error(err)
+		return err
+	}
+
+	_, bReader, err := orgAdapter.PullBlob(orgRepo, string(desc.Digest))
+	defer bReader.Close()
+	if err!=nil {
+		log.Error(err)
+		return err
+	}
+	err = adapter.PushBlob(localRepo, string(desc.Digest), desc.Size, bReader)
+	if err == nil {
+		blobID, err := blob.Ctl.Ensure(ctx, string(desc.Digest), desc.MediaType, desc.Size)
+		if err != nil {
+			log.Error(err)
+		}
+		err = blob.Ctl.AssociateWithProjectByID(ctx, blobID, projID)
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	return err
 }
 
@@ -129,7 +154,12 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 	if tag == "" {
 		tag = "latest"
 	}
+
 	_, err = adapter.PushManifest(repo, tag, mediaType, payload)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
 	return err
 }
 
