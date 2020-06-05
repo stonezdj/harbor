@@ -25,12 +25,10 @@ import (
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/controller/project"
-	"github.com/goharbor/harbor/src/controller/quota"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/distribution"
-	"github.com/goharbor/harbor/src/pkg/types"
 	"github.com/goharbor/harbor/src/server/middleware"
 	"github.com/opencontainers/go-digest"
 )
@@ -51,8 +49,6 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			//proxyRegID:= int64(1)
-			projIDstr := fmt.Sprintf("%v", proj.ProjectID)
 			if err != nil {
 				log.Error(err)
 			}
@@ -74,10 +70,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 				setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
 				w.Write(b)
 				go func(desc distribution.Descriptor) {
-					res := types.ResourceList{types.ResourceStorage: int64(len(b))}
-					err = quota.Ctl.Request(ctx, quota.ProjectReference, projIDstr, res, func() error {
-						return PutBlobToLocal(ctx, common.ProxyNamespacePrefix+repo, b, desc, proj.ProjectID)
-					})
+					err := PutBlobToLocal(ctx, common.ProxyNamespacePrefix+repo, b, desc, proj.ProjectID)
 					if err != nil {
 						log.Errorf("Error while puting blob to local, %v", err)
 					}
@@ -106,7 +99,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			log.Error(err)
 		}
 		//proxyRegID := proj.ProxyRegistryID
-		if proj.ProjectID <=1 {
+		if proj.ProjectID <= 1 {
 			next.ServeHTTP(w, r)
 			return
 		}
