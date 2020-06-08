@@ -16,8 +16,10 @@ package repoproxy
 
 import (
 	"context"
+	"io"
+	"strings"
+
 	"github.com/docker/distribution"
-	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -27,8 +29,6 @@ import (
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/opencontainers/go-digest"
-	"strings"
-	"io"
 )
 
 func GetManifestFromTarget(ctx context.Context, repository string, tag string, proxyRegID int64) (distribution.Manifest, distribution.Descriptor, error) {
@@ -62,12 +62,12 @@ func GetBlobFromTarget(ctx context.Context, w io.Writer, repository string, dig 
 	}
 	//blob, err := ioutil.ReadAll(bReader)
 	defer bReader.Close()
-	written, err :=io.CopyN(w, bReader, desc.Size)
+	written, err := io.CopyN(w, bReader, desc.Size)
 	if err != nil {
 		log.Error(err)
 	}
-	if written!=desc.Size {
-		log.Error("The size mismatch, actual:%d, expected: %d", written, desc.Size)
+	if written != desc.Size {
+		log.Errorf("The size mismatch, actual:%d, expected: %d", written, desc.Size)
 	}
 	if string(desc.Digest) != dig {
 		log.Errorf("origin dig:%v actual: %v", dig, string(desc.Digest))
@@ -87,14 +87,14 @@ func PutBlobToLocal(ctx context.Context, proxyRegID int64, orgRepo string, local
 		return err
 	}
 	orgAdapter, err := CreateRegistryAdapter(proxyRegID)
-	if err!=nil {
+	if err != nil {
 		log.Error(err)
 		return err
 	}
 
 	_, bReader, err := orgAdapter.PullBlob(orgRepo, string(desc.Digest))
 	defer bReader.Close()
-	if err!=nil {
+	if err != nil {
 		log.Error(err)
 		return err
 	}
@@ -120,7 +120,7 @@ func CreateLocalRegistryAdapter() (*base.Adapter, error) {
 		URL: registryURL,
 		Credential: &model.Credential{
 			Type:         model.CredentialTypeSecret,
-			AccessSecret: config.JobserviceSecret(),
+			AccessSecret: config.ProxyServiceSecret,
 		},
 	}
 	return base.New(reg)
@@ -163,8 +163,10 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 	return err
 }
 
-func CheckDependencies(ctx context.Context, man distribution.Manifest, dig string) bool {
+// CheckDependencies -- check all blobs used by this manifiest are ready
+func CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) bool {
 	// TODO: change blob.Ctl to use HEAD method
+	// TODO: CheckDependencies fails when pushing manifest list!
 	descriptors := man.References()
 	for _, desc := range descriptors {
 		log.Infof("checking the blob depedency: %v", desc.Digest)
@@ -184,9 +186,9 @@ func CheckDependencies(ctx context.Context, man distribution.Manifest, dig strin
 
 }
 
-func TrimProxyPrefix(repo string) string {
-	if strings.HasPrefix(repo, common.ProxyNamespacePrefix) {
-		return strings.TrimPrefix(repo, common.ProxyNamespacePrefix)
+func TrimProxyPrefix(projectName, repo string) string {
+	if strings.HasPrefix(repo, projectName+"/") {
+		return strings.TrimPrefix(repo, projectName+"/")
 	}
 	return repo
 }

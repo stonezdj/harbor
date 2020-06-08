@@ -162,5 +162,4 @@ const (
 	// ForeignLayer
 	ForeignLayer = "application/vnd.docker.image.rootfs.foreign.diff.tar.gzip"
 
-	ProxyNamespacePrefix = "dockerhub_proxy/"
 )

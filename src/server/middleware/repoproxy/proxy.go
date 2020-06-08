@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/controller/project"
@@ -41,7 +40,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			projectName := parseProject(r.URL.String())
 			dig := parseBlob(r.URL.String())
 			repo := parseRepo(r.URL.String())
-			repo = TrimProxyPrefix(repo)
+			repo = TrimProxyPrefix(projectName, repo)
 			proj, err := project.Ctl.GetByName(ctx, projectName, project.Metadata(false))
 			proxyRegID := proj.RegistryID
 			if proxyRegID == 0 {
@@ -69,7 +68,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 				setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
 				go func(desc distribution.Descriptor) {
 
-					err := PutBlobToLocal(ctx, proxyRegID, repo, common.ProxyNamespacePrefix+repo, desc, proj.ProjectID)
+					err := PutBlobToLocal(ctx, proxyRegID, repo, projectName+"/"+repo, desc, proj.ProjectID)
 
 					if err != nil {
 						log.Errorf("Error while puting blob to local, %v", err)
@@ -99,20 +98,18 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		if err != nil {
 			log.Error(err)
 		}
-		//proxyRegID := proj.ProxyRegistryID
-		if proj.ProjectID <= 1 {
+		proxyRegID := proj.RegistryID
+		if proxyRegID == 0 {
 			next.ServeHTTP(w, r)
 			return
 		}
-		proxyRegID := int64(1)
 
-		//projIDstr := fmt.Sprintf("%v", proj.ProjectID)
 		log.Infof("Getting artifact %v", art)
 		_, err = artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
 		if errors.IsNotFoundErr(err) {
 			log.Infof("The artifact is not found! artifact: %v", art)
 			log.Info("Retrieve the artifact from proxy server")
-			repo := TrimProxyPrefix(art.Repository)
+			repo := TrimProxyPrefix(art.ProjectName, art.Repository)
 			log.Infof("Repository name: %v", repo)
 			log.Infof("the tag is %v", string(art.Tag))
 			log.Infof("the digest is %v", string(art.Digest))
@@ -130,13 +127,13 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 					n := 0
 					for n < 30 {
 						time.Sleep(30 * time.Second)
-						if CheckDependencies(ctx, man, string(art.Digest)) {
+						if CheckDependencies(ctx, man, string(art.Digest), ct) {
 							break
 						}
 						n = n + 1
 					}
 
-					err = PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, "", proj.ProjectID)
+					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, man, "", proj.ProjectID)
 					if err != nil {
 						log.Errorf("error %v", err)
 					}
@@ -156,13 +153,13 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 					n := 0
 					for n < 30 {
 						time.Sleep(30 * time.Second)
-						if CheckDependencies(ctx, man, art.Digest) {
+						if CheckDependencies(ctx, man, art.Digest, ct) {
 							break
 						}
 						n = n + 1
 					}
 
-					err = PutManifestToLocalRepo(ctx, common.ProxyNamespacePrefix+repo, man, art.Tag, proj.ProjectID)
+					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, man, art.Tag, proj.ProjectID)
 
 					if err != nil {
 						log.Errorf("error %v", err)

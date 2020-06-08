@@ -16,7 +16,6 @@ package token
 
 import (
 	"crypto"
-	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -30,6 +29,7 @@ import (
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/core/promgr"
 	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/common/utils"
 )
 
 const (
@@ -150,7 +150,7 @@ func makeTokenCore(issuer, subject, audience string, expiration int,
 		KeyID:      signingKey.KeyID(),
 	}
 
-	jwtID, err := randString(16)
+	jwtID, err := utils.RandString(16)
 	if err != nil {
 		return nil, 0, nil, fmt.Errorf("Error to generate jwt id: %s", err)
 	}
@@ -192,19 +192,6 @@ func makeTokenCore(issuer, subject, audience string, expiration int,
 	tokenString := fmt.Sprintf("%s.%s", payload, signature)
 	t, err = token.NewToken(tokenString)
 	return
-}
-
-func randString(length int) (string, error) {
-	const alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	rb := make([]byte, length)
-	_, err := rand.Read(rb)
-	if err != nil {
-		return "", err
-	}
-	for i, b := range rb {
-		rb[i] = alphanum[int(b)%len(alphanum)]
-	}
-	return string(rb), nil
 }
 
 func base64UrlEncode(b []byte) string {

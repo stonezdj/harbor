@@ -29,6 +29,8 @@ import (
 	"github.com/goharbor/harbor/src/core/promgr"
 	"github.com/goharbor/harbor/src/core/promgr/pmsdriver/local"
 	"github.com/goharbor/harbor/src/lib/log"
+
+	"github.com/goharbor/harbor/src/common/utils"
 )
 
 const (
@@ -46,8 +48,9 @@ var (
 	GlobalProjectMgr promgr.ProjectManager
 	keyProvider      comcfg.KeyProvider
 	// defined as a var for testing.
-	defaultCACertPath = "/etc/core/ca/ca.crt"
-	cfgMgr            *comcfg.CfgManager
+	defaultCACertPath   = "/etc/core/ca/ca.crt"
+	cfgMgr             *comcfg.CfgManager
+	ProxyServiceSecret, _= utils.RandString(16)
 )
 
 // Init configurations
@@ -88,6 +91,7 @@ func initKeyProvider() {
 func initSecretStore() {
 	m := map[string]string{}
 	m[JobserviceSecret()] = secret.JobserviceUser
+	m[ProxyServiceSecret] = secret.ProxyserviceUser
 	SecretStore = secret.NewStore(m)
 }
 

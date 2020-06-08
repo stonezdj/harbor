@@ -109,3 +109,16 @@ func decryptAES(str, key string) (string, error) {
 	cfb.XORKeyStream(cipherText, cipherText)
 	return string(cipherText), nil
 }
+// RandString - Generate a fixed length random string with numbers and alphabet
+func RandString(length int) (string, error) {
+	const alphanum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	rb := make([]byte, length)
+	_, err := rand.Read(rb)
+	if err != nil {
+		return "", err
+	}
+	for i, b := range rb {
+		rb[i] = alphanum[int(b)%len(alphanum)]
+	}
+	return string(rb), nil
+}
