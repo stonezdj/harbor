@@ -139,7 +139,26 @@ func CreateRegistryAdapter(proxyRegID int64) (*native.Adapter, error) {
 	return native.NewAdapter(r), nil
 }
 
+func releaseLock(artifact string){
+	mu.Lock()
+	delete(inflight, artifact)
+	mu.Unlock()
+}
 func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.Manifest, tag string, projectID int64) error {
+
+	// Make sure there is only one go routing to push current artifact to local repo
+	artifact := repo +":"+tag
+	mu.Lock()
+	_, ok := inflight[artifact]
+	if ok {
+		mu.Unlock()
+		// Skip to copy artifact if there is existing job running
+		return nil
+	}
+	inflight[artifact] = 1
+	mu.Unlock()
+	defer releaseLock(artifact)
+
 	adapter, err := CreateLocalRegistryAdapter()
 	if err != nil {
 		log.Error(err)
