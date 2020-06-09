@@ -57,11 +57,10 @@ func GetBlobFromTarget(ctx context.Context, w io.Writer, repository string, dig 
 	}
 
 	desc, bReader, err := adapter.PullBlob(repository, dig)
+	defer bReader.Close()
 	if err != nil {
 		log.Error(err)
 	}
-	//blob, err := ioutil.ReadAll(bReader)
-	defer bReader.Close()
 	written, err := io.CopyN(w, bReader, desc.Size)
 	if err != nil {
 		log.Error(err)
