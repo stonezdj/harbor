@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/docker/distribution"
+	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -79,7 +80,7 @@ func GetBlobFromTarget(ctx context.Context, w io.Writer, repository string, dig 
 }
 
 func PutBlobToLocal(ctx context.Context, proxyRegID int64, orgRepo string, localRepo string, desc distribution.Descriptor, projID int64) error {
-	log.Debugf("Put bl to local registry!, digest: %v", desc.Digest)
+	log.Debugf("Put bl to local registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
 	adapter, err := CreateLocalRegistryAdapter()
 	if err != nil {
 		log.Error(err)
@@ -98,16 +99,6 @@ func PutBlobToLocal(ctx context.Context, proxyRegID int64, orgRepo string, local
 		return err
 	}
 	err = adapter.PushBlob(localRepo, string(desc.Digest), desc.Size, bReader)
-	if err == nil {
-		blobID, err := blob.Ctl.Ensure(ctx, string(desc.Digest), desc.MediaType, desc.Size)
-		if err != nil {
-			log.Error(err)
-		}
-		err = blob.Ctl.AssociateWithProjectByID(ctx, blobID, projID)
-		if err != nil {
-			log.Error(err)
-		}
-	}
 	return err
 }
 
@@ -138,7 +129,7 @@ func CreateRegistryAdapter(proxyRegID int64) (*native.Adapter, error) {
 	return native.NewAdapter(r), nil
 }
 
-func releaseLock(artifact string){
+func releaseLock(artifact string) {
 	mu.Lock()
 	delete(inflight, artifact)
 	mu.Unlock()
@@ -146,7 +137,7 @@ func releaseLock(artifact string){
 func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.Manifest, tag string, projectID int64) error {
 
 	// Make sure there is only one go routing to push current artifact to local repo
-	artifact := repo +":"+tag
+	artifact := repo + ":" + tag
 	mu.Lock()
 	_, ok := inflight[artifact]
 	if ok {
@@ -163,12 +154,13 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 		log.Error(err)
 		return err
 	}
+
 	mediaType, payload, err := mfst.Payload()
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	log.Infof("Pushing manifest to repo: %v, tag:%v", repo, tag)
+	log.Infof("Pushing manifest to repo: %v, tag:%v, payload: %v", repo, tag, string(payload))
 	if tag == "" {
 		tag = "latest"
 	}
@@ -182,25 +174,22 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 }
 
 // CheckDependencies -- check all blobs used by this manifiest are ready
-func CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) bool {
+func CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
 	// TODO: change blob.Ctl to use HEAD method
 	// TODO: CheckDependencies fails when pushing manifest list!
 	descriptors := man.References()
+	waitDesc := make([]distribution.Descriptor, 0)
 	for _, desc := range descriptors {
 		log.Infof("checking the blob depedency: %v", desc.Digest)
 		exist, err := blob.Ctl.Exist(ctx, string(desc.Digest))
-		if err != nil {
+		if err != nil || !exist {
 			log.Info("Check dependency failed!")
-			return false
-		}
-		if !exist {
-			log.Info("Check dependency failed!")
-			return false
+			waitDesc = append(waitDesc, desc)
 		}
 	}
 
-	log.Info("Check dependency success!")
-	return true
+	log.Infof("Check dependency result %v", waitDesc)
+	return waitDesc
 
 }
 
@@ -209,4 +198,18 @@ func TrimProxyPrefix(projectName, repo string) string {
 		return strings.TrimPrefix(repo, projectName+"/")
 	}
 	return repo
+}
+
+func TrimManifestList(manifest distribution.Manifest, os, arch, variant string) (distribution.Manifest, error) {
+	switch v := manifest.(type) {
+	case *manifestlist.DeserializedManifestList:
+		trimedList := make([]manifestlist.ManifestDescriptor, 0)
+		for _, m := range v.Manifests {
+			if m.Platform.OS == os && m.Platform.Architecture == arch && m.Platform.Variant == variant {
+				trimedList = append(trimedList, m)
+			}
+		}
+		return manifestlist.FromDescriptors(trimedList)
+	}
+	return manifest, nil
 }

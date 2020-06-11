@@ -19,8 +19,10 @@ import (
 
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/controller/project"
@@ -30,8 +32,13 @@ import (
 	"github.com/goharbor/harbor/src/pkg/distribution"
 	"github.com/goharbor/harbor/src/server/middleware"
 )
+
 var mu sync.Mutex
 var inflight = make(map[string]interface{})
+
+const maxWait = 10
+const maxManifestWait = 20
+const sleepIntervaSec = 10
 
 func BlobGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
@@ -125,17 +132,49 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 				setHeaders(w, int64(len(p)), ct, art.Digest)
 				w.Write(p)
 
+				// Trim manifest
+				var newMan distribution.Manifest
+				if ct == manifestlist.MediaTypeManifestList {
+					newMan, err = TrimManifestList(man, "linux", "amd64", "")
+					if err != nil {
+						log.Error(err)
+					}
+					_, playload, _ := newMan.Payload()
+					log.Infof("The trimed manifest is %v", string(playload))
+				} else {
+					newMan = man
+				}
+
 				go func() {
 					n := 0
-					for n < 30 {
-						time.Sleep(30 * time.Second)
-						if CheckDependencies(ctx, man, string(art.Digest), ct) {
+					var waitBlobs []distribution.Descriptor
+					wait := maxWait
+					if ct == manifestlist.MediaTypeManifestList {
+						wait = maxManifestWait
+					}
+					for n < wait {
+						time.Sleep(sleepIntervaSec * time.Second)
+						waitBlobs = CheckDependencies(ctx, newMan, string(art.Digest), ct)
+						if len(waitBlobs) == 0 {
 							break
 						}
 						n = n + 1
+						log.Infof("Current n=%v", n)
+
+						if n+1 == maxWait && len(waitBlobs) > 0 && ct != manifestlist.MediaTypeManifestList {
+							log.Info("Waiting blobs not empty, push it to local repo manually")
+							for _, desc := range waitBlobs {
+								PutBlobToLocal(ctx, proj.RegistryID, repo, art.ProjectName+"/"+repo, desc, proj.ProjectID)
+							}
+							time.Sleep(10 * time.Second)
+						}
+
+					}
+					for _, r := range newMan.References() {
+						log.Infof("current %v, reference digest %v", art.Digest, r.Digest)
 					}
 
-					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, man, "", proj.ProjectID)
+					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, newMan, "", proj.ProjectID)
 					if err != nil {
 						log.Errorf("error %v", err)
 					}
@@ -151,18 +190,44 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 				setHeaders(w, int64(len(p)), ct, art.Digest)
 				w.Write(p)
 
+				//Trim manifest
+				var newMan distribution.Manifest
+				if ct == manifestlist.MediaTypeManifestList {
+					newMan, err = TrimManifestList(man, "linux", "amd64", "")
+					if err != nil {
+						log.Error(err)
+					}
+					_, playload, _ := newMan.Payload()
+					log.Infof("The trimed manifest is %v", string(playload))
+				} else {
+					newMan = man
+				}
+
 				go func() {
+					var waitBlobs []distribution.Descriptor
 					n := 0
-					for n < 30 {
-						time.Sleep(30 * time.Second)
-						if CheckDependencies(ctx, man, art.Digest, ct) {
+					wait := maxWait
+					if ct == manifestlist.MediaTypeManifestList {
+						wait = maxManifestWait
+					}
+					for n < wait {
+						time.Sleep(sleepIntervaSec * time.Second)
+						waitBlobs = CheckDependencies(ctx, newMan, art.Digest, ct)
+						if len(waitBlobs) == 0 {
 							break
 						}
 						n = n + 1
+						log.Infof("Current n=%v", n)
+					}
+					if n+1 == maxWait && len(waitBlobs) > 0 && ct != manifestlist.MediaTypeManifestList {
+						log.Info("Waiting blobs not empty, push it to local repo manually")
+						for _, desc := range waitBlobs {
+							PutBlobToLocal(ctx, proj.RegistryID, repo, art.ProjectName+"/"+repo, desc, proj.ProjectID)
+						}
+						time.Sleep(10 * time.Second)
 					}
 
-					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, man, art.Tag, proj.ProjectID)
-
+					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, newMan, art.Tag, proj.ProjectID)
 					if err != nil {
 						log.Errorf("error %v", err)
 					}
