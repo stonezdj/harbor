@@ -46,7 +46,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		if middleware.V2BlobURLRe.MatchString(r.URL.String()) && r.Method == http.MethodGet {
 			log.Infof("Getting blob with url: %v\n", r.URL.String())
 			ctx := r.Context()
-			projectName := parseProject(r.URL.String())
+			projectName := distribution.ParseProjectName(r.URL.String())
 			dig := parseBlob(r.URL.String())
 			repo := parseRepo(r.URL.String())
 			repo = TrimProxyPrefix(projectName, repo)
@@ -246,17 +246,6 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-func parseProject(url string) string {
-	parts := strings.Split(url, ":")
-	if len(parts) == 2 {
-		paths := strings.Split(parts[0], "/")
-		if len(paths) > 2 {
-			return paths[2]
-		}
-	}
-	return ""
 }
 
 func parseRepo(url string) string {
