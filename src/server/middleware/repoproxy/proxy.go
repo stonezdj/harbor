@@ -37,7 +37,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			repo := parseRepo(r.URL.String())
 			repo = TrimProxyPrefix(pName, repo)
 			p, err := project.Ctl.GetByName(ctx, pName, project.Metadata(false))
-			proxyRegID := p.ProxyRegistryID
+			proxyRegID := p.RegistryID
 			if proxyRegID == 0 {
 				next.ServeHTTP(w, r)
 				return

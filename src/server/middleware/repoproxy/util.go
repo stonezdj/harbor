@@ -305,7 +305,7 @@ func WaitAndPushManifest(contType string, ctx context.Context, man distribution.
 		if n+1 == maxWait && len(waitBlobs) > 0 && contType != manifestlist.MediaTypeManifestList {
 			log.Info("Waiting blobs not empty, push it to local repo manually")
 			for _, desc := range waitBlobs {
-				PutBlobToLocal(ctx, proj.ProxyRegistryID, repo, art.ProjectName+"/"+repo, desc, proj.ProjectID)
+				PutBlobToLocal(ctx, proj.RegistryID, repo, art.ProjectName+"/"+repo, desc, proj.ProjectID)
 			}
 			time.Sleep(10 * time.Second)
 		}
