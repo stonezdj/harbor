@@ -17,14 +17,7 @@ package repoproxy
 import (
 	"net/http"
 
-	"fmt"
-	"strings"
-	"sync"
-	"time"
-
-	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/goharbor/harbor/src/controller/artifact"
-	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/errors"
@@ -33,25 +26,18 @@ import (
 	"github.com/goharbor/harbor/src/server/middleware"
 )
 
-var mu sync.Mutex
-var inflight = make(map[string]interface{})
-
-const maxWait = 10
-const maxManifestWait = 20
-const sleepIntervaSec = 10
-
 func BlobGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		log.Infof("Request url is %v", r.URL)
 		if middleware.V2BlobURLRe.MatchString(r.URL.String()) && r.Method == http.MethodGet {
 			log.Infof("Getting blob with url: %v\n", r.URL.String())
 			ctx := r.Context()
-			projectName := distribution.ParseProjectName(r.URL.String())
+			pName := distribution.ParseProjectName(r.URL.String())
 			dig := parseBlob(r.URL.String())
 			repo := parseRepo(r.URL.String())
-			repo = TrimProxyPrefix(projectName, repo)
-			proj, err := project.Ctl.GetByName(ctx, projectName, project.Metadata(false))
-			proxyRegID := proj.RegistryID
+			repo = TrimProxyPrefix(pName, repo)
+			p, err := project.Ctl.GetByName(ctx, pName, project.Metadata(false))
+			proxyRegID := p.ProxyRegistryID
 			if proxyRegID == 0 {
 				next.ServeHTTP(w, r)
 				return
@@ -59,10 +45,10 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			if err != nil {
 				log.Error(err)
 			}
-			log.Infof("The project id is %v", proj.ProjectID)
+			log.Infof("The project id is %v", p.ProjectID)
 			log.Info(dig)
-			// TODO: use head to check exist
-			exist, err := blob.Ctl.Exist(ctx, dig, blob.IsAssociatedWithProject(proj.ProjectID))
+
+			exist, err := BlobExist(ctx, dig)
 			if err == nil && exist {
 				log.Info("The blob exist!")
 			}
@@ -77,7 +63,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 				setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
 				go func(desc distribution.Descriptor) {
 
-					err := PutBlobToLocal(ctx, proxyRegID, repo, projectName+"/"+repo, desc, proj.ProjectID)
+					err := PutBlobToLocal(ctx, proxyRegID, repo, pName+"/"+repo, desc, p.ProjectID)
 
 					if err != nil {
 						log.Errorf("Error while puting blob to local, %v", err)
@@ -91,14 +77,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 	})
 }
 
-func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string) {
-	w.Header().Set("Content-Length", fmt.Sprintf("%v", size))
-	w.Header().Set("Content-Type", mediaType)
-	w.Header().Set("Docker-Content-Digest", dig)
-	w.Header().Set("Etag", dig)
-}
-
-// BlobGetMiddleware middleware which add logger to context
+// ManifestGetMiddleware middleware handle request for get blob request
 func ManifestGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		ctx := r.Context()
@@ -115,153 +94,42 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 
 		log.Infof("Getting artifact %v", art)
 		_, err = artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
-		if errors.IsNotFoundErr(err) {
-			log.Infof("The artifact is not found! artifact: %v", art)
-			log.Info("Retrieve the artifact from proxy server")
-			repo := TrimProxyPrefix(art.ProjectName, art.Repository)
-			log.Infof("Repository name: %v", repo)
-			log.Infof("the tag is %v", string(art.Tag))
-			log.Infof("the digest is %v", string(art.Digest))
-			if len(string(art.Digest)) > 0 {
-				man, err := GetManifestFromTargetWithDigest(ctx, repo, string(art.Digest), 1)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				ct, p, err := man.Payload()
-				setHeaders(w, int64(len(p)), ct, art.Digest)
-				w.Write(p)
-
-				// Trim manifest
-				var newMan distribution.Manifest
-				if ct == manifestlist.MediaTypeManifestList {
-					newMan, err = TrimManifestList(man, "linux", "amd64", "")
-					if err != nil {
-						log.Error(err)
-					}
-					_, playload, _ := newMan.Payload()
-					log.Infof("The trimed manifest is %v", string(playload))
-				} else {
-					newMan = man
-				}
-
-				go func() {
-					n := 0
-					var waitBlobs []distribution.Descriptor
-					wait := maxWait
-					if ct == manifestlist.MediaTypeManifestList {
-						wait = maxManifestWait
-					}
-					for n < wait {
-						time.Sleep(sleepIntervaSec * time.Second)
-						waitBlobs = CheckDependencies(ctx, newMan, string(art.Digest), ct)
-						if len(waitBlobs) == 0 {
-							break
-						}
-						n = n + 1
-						log.Infof("Current n=%v", n)
-
-						if n+1 == maxWait && len(waitBlobs) > 0 && ct != manifestlist.MediaTypeManifestList {
-							log.Info("Waiting blobs not empty, push it to local repo manually")
-							for _, desc := range waitBlobs {
-								PutBlobToLocal(ctx, proj.RegistryID, repo, art.ProjectName+"/"+repo, desc, proj.ProjectID)
-							}
-							time.Sleep(10 * time.Second)
-						}
-
-					}
-					for _, r := range newMan.References() {
-						log.Infof("current %v, reference digest %v", art.Digest, r.Digest)
-					}
-
-					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, newMan, "", proj.ProjectID)
-					if err != nil {
-						log.Errorf("error %v", err)
-					}
-				}()
-
-			} else if len(string(art.Tag)) > 0 {
-				man, _, err := GetManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				ct, p, err := man.Payload()
-				setHeaders(w, int64(len(p)), ct, art.Digest)
-				w.Write(p)
-
-				//Trim manifest
-				var newMan distribution.Manifest
-				if ct == manifestlist.MediaTypeManifestList {
-					newMan, err = TrimManifestList(man, "linux", "amd64", "")
-					if err != nil {
-						log.Error(err)
-					}
-					_, playload, _ := newMan.Payload()
-					log.Infof("The trimed manifest is %v", string(playload))
-				} else {
-					newMan = man
-				}
-
-				go func() {
-					var waitBlobs []distribution.Descriptor
-					n := 0
-					wait := maxWait
-					if ct == manifestlist.MediaTypeManifestList {
-						wait = maxManifestWait
-					}
-					for n < wait {
-						time.Sleep(sleepIntervaSec * time.Second)
-						waitBlobs = CheckDependencies(ctx, newMan, art.Digest, ct)
-						if len(waitBlobs) == 0 {
-							break
-						}
-						n = n + 1
-						log.Infof("Current n=%v", n)
-					}
-					if n+1 == maxWait && len(waitBlobs) > 0 && ct != manifestlist.MediaTypeManifestList {
-						log.Info("Waiting blobs not empty, push it to local repo manually")
-						for _, desc := range waitBlobs {
-							PutBlobToLocal(ctx, proj.RegistryID, repo, art.ProjectName+"/"+repo, desc, proj.ProjectID)
-						}
-						time.Sleep(10 * time.Second)
-					}
-
-					err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, newMan, art.Tag, proj.ProjectID)
-					if err != nil {
-						log.Errorf("error %v", err)
-					}
-				}()
-
-				return
-			} else {
-				log.Errorf("Invalid artifact info: %v", art)
-			}
-
-			if err != nil {
-				log.Errorf("Error when fetch manifest from remote %v", err)
-				return
-			}
-
+		if !errors.IsNotFoundErr(err) {
+			next.ServeHTTP(w, r)
+			return
 		}
-		next.ServeHTTP(w, r)
+
+		repo := TrimProxyPrefix(art.ProjectName, art.Repository)
+		log.Infof("the digest is %v", string(art.Digest))
+		if len(string(art.Digest)) > 0 {
+			man, err := GetManifestFromTargetWithDigest(ctx, repo, string(art.Digest), 1)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			ct, p, err := man.Payload()
+			setHeaders(w, int64(len(p)), ct, art.Digest)
+			w.Write(p)
+			go func() {
+				WaitAndPushManifest(ct, ctx, man, art, proj, repo)
+			}()
+			return
+
+		} else if len(string(art.Tag)) > 0 {
+			man, _, err := GetManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			ct, p, err := man.Payload()
+			setHeaders(w, int64(len(p)), ct, art.Digest)
+			w.Write(p)
+
+			go func() {
+				WaitAndPushManifest(ct, ctx, man, art, proj, repo)
+			}()
+
+			return
+		}
 	})
-}
-
-func parseRepo(url string) string {
-	u := strings.TrimPrefix(url, "/v2/")
-	i := strings.LastIndex(u, "/blobs/")
-	if i <= 0 {
-		return url
-	}
-	return u[0:i]
-}
-
-func parseBlob(url string) string {
-
-	parts := strings.Split(url, ":")
-	if len(parts) == 2 {
-		return "sha256:" + parts[1]
-	}
-	return ""
 }

@@ -16,13 +16,16 @@ package repoproxy
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
+	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/core/config"
+	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
 	"github.com/goharbor/harbor/src/replication/adapter/native"
@@ -30,7 +33,30 @@ import (
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/opencontainers/go-digest"
+	"net/http"
+	"sync"
+	"time"
 )
+
+var mu sync.Mutex
+var inflight = make(map[string]interface{})
+
+const maxWait = 10
+const maxManifestWait = 20
+const sleepIntervalSec = 10
+
+func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string) {
+	w.Header().Set("Content-Length", fmt.Sprintf("%v", size))
+	w.Header().Set("Content-Type", mediaType)
+	w.Header().Set("Docker-Content-Digest", dig)
+	w.Header().Set("Etag", dig)
+}
+
+// BlobExist check the blob exist in project
+// TODO: use head to check exist
+func BlobExist(ctx context.Context, dig string) (bool, error) {
+	return blob.Ctl.Exist(ctx, dig)
+}
 
 func GetManifestFromTarget(ctx context.Context, repository string, tag string, proxyRegID int64) (distribution.Manifest, distribution.Descriptor, error) {
 	desc := distribution.Descriptor{}
@@ -134,6 +160,7 @@ func releaseLock(artifact string) {
 	delete(inflight, artifact)
 	mu.Unlock()
 }
+
 func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.Manifest, tag string, projectID int64) error {
 
 	// Make sure there is only one go routing to push current artifact to local repo
@@ -173,15 +200,13 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 	return err
 }
 
-// CheckDependencies -- check all blobs used by this manifiest are ready
+// CheckDependencies -- check all blobs used by this manifest are ready
 func CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
-	// TODO: change blob.Ctl to use HEAD method
-	// TODO: CheckDependencies fails when pushing manifest list!
 	descriptors := man.References()
 	waitDesc := make([]distribution.Descriptor, 0)
 	for _, desc := range descriptors {
 		log.Infof("checking the blob depedency: %v", desc.Digest)
-		exist, err := blob.Ctl.Exist(ctx, string(desc.Digest))
+		exist, err := BlobExist(ctx, string(desc.Digest))
 		if err != nil || !exist {
 			log.Info("Check dependency failed!")
 			waitDesc = append(waitDesc, desc)
@@ -212,4 +237,85 @@ func TrimManifestList(manifest distribution.Manifest, os, arch, variant string) 
 		return manifestlist.FromDescriptors(trimedList)
 	}
 	return manifest, nil
+}
+
+func UpdateManifestList(ctx context.Context, manifest distribution.Manifest) (distribution.Manifest, error) {
+	switch v := manifest.(type) {
+	case *manifestlist.DeserializedManifestList:
+		trimedList := make([]manifestlist.ManifestDescriptor, 0)
+		for _, m := range v.Manifests {
+			exist, err := BlobExist(ctx, string(m.Digest))
+			if err != nil {
+				continue
+			}
+			if exist {
+				trimedList = append(trimedList, m)
+			}
+
+		}
+		return manifestlist.FromDescriptors(trimedList)
+	}
+	return manifest, nil
+}
+
+func parseRepo(url string) string {
+	u := strings.TrimPrefix(url, "/v2/")
+	i := strings.LastIndex(u, "/blobs/")
+	if i <= 0 {
+		return url
+	}
+	return u[0:i]
+}
+
+func parseBlob(url string) string {
+
+	parts := strings.Split(url, ":")
+	if len(parts) == 2 {
+		return "sha256:" + parts[1]
+	}
+	return ""
+}
+
+func WaitAndPushManifest(contType string, ctx context.Context, man distribution.Manifest, art lib.ArtifactInfo, proj *models.Project, repo string) {
+	var waitBlobs []distribution.Descriptor
+	n := 0
+	wait := maxWait
+	if contType == manifestlist.MediaTypeManifestList {
+		wait = maxManifestWait
+		time.Sleep(maxManifestWait * sleepIntervalSec)
+		newMan, err := UpdateManifestList(ctx, man)
+		if err != nil {
+			log.Error(err)
+		}
+		err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, newMan, "", proj.ProjectID)
+		if err != nil {
+			log.Errorf("error %v", err)
+		}
+		return
+	}
+
+	for n < wait {
+		time.Sleep(sleepIntervalSec * time.Second)
+		waitBlobs = CheckDependencies(ctx, man, string(art.Digest), contType)
+		if len(waitBlobs) == 0 {
+			break
+		}
+		n = n + 1
+		log.Infof("Current n=%v", n)
+		if n+1 == maxWait && len(waitBlobs) > 0 && contType != manifestlist.MediaTypeManifestList {
+			log.Info("Waiting blobs not empty, push it to local repo manually")
+			for _, desc := range waitBlobs {
+				PutBlobToLocal(ctx, proj.ProxyRegistryID, repo, art.ProjectName+"/"+repo, desc, proj.ProjectID)
+			}
+			time.Sleep(10 * time.Second)
+		}
+
+	}
+	for _, r := range man.References() {
+		log.Infof("current %v, reference digest %v", art.Digest, r.Digest)
+	}
+	err := PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, man, "", proj.ProjectID)
+	if err != nil {
+		log.Errorf("error %v", err)
+	}
 }
