@@ -87,8 +87,9 @@ restore_redis() {
 }
 
 restore_chartmuseum() {
-    if [ -d ./harbor/chart_museum ]; then
-        cp -r ./harbor/chart_museum/* /data/chart_museum
+    if [ -d ./harbor/chart_storage ]; then
+        cp -r ./harbor/chart_storage/* /data/chart_storage
+        chown -R 10000 /data/chart_storage
     fi
 }
 
