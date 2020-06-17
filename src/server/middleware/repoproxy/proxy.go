@@ -45,14 +45,8 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			if err != nil {
 				log.Error(err)
 			}
-			log.Infof("The project id is %v", p.ProjectID)
-			log.Info(dig)
 
 			exist, err := BlobExist(ctx, dig)
-			if err == nil && exist {
-				log.Info("The blob exist!")
-			}
-
 			if !exist {
 				log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
 				desc, err := GetBlobFromTarget(ctx, w, repo, dig, proxyRegID)
@@ -61,15 +55,12 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 					return
 				}
 				setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
-				go func(desc distribution.Descriptor) {
-
+				go func() {
 					err := PutBlobToLocal(ctx, proxyRegID, repo, pName+"/"+repo, desc, p.ProjectID)
-
 					if err != nil {
 						log.Errorf("Error while puting blob to local, %v", err)
 					}
-				}(desc)
-
+				}()
 				return
 			}
 		}
@@ -91,7 +82,6 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-
 		log.Infof("Getting artifact %v", art)
 		_, err = artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
 		if !errors.IsNotFoundErr(err) {
@@ -101,35 +91,38 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 
 		repo := TrimProxyPrefix(art.ProjectName, art.Repository)
 		log.Infof("the digest is %v", string(art.Digest))
+		var man distribution.Manifest
 		if len(string(art.Digest)) > 0 {
-			man, err := GetManifestFromTargetWithDigest(ctx, repo, string(art.Digest), 1)
-			if err != nil {
-				log.Error(err)
+			// pull by digest
+			log.Infof("Getting manifest by digiest %v", art.Digest)
+			exist, err := BlobExist(ctx, art.Digest)
+			// exist in local, serve it with local repo
+			if err == nil && exist {
+				next.ServeHTTP(w, r)
 				return
 			}
-			ct, p, err := man.Payload()
-			setHeaders(w, int64(len(p)), ct, art.Digest)
-			w.Write(p)
-			go func() {
-				WaitAndPushManifest(ct, ctx, man, art, proj, repo)
-			}()
-			return
+			man, err = GetManifestFromTargetWithDigest(ctx, repo, string(art.Digest), proxyRegID)
+		} else if len(string(art.Tag)) > 0 { // pull by tag
+			man, _, err = GetManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
+		}
 
-		} else if len(string(art.Tag)) > 0 {
-			man, _, err := GetManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
-			if err != nil {
-				log.Error(err)
-				return
+		if err != nil {
+			if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
+				defer CleanupTagInLocal(ctx, repo, string(art.Tag))
 			}
-			ct, p, err := man.Payload()
-			setHeaders(w, int64(len(p)), ct, art.Digest)
-			w.Write(p)
-
-			go func() {
-				WaitAndPushManifest(ct, ctx, man, art, proj, repo)
-			}()
-
+			log.Error(err)
 			return
 		}
+		ct, p, err := man.Payload()
+		setHeaders(w, int64(len(p)), ct, art.Digest)
+		w.Write(p)
+
+		// Push manifest in background
+		go func() {
+			WaitAndPushManifest(ct, ctx, man, art, proj, repo, string(art.Tag))
+		}()
+
+		return
+
 	})
 }

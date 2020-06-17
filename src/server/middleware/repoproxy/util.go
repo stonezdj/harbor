@@ -42,8 +42,8 @@ var mu sync.Mutex
 var inflight = make(map[string]interface{})
 
 const maxWait = 10
-const maxManifestWait = 20
-const sleepIntervalSec = 10
+const maxManifestWait = 40
+const sleepIntervalSec = 20
 
 func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string) {
 	w.Header().Set("Content-Length", fmt.Sprintf("%v", size))
@@ -67,7 +67,7 @@ func GetManifestFromTarget(ctx context.Context, repository string, tag string, p
 	}
 	man, dig, err := adapter.PullManifest(repository, tag)
 	desc.Digest = digest.Digest(dig)
-	return man, desc, nil
+	return man, desc, err
 }
 
 func GetManifestFromTargetWithDigest(ctx context.Context, repository string, dig string, proxyRegID int64) (distribution.Manifest, error) {
@@ -162,7 +162,6 @@ func releaseLock(artifact string) {
 }
 
 func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.Manifest, tag string, projectID int64) error {
-
 	// Make sure there is only one go routing to push current artifact to local repo
 	artifact := repo + ":" + tag
 	mu.Lock()
@@ -191,7 +190,6 @@ func PutManifestToLocalRepo(ctx context.Context, repo string, mfst distribution.
 	if tag == "" {
 		tag = "latest"
 	}
-
 	_, err = adapter.PushManifest(repo, tag, mediaType, payload)
 	if err != nil {
 		log.Error(err)
@@ -239,6 +237,7 @@ func TrimManifestList(manifest distribution.Manifest, os, arch, variant string) 
 	return manifest, nil
 }
 
+// UpdateManifestList -- Trim the manifest list, make sure all depend manifests are ready
 func UpdateManifestList(ctx context.Context, manifest distribution.Manifest) (distribution.Manifest, error) {
 	switch v := manifest.(type) {
 	case *manifestlist.DeserializedManifestList:
@@ -253,11 +252,15 @@ func UpdateManifestList(ctx context.Context, manifest distribution.Manifest) (di
 			}
 
 		}
-		return manifestlist.FromDescriptors(trimedList)
+		if len(trimedList) > 0 {
+			// Avoid empty manifest in the manifest list
+			return manifestlist.FromDescriptors(trimedList)
+		}
 	}
 	return manifest, nil
 }
 
+// parseRepo parse the repo name from request url
 func parseRepo(url string) string {
 	u := strings.TrimPrefix(url, "/v2/")
 	i := strings.LastIndex(u, "/blobs/")
@@ -268,7 +271,6 @@ func parseRepo(url string) string {
 }
 
 func parseBlob(url string) string {
-
 	parts := strings.Split(url, ":")
 	if len(parts) == 2 {
 		return "sha256:" + parts[1]
@@ -276,18 +278,19 @@ func parseBlob(url string) string {
 	return ""
 }
 
-func WaitAndPushManifest(contType string, ctx context.Context, man distribution.Manifest, art lib.ArtifactInfo, proj *models.Project, repo string) {
+func WaitAndPushManifest(contType string, ctx context.Context, man distribution.Manifest, art lib.ArtifactInfo, proj *models.Project, repo, tag string) {
 	var waitBlobs []distribution.Descriptor
 	n := 0
 	wait := maxWait
 	if contType == manifestlist.MediaTypeManifestList {
 		wait = maxManifestWait
-		time.Sleep(maxManifestWait * sleepIntervalSec)
+		// Make sure all depend manifests are pushed to local repo
+		time.Sleep(maxManifestWait * sleepIntervalSec * time.Second)
 		newMan, err := UpdateManifestList(ctx, man)
 		if err != nil {
 			log.Error(err)
 		}
-		err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, newMan, "", proj.ProjectID)
+		err = PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, newMan, tag, proj.ProjectID)
 		if err != nil {
 			log.Errorf("error %v", err)
 		}
@@ -314,8 +317,12 @@ func WaitAndPushManifest(contType string, ctx context.Context, man distribution.
 	for _, r := range man.References() {
 		log.Infof("current %v, reference digest %v", art.Digest, r.Digest)
 	}
-	err := PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, man, "", proj.ProjectID)
+	err := PutManifestToLocalRepo(ctx, art.ProjectName+"/"+repo, man, tag, proj.ProjectID)
 	if err != nil {
 		log.Errorf("error %v", err)
 	}
+}
+func CleanupTagInLocal(ctx context.Context, s string, s2 string) {
+	log.Infof("Remove tag from repo if it is exist")
+	// TODO: remove cached tag if it exist
 }
