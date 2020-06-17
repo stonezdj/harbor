@@ -19,6 +19,7 @@ import (
 
 	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/controller/project"
+	"github.com/goharbor/harbor/src/controller/proxy"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -44,14 +45,13 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		repo := parseRepo(urlStr)
 		repo = TrimProxyPrefix(pName, repo)
 		p, err := project.Ctl.GetByName(ctx, pName, project.Metadata(false))
+		if err != nil {
+			log.Error(err)
+		}
 		proxyRegID := p.RegistryID
-
 		if proxyRegID == 0 {
 			next.ServeHTTP(w, r)
 			return
-		}
-		if err != nil {
-			log.Error(err)
 		}
 
 		exist, err := BlobExist(ctx, dig)
@@ -61,19 +61,10 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		}
 
 		log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
-		desc, err := blobFromTarget(ctx, w, repo, dig, proxyRegID)
+		err = proxy.Ctl.ProxyBlob(ctx, p, repo, dig, w)
 		if err != nil {
 			log.Error(err)
-			return
 		}
-		setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
-
-		go func() {
-			err := putBlobToLocal(ctx, proxyRegID, repo, pName+"/"+repo, desc, p.ProjectID)
-			if err != nil {
-				log.Errorf("Error while puting blob to local, %v", err)
-			}
-		}()
 		return
 
 	})
@@ -111,39 +102,54 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 
 		repo := TrimProxyPrefix(art.ProjectName, art.Repository)
 		log.Infof("the digest is %v", string(art.Digest))
-		var man distribution.Manifest
+
 		if len(string(art.Digest)) > 0 {
-			// pull by digest
-			log.Infof("Getting manifest by digiest %v", art.Digest)
-			// exist in local, serve it with local repo
 			exist, err := BlobExist(ctx, art.Digest)
 			if err == nil && exist {
 				next.ServeHTTP(w, r)
 				return
 			}
-			man, err = manifestFromTargetWithDigest(ctx, repo, string(art.Digest), proxyRegID)
-		} else if len(string(art.Tag)) > 0 { // pull by tag
-			man, _, err = getManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
 		}
 
+		err = proxy.Ctl.ProxyManifest(ctx, proj, repo, art, w)
 		if err != nil {
-			if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
-				defer cleanupTagInLocal(ctx, repo, string(art.Tag))
-			}
 			log.Error(err)
-			return
 		}
-
-		ct, p, err := man.Payload()
-		setHeaders(w, int64(len(p)), ct, art.Digest)
-		w.Write(p)
-
-		// Push manifest in background
-		go func() {
-			waitAndPushManifest(ct, ctx, man, art, proj, repo, string(art.Tag))
-		}()
-
-		return
+		//var man distribution.Manifest
+		//if len(string(art.Digest)) > 0 {
+		//	// pull by digest
+		//	log.Infof("Getting manifest by digiest %v", art.Digest)
+		//	// exist in local, serve it with local repo
+		//	exist, err := BlobExist(ctx, art.Digest)
+		//	if err == nil && exist {
+		//		next.ServeHTTP(w, r)
+		//		return
+		//	}
+		//	man, err = manifestFromTargetWithDigest(ctx, repo, string(art.Digest), proxyRegID)
+		//} else if len(string(art.Tag)) > 0 { // pull by tag
+		//	man, _, err = getManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
+		//}
+		//
+		//if err != nil {
+		//	if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
+		//		go func(){
+		//			cleanupTagInLocal(ctx, repo, string(art.Tag))
+		//		} ()
+		//	}
+		//	log.Error(err)
+		//	return
+		//}
+		//
+		//ct, p, err := man.Payload()
+		//setHeaders(w, int64(len(p)), ct, art.Digest)
+		//w.Write(p)
+		//
+		//// Push manifest in background
+		//go func() {
+		//	waitAndPushManifest(ct, ctx, man, art, proj, repo, string(art.Tag))
+		//}()
+		//
+		//return
 
 	})
 }

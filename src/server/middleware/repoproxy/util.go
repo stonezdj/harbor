@@ -108,7 +108,7 @@ func blobFromTarget(ctx context.Context, w io.Writer, repository string, dig str
 
 // putBlobToLocal ...
 func putBlobToLocal(ctx context.Context, proxyRegID int64, orgRepo string, localRepo string, desc distribution.Descriptor, projID int64) error {
-	log.Debugf("Put bl to local registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
+	log.Debugf("Put blob to local registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
 	adapter, err := createLocalRegistryAdapter()
 	if err != nil {
 		log.Error(err)
