@@ -29,7 +29,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
 	"github.com/goharbor/harbor/src/replication/adapter/native"
-	"github.com/goharbor/harbor/src/replication/dao"
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/opencontainers/go-digest"
@@ -58,13 +57,13 @@ func BlobExist(ctx context.Context, dig string) (bool, error) {
 	return blob.Ctl.Exist(ctx, dig)
 }
 
-// GetManifestFromTarget
-func GetManifestFromTarget(ctx context.Context, repository string, tag string, proxyRegID int64) (distribution.Manifest, distribution.Descriptor, error) {
+// getManifestFromTarget
+func getManifestFromTarget(ctx context.Context, repository string, tag string, proxyRegID int64) (distribution.Manifest, distribution.Descriptor, error) {
 	desc := distribution.Descriptor{}
 	adapter, err := createRegistryAdapter(proxyRegID)
 	if err != nil {
 		log.Error(err)
-		return nil, desc, nil
+		return nil, desc, err
 	}
 	man, dig, err := adapter.PullManifest(repository, tag)
 	desc.Digest = digest.Digest(dig)
@@ -146,16 +145,12 @@ func createLocalRegistryAdapter() (*base.Adapter, error) {
 }
 
 func createRegistryAdapter(proxyRegID int64) (*native.Adapter, error) {
-	reg, err := dao.GetRegistry(proxyRegID)
+	reg, err := registry.NewDefaultManager().Get(proxyRegID)
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
-	r, err := registry.FromDaoModel(reg)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Infof("The credential from registry is %v", r.Credential)
-	return native.NewAdapter(r), nil
+	log.Infof("The credential from registry is %v", reg.Credential)
+	return native.NewAdapter(reg), nil
 }
 
 func releaseLock(artifact string) {

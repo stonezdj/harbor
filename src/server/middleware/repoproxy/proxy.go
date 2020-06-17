@@ -23,6 +23,8 @@ import (
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/distribution"
+	"github.com/goharbor/harbor/src/replication/model"
+	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/goharbor/harbor/src/server/middleware"
 )
 
@@ -91,6 +93,15 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		// If registry is unhealthy， bypass the middleware
+		reg, err := registry.NewDefaultManager().Get(proxyRegID)
+		if reg.Status != model.Healthy {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Pull by digest
 		log.Infof("Getting artifact %v", art)
 		_, err = artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
 		if !errors.IsNotFoundErr(err) {
@@ -112,7 +123,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			}
 			man, err = manifestFromTargetWithDigest(ctx, repo, string(art.Digest), proxyRegID)
 		} else if len(string(art.Tag)) > 0 { // pull by tag
-			man, _, err = GetManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
+			man, _, err = getManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
 		}
 
 		if err != nil {
