@@ -21,10 +21,10 @@ import (
 
 func TestParseBlob(t *testing.T) {
 	url := "/v2/library/hello-world/blobs/sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689"
-	result := parseBlob(url)
+	result := parseDigest(url)
 	assert.Equal(t, "sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689", result)
 	url2 := "/v2/library/hello-world/bad"
-	result2 := parseBlob(url2)
+	result2 := parseDigest(url2)
 	assert.Equal(t, "", result2)
 }
 

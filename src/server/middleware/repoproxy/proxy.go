@@ -29,42 +29,51 @@ import (
 func BlobGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		log.Infof("Request url is %v", r.URL)
-		if middleware.V2BlobURLRe.MatchString(r.URL.String()) && r.Method == http.MethodGet {
-			log.Infof("Getting blob with url: %v\n", r.URL.String())
-			ctx := r.Context()
-			pName := distribution.ParseProjectName(r.URL.String())
-			dig := parseBlob(r.URL.String())
-			repo := parseRepo(r.URL.String())
-			repo = TrimProxyPrefix(pName, repo)
-			p, err := project.Ctl.GetByName(ctx, pName, project.Metadata(false))
-			proxyRegID := p.RegistryID
-			if proxyRegID == 0 {
-				next.ServeHTTP(w, r)
-				return
-			}
-			if err != nil {
-				log.Error(err)
-			}
-
-			exist, err := BlobExist(ctx, dig)
-			if !exist {
-				log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
-				desc, err := GetBlobFromTarget(ctx, w, repo, dig, proxyRegID)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
-				go func() {
-					err := PutBlobToLocal(ctx, proxyRegID, repo, pName+"/"+repo, desc, p.ProjectID)
-					if err != nil {
-						log.Errorf("Error while puting blob to local, %v", err)
-					}
-				}()
-				return
-			}
+		urlStr := r.URL.String()
+		if !middleware.V2BlobURLRe.MatchString(urlStr) || r.Method != http.MethodGet {
+			next.ServeHTTP(w, r)
+			return
 		}
-		next.ServeHTTP(w, r)
+
+		log.Infof("Getting blob with url: %v\n", urlStr)
+		ctx := r.Context()
+		pName := distribution.ParseProjectName(urlStr)
+		dig := parseDigest(urlStr)
+		repo := parseRepo(urlStr)
+		repo = TrimProxyPrefix(pName, repo)
+		p, err := project.Ctl.GetByName(ctx, pName, project.Metadata(false))
+		proxyRegID := p.RegistryID
+
+		if proxyRegID == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if err != nil {
+			log.Error(err)
+		}
+
+		exist, err := BlobExist(ctx, dig)
+		if exist {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
+		desc, err := blobFromTarget(ctx, w, repo, dig, proxyRegID)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
+
+		go func() {
+			err := putBlobToLocal(ctx, proxyRegID, repo, pName+"/"+repo, desc, p.ProjectID)
+			if err != nil {
+				log.Errorf("Error while puting blob to local, %v", err)
+			}
+		}()
+		return
+
 	})
 }
 
@@ -95,31 +104,32 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		if len(string(art.Digest)) > 0 {
 			// pull by digest
 			log.Infof("Getting manifest by digiest %v", art.Digest)
-			exist, err := BlobExist(ctx, art.Digest)
 			// exist in local, serve it with local repo
+			exist, err := BlobExist(ctx, art.Digest)
 			if err == nil && exist {
 				next.ServeHTTP(w, r)
 				return
 			}
-			man, err = GetManifestFromTargetWithDigest(ctx, repo, string(art.Digest), proxyRegID)
+			man, err = manifestFromTargetWithDigest(ctx, repo, string(art.Digest), proxyRegID)
 		} else if len(string(art.Tag)) > 0 { // pull by tag
 			man, _, err = GetManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
 		}
 
 		if err != nil {
 			if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
-				defer CleanupTagInLocal(ctx, repo, string(art.Tag))
+				defer cleanupTagInLocal(ctx, repo, string(art.Tag))
 			}
 			log.Error(err)
 			return
 		}
+
 		ct, p, err := man.Payload()
 		setHeaders(w, int64(len(p)), ct, art.Digest)
 		w.Write(p)
 
 		// Push manifest in background
 		go func() {
-			WaitAndPushManifest(ct, ctx, man, art, proj, repo, string(art.Tag))
+			waitAndPushManifest(ct, ctx, man, art, proj, repo, string(art.Tag))
 		}()
 
 		return
