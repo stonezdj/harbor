@@ -13,28 +13,3 @@
 //  limitations under the License.
 
 package repoproxy
-
-import (
-	"github.com/stretchr/testify/assert"
-	"testing"
-)
-
-func TestParseBlob(t *testing.T) {
-	url := "/v2/library/hello-world/blobs/sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689"
-	result := parseDigest(url)
-	assert.Equal(t, "sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689", result)
-	url2 := "/v2/library/hello-world/bad"
-	result2 := parseDigest(url2)
-	assert.Equal(t, "", result2)
-}
-
-func TestParseRepo(t *testing.T) {
-	url := "/v2/library/hello-world/blobs/sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689"
-	result := parseRepo(url)
-	assert.Equal(t, "library/hello-world", result)
-}
-func TestParseRepo2(t *testing.T) {
-	url := "/v2/dockerhub_proxy/firstfloor/hello-world/blobs/sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689"
-	result := parseRepo(url)
-	assert.Equal(t, "dockerhub_proxy/firstfloor/hello-world", result)
-}

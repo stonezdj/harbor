@@ -79,7 +79,7 @@ func (f *FakeClient) DeleteManifest(repository, reference string) error {
 	return args.Error(0)
 }
 
-// BlobExist ...
+// blobExist ...
 func (f *FakeClient) BlobExist(repository, digest string) (bool, error) {
 	args := f.Called()
 	return args.Bool(0), args.Error(1)

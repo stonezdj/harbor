@@ -79,7 +79,7 @@ type Client interface {
 	PushManifest(repository, reference, mediaType string, payload []byte) (digest string, err error)
 	// DeleteManifest deletes the specified manifest. The "reference" can be "tag" or "digest"
 	DeleteManifest(repository, reference string) (err error)
-	// BlobExist checks the existence of the specified blob
+	// blobExist checks the existence of the specified blob
 	BlobExist(repository, digest string) (exist bool, err error)
 	// PullBlob pulls the specified blob. The caller must close the returned "blob"
 	PullBlob(repository, digest string) (descriptor distribution.Descriptor, blob io.ReadCloser, err error)

@@ -17,15 +17,12 @@ package repoproxy
 import (
 	"net/http"
 
-	"github.com/goharbor/harbor/src/controller/artifact"
+	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/controller/proxy"
 	"github.com/goharbor/harbor/src/lib"
-	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/distribution"
-	"github.com/goharbor/harbor/src/replication/model"
-	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/goharbor/harbor/src/server/middleware"
 )
 
@@ -41,32 +38,23 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		log.Infof("Getting blob with url: %v\n", urlStr)
 		ctx := r.Context()
 		pName := distribution.ParseProjectName(urlStr)
-		dig := parseDigest(urlStr)
-		repo := parseRepo(urlStr)
-		repo = TrimProxyPrefix(pName, repo)
+		dig := utils.ParseDigest(urlStr)
+		repo := utils.ParseRepo(urlStr)
+		repo = utils.TrimProxyPrefix(pName, repo)
 		p, err := project.Ctl.GetByName(ctx, pName, project.Metadata(false))
 		if err != nil {
 			log.Error(err)
 		}
-		proxyRegID := p.RegistryID
-		if proxyRegID == 0 {
+		if proxy.Ctl.UseLocalBlob(ctx, p, dig) {
 			next.ServeHTTP(w, r)
 			return
 		}
-
-		exist, err := BlobExist(ctx, dig)
-		if exist {
-			next.ServeHTTP(w, r)
-			return
-		}
-
 		log.Infof("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
 		err = proxy.Ctl.ProxyBlob(ctx, p, repo, dig, w)
 		if err != nil {
 			log.Error(err)
 		}
 		return
-
 	})
 }
 
@@ -75,81 +63,21 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		ctx := r.Context()
 		art := lib.GetArtifactInfo(ctx)
-		proj, err := project.Ctl.GetByName(ctx, art.ProjectName)
+		p, err := project.Ctl.GetByName(ctx, art.ProjectName)
 		if err != nil {
 			log.Error(err)
 		}
-		proxyRegID := proj.RegistryID
-		if proxyRegID == 0 {
+
+		if proxy.Ctl.UseLocalManifest(ctx, p, art) {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// If registry is unhealthy， bypass the middleware
-		reg, err := registry.NewDefaultManager().Get(proxyRegID)
-		if reg.Status != model.Healthy {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		// Pull by digest
-		log.Infof("Getting artifact %v", art)
-		_, err = artifact.Ctl.GetByReference(ctx, art.Repository, art.Tag, nil)
-		if !errors.IsNotFoundErr(err) {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		repo := TrimProxyPrefix(art.ProjectName, art.Repository)
+		repo := utils.TrimProxyPrefix(art.ProjectName, art.Repository)
 		log.Infof("the digest is %v", string(art.Digest))
-
-		if len(string(art.Digest)) > 0 {
-			exist, err := BlobExist(ctx, art.Digest)
-			if err == nil && exist {
-				next.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		err = proxy.Ctl.ProxyManifest(ctx, proj, repo, art, w)
+		err = proxy.Ctl.ProxyManifest(ctx, p, repo, art, w)
 		if err != nil {
 			log.Error(err)
 		}
-		//var man distribution.Manifest
-		//if len(string(art.Digest)) > 0 {
-		//	// pull by digest
-		//	log.Infof("Getting manifest by digiest %v", art.Digest)
-		//	// exist in local, serve it with local repo
-		//	exist, err := BlobExist(ctx, art.Digest)
-		//	if err == nil && exist {
-		//		next.ServeHTTP(w, r)
-		//		return
-		//	}
-		//	man, err = manifestFromTargetWithDigest(ctx, repo, string(art.Digest), proxyRegID)
-		//} else if len(string(art.Tag)) > 0 { // pull by tag
-		//	man, _, err = getManifestFromTarget(ctx, repo, string(art.Tag), proxyRegID)
-		//}
-		//
-		//if err != nil {
-		//	if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
-		//		go func(){
-		//			cleanupTagInLocal(ctx, repo, string(art.Tag))
-		//		} ()
-		//	}
-		//	log.Error(err)
-		//	return
-		//}
-		//
-		//ct, p, err := man.Payload()
-		//setHeaders(w, int64(len(p)), ct, art.Digest)
-		//w.Write(p)
-		//
-		//// Push manifest in background
-		//go func() {
-		//	waitAndPushManifest(ct, ctx, man, art, proj, repo, string(art.Tag))
-		//}()
-		//
-		//return
-
 	})
 }

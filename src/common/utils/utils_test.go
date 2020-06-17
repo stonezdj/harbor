@@ -425,3 +425,88 @@ func TestIsDigest(t *testing.T) {
 	assert.False(IsDigest("latest"))
 	assert.True(IsDigest("sha256:1359608115b94599e5641638bac5aef1ddfaa79bb96057ebf41ebc8d33acf8a7"))
 }
+
+func TestParseBlob(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: `normal`,
+			in:   "/v2/library/hello-world/blobs/sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689",
+			want: "sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689",
+		},
+		{
+			name: `bad`,
+			in:   "/v2/library/hello-world/bad",
+			want: "",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ParseDigest(tt.in)
+			if got != tt.want {
+				t.Errorf(`(%v) = %v; want "%v"`, tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseRepo(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: `normal`,
+			in:   "/v2/library/hello-world/blobs/sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689",
+			want: "library/hello-world",
+		},
+		{
+			name: `with proxy`,
+			in:   "/v2/dockerhub_proxy/firstfloor/hello-world/blobs/sha256:0e03bdcc26d7a9a57ef3b6f1bf1a210cff6239bff7c8cac72435984032851689",
+			want: "dockerhub_proxy/firstfloor/hello-world",
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ParseRepo(tt.in)
+			if got != tt.want {
+				t.Errorf(`(%v) = %v; want "%v"`, tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrimProxyPrefix(t *testing.T) {
+	type args struct {
+		project string
+		repo    string
+	}
+	cases := []struct {
+		name string
+		in   args
+		want string
+	}{
+		{
+			name: `normal test`,
+			in:   args{"dockerhub_proxy", "dockerhub_proxy/firstfloor/hello-world"},
+			want: "firstfloor/hello-world",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+
+			got := TrimProxyPrefix(tt.in.project, tt.in.repo)
+
+			if got != tt.want {
+				t.Errorf(`(%v) = %v; want "%v"`, tt.in, got, tt.want)
+			}
+
+		})
+	}
+}

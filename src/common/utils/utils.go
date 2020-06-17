@@ -291,3 +291,33 @@ func FindNamedMatches(regex *regexp.Regexp, str string) map[string]string {
 	}
 	return results
 }
+
+// TrimProxyPrefix remove proxy prefix from original original project name
+func TrimProxyPrefix(projectName, repo string) string {
+	if strings.HasPrefix(repo, projectName+"/") {
+		return strings.TrimPrefix(repo, projectName+"/")
+	}
+	return repo
+}
+
+// ParseRepo parse the repo name from request url
+func ParseRepo(url string) string {
+	u := strings.TrimPrefix(url, "/v2/")
+	i := strings.LastIndex(u, "/blobs/")
+	if i <= 0 {
+		return url
+	}
+	return u[0:i]
+}
+
+// ParseDigest parse the digest
+func ParseDigest(url string) string {
+	if strings.Index(url, "sha256:") < 0 {
+		return ""
+	}
+	parts := strings.Split(url, ":")
+	if len(parts) == 2 {
+		return "sha256:" + parts[1]
+	}
+	return ""
+}
