@@ -127,8 +127,8 @@ while [ $# -gt 0 ]; do
             --istile)
             istile=true;;
             --backupfile)
-            backupfile=$2;;
-            shift
+            backupfile=$2
+            shift 2;;
             *)
             note "$usage"
             exit 1;;
