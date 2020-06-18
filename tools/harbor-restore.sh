@@ -82,13 +82,13 @@ restore_registry() {
 }
 
 restore_redis() {
-    cp -r harbor/redis/* /data/redis
+    cp -r harbor/redis/ /data/
     chown -R 10000 /data/redis
 }
 
 restore_chartmuseum() {
     if [ -d ./harbor/chart_storage ]; then
-        cp -r ./harbor/chart_storage/* /data/chart_storage
+        cp -r ./harbor/chart_storage/ /data/
         chown -R 10000 /data/chart_storage
     fi
 }
