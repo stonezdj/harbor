@@ -83,7 +83,7 @@ restore_registry() {
 
 restore_redis() {
     cp -r harbor/redis/ /data/
-    chown -R 10000 /data/redis
+    chown -R 999 /data/redis
 }
 
 restore_chartmuseum() {
