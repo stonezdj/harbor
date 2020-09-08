@@ -15,14 +15,12 @@
 package api
 
 import (
+	"errors"
 	"fmt"
-
 	"github.com/goharbor/harbor/src/common/models"
 	ldapUtils "github.com/goharbor/harbor/src/common/utils/ldap"
 	"github.com/goharbor/harbor/src/core/auth"
 	"github.com/goharbor/harbor/src/lib/log"
-
-	"errors"
 	"strings"
 
 	"github.com/goharbor/harbor/src/core/config"
@@ -37,6 +35,7 @@ type LdapAPI struct {
 
 const (
 	pingErrorMessage       = "LDAP connection test failed"
+	passwordErrorMessage   = "invalid credential"
 	loadSystemErrorMessage = "Can't load system configuration!"
 	canNotOpenLdapSession  = "Can't open LDAP session!"
 	searchLdapFailMessage  = "LDAP search failed!"
@@ -100,6 +99,10 @@ func (l *LdapAPI) Ping() {
 	}
 
 	if err != nil {
+		if goldap.IsErrorWithCode(err, 49) {
+			l.SendBadRequestError(errors.New(passwordErrorMessage))
+			return
+		}
 		l.SendInternalServerError(fmt.Errorf("LDAP connect fail, error: %v", err))
 		return
 	}
