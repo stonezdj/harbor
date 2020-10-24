@@ -240,17 +240,17 @@ func refreshToken(ctx context.Context, token *Token) (*Token, error) {
 // UserInfoFromToken tries to call the UserInfo endpoint of the OIDC provider, and consolidate with ID token
 // to generate a UserInfo object, if the ID token is not in the input token struct, some attributes will be empty
 func UserInfoFromToken(ctx context.Context, token *Token) (*UserInfo, error) {
-	oidcs, er := config.OIDCSetting()
+	setting, er := config.OIDCSetting()
 	if er != nil {
 		log.Info(er)
 	}
-	log.Infof("oidc settings %v", oidcs)
-	setting := provider.setting.Load().(models.OIDCSetting)
-	local, err := userInfoFromIDToken(ctx, token, setting)
+	log.Infof("oidc settings %+v", setting)
+	//setting := provider.setting.Load().(models.OIDCSetting)
+	local, err := userInfoFromIDToken(ctx, token, *setting)
 	if err != nil {
 		return nil, err
 	}
-	remote, err := userInfoFromRemote(ctx, token, setting)
+	remote, err := userInfoFromRemote(ctx, token, *setting)
 	if err != nil {
 		log.Warningf("Failed to get userInfo by calling remote userinfo endpoint, error: %v ", err)
 	}
