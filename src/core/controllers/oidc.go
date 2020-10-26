@@ -124,6 +124,11 @@ func (oc *OIDCController) Callback() {
 
 	if u == nil {
 		oc.SetSession(userInfoKey, string(ouDataStr))
+		s, err := config.OIDCSetting()
+		if err != nil {
+			log.Info("error %v", err)
+		}
+		log.Infof("zdj: going to onboard user with username %v, setting %+v", info.Username, s)
 		oc.Controller.Redirect(fmt.Sprintf("/oidc-onboard?username=%s", strings.Replace(info.Username, " ", "_", -1)),
 			http.StatusFound)
 	} else {
