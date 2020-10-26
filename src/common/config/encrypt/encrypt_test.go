@@ -2,6 +2,7 @@ package encrypt
 
 import (
 	"fmt"
+	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -36,4 +37,14 @@ func TestEncryptDecrypt(t *testing.T) {
 	}
 	assert.NotEqual(t, password, encrypted)
 	assert.Equal(t, password, decrypted)
+}
+
+func TestDecrypt(t *testing.T) {
+	key := "HPThVFhowY5qqRHi"
+	ciphertext := "IRyQ-Iwy_uGBxm1wA10ug-XsQ9X7Awtc"
+	result, err := utils.ReversibleDecrypt(ciphertext, key)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(result)
 }

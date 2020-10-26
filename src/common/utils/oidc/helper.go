@@ -171,6 +171,7 @@ func ExchangeToken(ctx context.Context, code string) (*Token, error) {
 		return nil, err
 	}
 	setting := provider.setting.Load().(models.OIDCSetting)
+	log.Infof("ExchangeToken: the client secret is %+v", setting)
 	ctx = clientCtx(ctx, setting.VerifyCert)
 	oauthToken, err := oauth.Exchange(ctx, code)
 	if err != nil {
