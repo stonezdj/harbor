@@ -197,6 +197,7 @@ func verifyTokenWithConfig(ctx context.Context, rawIDToken string, conf *gooidc.
 		return nil, err
 	}
 	settings := provider.setting.Load().(models.OIDCSetting)
+	log.Infof("zdj:verify token with setting %+v", settings)
 	if conf == nil {
 		conf = &gooidc.Config{ClientID: settings.ClientID}
 	}
