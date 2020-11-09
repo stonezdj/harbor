@@ -36,7 +36,10 @@ type CfgManager struct {
 
 // NewDBCfgManager - create DB config manager
 func NewDBCfgManager() *CfgManager {
-	manager := &CfgManager{store: store.NewConfigStore(&driver.Database{})}
+	cd := &driver.CachedDriver{
+		Driver:      &driver.Database{},
+		IntervalSec: driver.DefaultCfgCacheIntSec}
+	manager := &CfgManager{store: store.NewConfigStore(cd)}
 	// load default value
 	manager.loadDefault()
 	// load system config from env

@@ -161,7 +161,8 @@ const (
 	DefaultGCTimeWindowHours = int64(2)
 
 	// Metric setting items
-	MetricEnable = "metric_enable"
-	MetricPort   = "metric_port"
-	MetricPath   = "metric_path"
+	MetricEnable            = "metric_enable"
+	MetricPort              = "metric_port"
+	MetricPath              = "metric_path"
+	CfgCacheIntervalSeconds = "cfg_cache_interval_seconds"
 )

@@ -20,7 +20,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/goharbor/harbor/src/core/config"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -54,7 +53,7 @@ func DefaultPool() *redis.Pool {
 			idleTimeout = poolIdleTimeout
 		}
 
-		url := config.GetRedisOfRegURL()
+		url := os.Getenv("_REDIS_URL_REG")
 		if url == "" {
 			url = "redis://localhost:6379/1"
 		}
