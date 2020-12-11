@@ -43,7 +43,7 @@ const (
 	maxManifestWait     = 10
 	sleepIntervalSec    = 20
 	// keep manifest list in cache for one week
-	manifestListCacheIntervalSec = 7 * 24 * 60 * 60
+	manifestListCacheInterval = 7 * 24 * 60 * 60 * time.Second
 )
 
 var (
@@ -65,7 +65,7 @@ type Controller interface {
 	// art is the ArtifactInfo which includes the tag or digest of the manifest
 	ProxyManifest(ctx context.Context, art lib.ArtifactInfo, remote RemoteInterface) (distribution.Manifest, error)
 	// HeadManifest send manifest head request to the remote server
-	HeadManifest(ctx context.Context, art lib.ArtifactInfo, remote RemoteInterface) (bool, string, error)
+	HeadManifest(ctx context.Context, art lib.ArtifactInfo, remote RemoteInterface) (bool, *distribution.Descriptor, error)
 }
 type controller struct {
 	blobCtl     blob.Controller
@@ -119,11 +119,11 @@ func (c *controller) UseLocalManifest(ctx context.Context, art lib.ArtifactInfo,
 	}
 
 	remoteRepo := getRemoteRepo(art)
-	exist, dig, err := remote.ManifestExist(remoteRepo, getReference(art)) // HEAD
+	exist, desc, err := remote.ManifestExist(remoteRepo, getReference(art)) // HEAD
 	if err != nil {
 		return false, nil, err
 	}
-	if !exist {
+	if !exist || desc == nil {
 		go func() {
 			c.local.DeleteManifest(remoteRepo, art.Tag)
 		}()
@@ -132,18 +132,18 @@ func (c *controller) UseLocalManifest(ctx context.Context, art lib.ArtifactInfo,
 
 	var content []byte
 	if c.cache != nil {
-		err = c.cache.Fetch(getManifestListKey(art.Repository, dig), &content)
+		err = c.cache.Fetch(getManifestListKey(art.Repository, string(desc.Digest)), &content)
 		if err == nil {
-			log.Debugf("Get the manifest list with key=cache:%v", getManifestListKey(art.Repository, dig))
-			return true, &ManifestList{content, dig, manifestlist.MediaTypeManifestList}, nil
+			log.Debugf("Get the manifest list with key=cache:%v", getManifestListKey(art.Repository, string(desc.Digest)))
+			return true, &ManifestList{content, string(desc.Digest), manifestlist.MediaTypeManifestList}, nil
 		}
 		if err == cache.ErrNotFound {
-			log.Debugf("Digest is not found in manifest list cache, key=cache:%v", getManifestListKey(art.Repository, dig))
+			log.Debugf("Digest is not found in manifest list cache, key=cache:%v", getManifestListKey(art.Repository, string(desc.Digest)))
 		} else {
 			log.Errorf("Failed to get manifest list from cache, error: %v", err)
 		}
 	}
-	return a != nil && dig == a.Digest, nil, nil // digest matches
+	return a != nil && string(desc.Digest) == a.Digest, nil, nil // digest matches
 }
 
 func getManifestListKey(repo, dig string) string {
@@ -177,11 +177,7 @@ func (c *controller) ProxyManifest(ctx context.Context, art lib.ArtifactInfo, re
 		}
 		// Push manifest to local when pull with digest, or artifact not found, or digest mismatch
 		if len(art.Tag) == 0 || a == nil || a.Digest != dig {
-			artInfo := art
-			if len(artInfo.Digest) == 0 {
-				artInfo.Digest = dig
-			}
-			c.waitAndPushManifest(ctx, remoteRepo, man, artInfo, ct, remote)
+			c.waitAndPushManifest(ctx, remoteRepo, man, art, ct, remote)
 		}
 
 		// Query artifact after push
@@ -198,7 +194,7 @@ func (c *controller) ProxyManifest(ctx context.Context, art lib.ArtifactInfo, re
 
 	return man, nil
 }
-func (c *controller) HeadManifest(ctx context.Context, art lib.ArtifactInfo, remote RemoteInterface) (bool, string, error) {
+func (c *controller) HeadManifest(ctx context.Context, art lib.ArtifactInfo, remote RemoteInterface) (bool, *distribution.Descriptor, error) {
 	remoteRepo := getRemoteRepo(art)
 	ref := getReference(art)
 	return remote.ManifestExist(remoteRepo, ref)
@@ -245,9 +241,10 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 			log.Errorf("failed to get payload, error %v", err)
 			return
 		}
-		key := getManifestListKey(art.Repository, art.Digest)
+		dig := digest.FromBytes(payload)
+		key := getManifestListKey(art.Repository, string(dig))
 		log.Debugf("Cache manifest list with key=cache:%v", key)
-		err = c.cache.Save(key, payload, manifestListCacheIntervalSec)
+		err = c.cache.Save(key, payload, manifestListCacheInterval)
 		if err != nil {
 			log.Errorf("failed to cache payload, error %v", err)
 		}
