@@ -17,7 +17,10 @@ package orm
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/astaxie/beego/orm"
 	"github.com/goharbor/harbor/src/common/dao"
@@ -155,6 +158,52 @@ func (suite *OrmSuite) TestWithTransaction() {
 	suite.Nil(t1(ctx))
 	suite.True(existFoo(ctx, id))
 	suite.Nil(deleteFoo(ctx, id))
+}
+
+// Test parallel transactions
+func (suite *OrmSuite) TestWithTransactionParallels() {
+	var wg sync.WaitGroup
+	conns := 200
+	wg.Add(conns)
+	for i := 0; i < conns; i++ {
+		go func(i int) {
+			defer wg.Done()
+			ctx := NewContext(context.TODO(), orm.NewOrm())
+			var id int64
+			t1 := WithTransaction(func(ctx context.Context) (err error) {
+				id, err = addFoo(ctx, Foo{Name: fmt.Sprintf("t%v", i)})
+				time.Sleep(100 * time.Second)
+				return err
+			})
+			suite.Nil(t1(ctx))
+			suite.True(existFoo(ctx, id))
+			suite.Nil(deleteFoo(ctx, id))
+		}(i)
+	}
+	wg.Wait()
+}
+
+// Test parallel no transactions
+func (suite *OrmSuite) TestWithOutTransactionParallels() {
+	var wg sync.WaitGroup
+	conns := 200
+	wg.Add(conns)
+	for i := 0; i < conns; i++ {
+		go func(i int) {
+			defer wg.Done()
+			ctx := NewContext(context.TODO(), orm.NewOrm())
+			var id int64
+			t1 := func(ctx context.Context) (err error) {
+				id, err = addFoo(ctx, Foo{Name: fmt.Sprintf("t%v", i)})
+				time.Sleep(100 * time.Second)
+				return err
+			}
+			suite.Nil(t1(ctx))
+			suite.True(existFoo(ctx, id))
+			suite.Nil(deleteFoo(ctx, id))
+		}(i)
+	}
+	wg.Wait()
 }
 
 func (suite *OrmSuite) TestSequentialTransactions() {
