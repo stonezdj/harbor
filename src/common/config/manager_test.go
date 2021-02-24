@@ -91,7 +91,7 @@ func TestCfgManager_loadDefaultValues(t *testing.T) {
 
 func TestCfgManger_loadSystemValues(t *testing.T) {
 	configManager.loadDefault()
-	configManager.loadSystemConfigFromEnv()
+	configManager.configFromEnv()
 	configManager.UpdateConfig(map[string]interface{}{
 		"postgresql_host": "127.0.0.1",
 	})

@@ -174,7 +174,7 @@ func convertForGet(cfg map[string]interface{}) (map[string]*value, error) {
 	for k, v := range cfg {
 		result[k] = &value{
 			Value:    v,
-			Editable: true,
+			Editable: metadata.Instance().Editable(k),
 		}
 	}
 
@@ -182,7 +182,7 @@ func convertForGet(cfg map[string]interface{}) (map[string]*value, error) {
 	if err != nil {
 		return nil, err
 	}
-	result[common.AUTHMode].Editable = flag
+	result[common.AUTHMode].Editable = flag && metadata.Instance().Editable(common.AUTHMode)
 	return result, nil
 }
 

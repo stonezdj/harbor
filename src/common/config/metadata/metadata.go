@@ -44,6 +44,20 @@ func (c *CfgMetaData) init() {
 	c.initFromArray(ConfigList)
 }
 
+func (c *CfgMetaData) ReadOnly(key string) {
+	if item, ok := c.metaMap[key]; ok {
+		item.Editable = false
+		c.metaMap[key] = item
+	}
+}
+
+func (c *CfgMetaData) Editable(key string) bool {
+	if item, ok := c.metaMap[key]; ok {
+		return item.Editable
+	}
+	return false
+}
+
 // initFromArray - Initial metadata from an array
 func (c *CfgMetaData) initFromArray(items []Item) {
 	c.metaMap = make(map[string]Item)

@@ -48,7 +48,7 @@ func NewDBCfgManager() *CfgManager {
 	// load default value
 	manager.loadDefault()
 	// load system config from env
-	manager.loadSystemConfigFromEnv()
+	manager.configFromEnv()
 	return manager
 }
 
@@ -94,7 +94,7 @@ func NewInMemoryManager() *CfgManager {
 	// load default value
 	manager.loadDefault()
 	// load system config from env
-	manager.loadSystemConfigFromEnv()
+	manager.configFromEnv()
 	return manager
 }
 
@@ -114,19 +114,20 @@ func (c *CfgManager) loadDefault() {
 	}
 }
 
-// loadSystemConfigFromEnv ...
-func (c *CfgManager) loadSystemConfigFromEnv() {
+// configFromEnv ...
+func (c *CfgManager) configFromEnv() {
 	itemArray := metadata.Instance().GetAll()
 	// Init System Value
 	for _, item := range itemArray {
-		if item.Scope == metadata.SystemScope && len(item.EnvKey) > 0 {
+		if len(item.EnvKey) > 0 {
 			if envValue, ok := os.LookupEnv(item.EnvKey); ok {
 				configValue, err := metadata.NewCfgValue(item.Name, envValue)
 				if err != nil {
-					log.Errorf("loadSystemConfigFromEnv failed, config item, key: %v,  err: %v", item.Name, err)
+					log.Errorf("configFromEnv failed, config item, key: %v,  err: %v", item.Name, err)
 					continue
 				}
 				c.store.Set(item.Name, *configValue)
+				metadata.Instance().ReadOnly(item.Name)
 			}
 		}
 	}
