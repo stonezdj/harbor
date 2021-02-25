@@ -233,7 +233,14 @@ func (c *CfgManager) GetDatabaseCfg() *models.Database {
 
 // UpdateConfig - Update config store with a specified configuration and also save updated configure.
 func (c *CfgManager) UpdateConfig(cfgs map[string]interface{}) error {
-	return c.store.Update(cfgs)
+	//skip readonly config items
+	editableCfg := map[string]interface{}{}
+	for k, v := range cfgs {
+		if metadata.Instance().Editable(k) {
+			editableCfg[k] = v
+		}
+	}
+	return c.store.Update(editableCfg)
 }
 
 // ValidateCfg validate config by metadata. return the first error if exist.
