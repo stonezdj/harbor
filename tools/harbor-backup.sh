@@ -135,9 +135,19 @@ harbor_db_image=$($DOCKER_CMD images goharbor/harbor-db --format "{{.Repository}
 harbor_db_path="/data/database"
 
 
-create_dir
-launch_db
-wait_for_db_ready
+#create_dir  
+
+# Create and mount backup directory manually
+# create directory offline 
+#     mkdir -p /backup/harbor/db
+#     chown 999:999 /backup/harbor/db
+# mount the backup directory into postgres by update the /var/vcap/packages/harbor-app/common/docker-compose.yml
+#       postgresql:
+#         volumes:
+#         - /backup:/backup
+
+#launch_db
+#wait_for_db_ready
 dump_database
 backup_redis
 if [ $dbonly = false ];  then
@@ -146,6 +156,6 @@ if [ $dbonly = false ];  then
 fi
 backup_secret
 create_tarball
-clean_db
+# clean_db
 
 echo "All Harbor data are backed up, backup file is $backup_filename."
