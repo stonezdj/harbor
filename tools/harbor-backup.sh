@@ -139,12 +139,12 @@ harbor_db_path="/data/database"
 
 # Create and mount backup directory manually
 # create directory offline 
-#     mkdir -p /backup/harbor/db
-#     chown 999:999 /backup/harbor/db
+#     mkdir -p <path_of_backup>/harbor/db
+#     chown 999:999 <path_of_backup>/harbor/db
 # mount the backup directory into postgres by update the /var/vcap/packages/harbor-app/common/docker-compose.yml
 #       postgresql:
 #         volumes:
-#         - /backup:/backup
+#         - <path_of_backup>:/backup
 
 #launch_db
 #wait_for_db_ready
