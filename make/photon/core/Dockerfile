@@ -15,7 +15,7 @@ RUN tdnf install -y python3 python3-pip.noarch shadow gzip postgresql findutils 
     && sed -i "s|#listen_addresses = 'localhost'.*|listen_addresses = '*'|g" /usr/share/postgresql/postgresql.conf.sample \
     && sed -i "s|#unix_socket_directories = '/tmp'.*|unix_socket_directories = '/run/postgresql'|g" /usr/share/postgresql/postgresql.conf.sample 
 
-RUN tdnf erase -y toybox && tdnf install -y util-linux net-tools
+RUN tdnf erase -y toybox && tdnf install -y util-linux net-tools redis
 
 RUN pip3 install supervisor && pip3 install --upgrade setuptools
 
@@ -28,7 +28,16 @@ COPY ./icons /harbor/icons
 
 
 VOLUME /var/lib/postgresql/data
+VOLUME /var/lib/redis
 
+# prepare core
+RUN chown -R harbor:harbor /etc/pki/tls/certs \
+    && chown -R harbor:harbor /harbor/ \
+    && chmod u+x /harbor/entrypoint.sh \
+    && chmod u+x /harbor/install_cert.sh \
+    && chmod u+x /harbor/harbor_core
+
+# prepare postgres
 COPY ./make/photon/db/docker-entrypoint.sh /postgres-docker-entrypoint.sh
 COPY ./make/photon/db/initdb.sh /initdb.sh
 COPY ./make/photon/db/upgrade.sh /upgrade.sh
@@ -41,10 +50,10 @@ RUN chown -R postgres:postgres /postgres-docker-entrypoint.sh /docker-healthchec
 
 COPY ./make/photon/core/supervisord.conf /etc/supervisord.conf
 
-RUN chown -R harbor:harbor /etc/pki/tls/certs \
-    && chown -R harbor:harbor /harbor/ \
-    && chmod u+x /harbor/entrypoint.sh \
-    && chmod u+x /harbor/install_cert.sh \
-    && chmod u+x /harbor/harbor_core
+# prepare redis
+COPY ./make/photon/redis/docker-healthcheck /usr/bin/
+COPY ./make/photon/redis/redis.conf /etc/redis.conf
+RUN chmod +x /usr/bin/docker-healthcheck \
+    && chown redis:redis /etc/redis.conf    
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
