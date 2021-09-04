@@ -4,7 +4,7 @@ FROM ${harbor_base_namespace}/harbor-core-base:${harbor_base_image_version}
 
 ENV PGDATA /var/lib/postgresql/data
 
-RUN tdnf install -y python3 python3-pip.noarch shadow gzip postgresql findutils bc >> /dev/null \
+RUN tdnf install -y python3 python3-pip.noarch gzip postgresql findutils bc >> /dev/null \
     && groupadd -r postgres --gid=999 \
     && useradd -m -r -g postgres --uid=999 postgres \
     && mkdir -p /docker-entrypoint-initdb.d \
@@ -29,6 +29,7 @@ COPY ./icons /harbor/icons
 
 VOLUME /var/lib/postgresql/data
 VOLUME /var/lib/redis
+VOLUME /storage
 
 # prepare core
 RUN chown -R harbor:harbor /etc/pki/tls/certs \
@@ -55,5 +56,22 @@ COPY ./make/photon/redis/docker-healthcheck /usr/bin/
 COPY ./make/photon/redis/redis.conf /etc/redis.conf
 RUN chmod +x /usr/bin/docker-healthcheck \
     && chown redis:redis /etc/redis.conf    
+
+# prepare registry
+RUN mkdir -p /etc/registry 
+COPY ./make/photon/registry/config.yml /etc/registry/config.yml
+COPY ./make/photon/registry/passwd   /etc/registry/
+COPY ./make/photon/registry/root.crt   /etc/registry/
+COPY ./make/photon/common/install_cert.sh /home/harbor
+COPY ./make/photon/registry/entrypoint.sh /home/harbor/registry-entrypoint.sh
+COPY ./make/photon/registry/binary/registry /usr/bin/registry_DO_NOT_USE_GC
+
+RUN chown -R harbor:harbor /etc/pki/tls/certs \
+    && chown harbor:harbor /etc/registry/config.yml \
+    && chown harbor:harbor /etc/registry/passwd \
+    && chown harbor:harbor /etc/registry/root.crt \
+    && chown harbor:harbor /home/harbor/install_cert.sh && chmod u+x /home/harbor/install_cert.sh \
+    && chown harbor:harbor /home/harbor/registry-entrypoint.sh && chmod u+x /home/harbor/registry-entrypoint.sh \
+    && chown harbor:harbor /usr/bin/registry_DO_NOT_USE_GC && chmod u+x /usr/bin/registry_DO_NOT_USE_GC
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
