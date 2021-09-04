@@ -4,7 +4,7 @@ FROM ${harbor_base_namespace}/harbor-core-base:${harbor_base_image_version}
 
 ENV PGDATA /var/lib/postgresql/data
 
-RUN tdnf install -y python3 python3-pip.noarch gzip postgresql findutils bc >> /dev/null \
+RUN tdnf install -y python3 python3-pip.noarch gzip postgresql findutils bc procps-ng >> /dev/null \
     && groupadd -r postgres --gid=999 \
     && useradd -m -r -g postgres --uid=999 postgres \
     && mkdir -p /docker-entrypoint-initdb.d \
@@ -57,14 +57,17 @@ COPY ./make/photon/redis/redis.conf /etc/redis.conf
 RUN chmod +x /usr/bin/docker-healthcheck \
     && chown redis:redis /etc/redis.conf    
 
-# prepare registry
-RUN mkdir -p /etc/registry 
+# prepare registry and registry ctl
+RUN mkdir -p /etc/registry && mkdir -p /etc/registryctl 
 COPY ./make/photon/registry/config.yml /etc/registry/config.yml
 COPY ./make/photon/registry/passwd   /etc/registry/
 COPY ./make/photon/registry/root.crt   /etc/registry/
 COPY ./make/photon/common/install_cert.sh /home/harbor
 COPY ./make/photon/registry/entrypoint.sh /home/harbor/registry-entrypoint.sh
 COPY ./make/photon/registry/binary/registry /usr/bin/registry_DO_NOT_USE_GC
+COPY ./make/photon/registryctl/start.sh /home/harbor
+COPY ./make/photon/registryctl/harbor_registryctl /home/harbor
+COPY ./make/photon/registryctl/config.yml /etc/registryctl/config.yml
 
 RUN chown -R harbor:harbor /etc/pki/tls/certs \
     && chown harbor:harbor /etc/registry/config.yml \
@@ -72,6 +75,9 @@ RUN chown -R harbor:harbor /etc/pki/tls/certs \
     && chown harbor:harbor /etc/registry/root.crt \
     && chown harbor:harbor /home/harbor/install_cert.sh && chmod u+x /home/harbor/install_cert.sh \
     && chown harbor:harbor /home/harbor/registry-entrypoint.sh && chmod u+x /home/harbor/registry-entrypoint.sh \
-    && chown harbor:harbor /usr/bin/registry_DO_NOT_USE_GC && chmod u+x /usr/bin/registry_DO_NOT_USE_GC
+    && chown harbor:harbor /home/harbor/harbor_registryctl && chmod u+x /home/harbor/harbor_registryctl \
+    && chown harbor:harbor /home/harbor/start.sh && chmod u+x /home/harbor/start.sh \
+    && chown harbor:harbor /usr/bin/registry_DO_NOT_USE_GC && chmod u+x /usr/bin/registry_DO_NOT_USE_GC \
+    && chown harbor:harbor /etc/registryctl/config.yml
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

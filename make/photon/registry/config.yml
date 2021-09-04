@@ -14,7 +14,7 @@ storage:
   delete:
     enabled: true
 redis:
-  addr: redis:6379
+  addr: localhost:6379
   readtimeout: 10s
   writetimeout: 10s
   dialtimeout: 10s
