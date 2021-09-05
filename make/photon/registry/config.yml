@@ -7,7 +7,7 @@ storage:
   cache:
     layerinfo: redis
   filesystem:
-    rootdirectory: /storage
+    rootdirectory: /data/registry
   maintenance:
     uploadpurging:
       enabled: false
