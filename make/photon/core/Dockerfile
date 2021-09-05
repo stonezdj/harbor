@@ -1,5 +1,7 @@
 ARG harbor_base_image_version
 ARG harbor_base_namespace
+# build node portal files first
+FROM goharbor/harbor-portal:dev as harbor-portal
 FROM ${harbor_base_namespace}/harbor-core-base:${harbor_base_image_version}
 
 ENV PGDATA /var/lib/postgresql/data
@@ -15,7 +17,7 @@ RUN tdnf install -y python3 python3-pip.noarch gzip postgresql findutils bc proc
     && sed -i "s|#listen_addresses = 'localhost'.*|listen_addresses = '*'|g" /usr/share/postgresql/postgresql.conf.sample \
     && sed -i "s|#unix_socket_directories = '/tmp'.*|unix_socket_directories = '/run/postgresql'|g" /usr/share/postgresql/postgresql.conf.sample 
 
-RUN tdnf erase -y toybox && tdnf install -y util-linux net-tools redis
+RUN tdnf erase -y toybox && tdnf install -y util-linux net-tools redis nginx
 
 RUN pip3 install supervisor && pip3 install --upgrade setuptools
 
@@ -30,6 +32,7 @@ COPY ./icons /harbor/icons
 VOLUME /var/lib/postgresql/data
 VOLUME /var/lib/redis
 VOLUME /storage
+VOLUME /var/cache/nginx /var/log/nginx /run
 
 # prepare core
 RUN chown -R harbor:harbor /etc/pki/tls/certs \
@@ -79,5 +82,19 @@ RUN chown -R harbor:harbor /etc/pki/tls/certs \
     && chown harbor:harbor /home/harbor/start.sh && chmod u+x /home/harbor/start.sh \
     && chown harbor:harbor /usr/bin/registry_DO_NOT_USE_GC && chmod u+x /usr/bin/registry_DO_NOT_USE_GC \
     && chown harbor:harbor /etc/registryctl/config.yml
+
+# setup portal
+RUN mkdir -p /var/log/nginx &&  groupadd -r -g 10001 nginx && useradd --no-log-init -r -g 10001 -u 10001 nginx \
+    && chown -R nginx:nginx /etc/nginx \
+    && chown -R nginx:nginx /var/log/nginx \
+    && chown -R nginx:nginx /var/log/nginx/*
+
+COPY --from=harbor-portal /usr/share/nginx/html /usr/share/nginx/html
+COPY --from=harbor-portal /usr/share/nginx/ /usr/share/nginx/    
+COPY ./make/photon/portal/nginx.conf /etc/nginx/nginx.conf
+
+RUN chown nginx:nginx /etc/nginx/nginx.conf
+
+STOPSIGNAL SIGQUIT
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
