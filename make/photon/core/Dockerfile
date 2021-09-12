@@ -41,6 +41,21 @@ RUN chown -R harbor:harbor /etc/pki/tls/certs \
     && chmod u+x /harbor/install_cert.sh \
     && chmod u+x /harbor/harbor_core
 
+# prepare job service
+RUN mkdir -p /etc/jobservice 
+RUN mkdir -p /var/log/jobs
+
+COPY ./make/photon/jobservice/harbor_jobservice /harbor/ 
+COPY ./make/photon/jobservice/config.yml /etc/jobservice/config.yml
+COPY ./make/photon/jobservice/entrypoint.sh /harbor/jobservice_entrypoint.sh 
+
+RUN chown -R harbor:harbor /harbor/harbor_jobservice \
+    && chown -R harbor:harbor /harbor/jobservice_entrypoint.sh \
+    && chown -R harbor:harbor /etc/jobservice/config.yml \
+    && chown -R harbor:harbor /var/log/jobs \
+    && chmod u+x /harbor/harbor_jobservice \
+    && chmod u+x /harbor/jobservice_entrypoint.sh 
+
 # prepare postgres
 COPY ./make/photon/db/docker-entrypoint.sh /postgres-docker-entrypoint.sh
 COPY ./make/photon/db/initdb.sh /initdb.sh
