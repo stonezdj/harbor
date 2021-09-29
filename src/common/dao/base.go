@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 	proModels "github.com/goharbor/harbor/src/pkg/project/models"
-	userModels "github.com/goharbor/harbor/src/pkg/user/models"
+	userDao "github.com/goharbor/harbor/src/pkg/user/dao"
 	"strconv"
 	"sync"
 
@@ -112,7 +112,7 @@ func ClearTable(table string) error {
 	if table == proModels.ProjectTable {
 		sql = fmt.Sprintf("delete from %s where project_id > 1", table)
 	}
-	if table == userModels.UserTable {
+	if table == userDao.UserTable {
 		sql = fmt.Sprintf("delete from %s where user_id > 2", table)
 	}
 	if table == "project_member" { // make sure admin in library

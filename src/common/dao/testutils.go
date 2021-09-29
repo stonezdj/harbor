@@ -15,9 +15,10 @@
 package dao
 
 import (
+	"context"
 	"fmt"
 	"github.com/goharbor/harbor/src/common/models"
-	userModels "github.com/goharbor/harbor/src/pkg/user/models"
+	ctluser "github.com/goharbor/harbor/src/controller/user"
 	"os"
 	"strconv"
 
@@ -138,8 +139,7 @@ func ExecuteBatchSQL(sqls []string) {
 
 // CleanUser - Clean this user information from DB, this is a shortcut for UT.
 func CleanUser(id int64) error {
-	_, err := GetOrmer().QueryTable(&userModels.User{}).Filter("UserID", id).Delete()
-	return err
+	return ctluser.Ctl.Delete(context.Background(), int(id))
 }
 
 // ArrayEqual ...
