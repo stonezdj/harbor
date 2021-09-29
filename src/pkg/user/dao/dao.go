@@ -20,7 +20,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/lib/q"
-	"github.com/goharbor/harbor/src/pkg/user/models"
 )
 
 // DAO is the data access object interface for user
@@ -42,7 +41,7 @@ func New() DAO {
 
 func init() {
 	orm.RegisterModel(
-		new(models.User),
+		new(user),
 	)
 }
 
@@ -51,7 +50,7 @@ type dao struct{}
 func (d *dao) Count(ctx context.Context, query *q.Query) (int64, error) {
 	query = q.MustClone(query)
 	query.Keywords["deleted"] = false
-	qs, err := orm.QuerySetterForCount(ctx, &models.User{}, query)
+	qs, err := orm.QuerySetterForCount(ctx, &user{}, query)
 	if err != nil {
 		return 0, err
 	}
@@ -66,7 +65,7 @@ func (d *dao) Create(ctx context.Context, user *commonmodels.User) (int, error) 
 	if err != nil {
 		return 0, err
 	}
-	id, err := ormer.Insert(models.ConvertToDBUser(user))
+	id, err := ormer.Insert(ConvertToDBUser(user))
 	if err != nil {
 		return 0, orm.WrapConflictError(err, "user %s or email %s already exists", user.Username, user.Email)
 	}
@@ -78,7 +77,7 @@ func (d *dao) Update(ctx context.Context, user *commonmodels.User, props ...stri
 	if err != nil {
 		return err
 	}
-	n, err := ormer.Update(models.ConvertToDBUser(user), props...)
+	n, err := ormer.Update(ConvertToDBUser(user), props...)
 	if err != nil {
 		return err
 	}
@@ -93,19 +92,19 @@ func (d *dao) List(ctx context.Context, query *q.Query) ([]*commonmodels.User, e
 	query = q.MustClone(query)
 	query.Keywords["deleted"] = false
 
-	qs, err := orm.QuerySetter(ctx, &models.User{}, query)
+	qs, err := orm.QuerySetter(ctx, &user{}, query)
 	if err != nil {
 		return nil, err
 	}
 
-	var users []*models.User
+	var users []*user
 	if _, err := qs.All(&users); err != nil {
 		return nil, err
 	}
 
 	var retUsers []*commonmodels.User
 	for _, u := range users {
-		mU := models.ToCommonUser(u)
+		mU := ToCommonUser(u)
 		retUsers = append(retUsers, mU)
 	}
 
