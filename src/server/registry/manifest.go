@@ -15,6 +15,7 @@
 package registry
 
 import (
+	tracelib "github.com/goharbor/harbor/src/lib/trace"
 	"net/http"
 	"strings"
 
@@ -95,11 +96,14 @@ func deleteManifest(w http.ResponseWriter, req *http.Request) {
 func putManifest(w http.ResponseWriter, req *http.Request) {
 	repo := router.Param(req.Context(), ":splat")
 	reference := router.Param(req.Context(), ":reference")
+	ctx := req.Context()
+	ct, span := tracelib.StartTrace(ctx, "goharbor/harbor/src/server/registry", "put manifest")
 
 	// make sure the repository exist before pushing the manifest
-	_, _, err := repository.Ctl.Ensure(req.Context(), repo)
+	_, _, err := repository.Ctl.Ensure(ct, repo)
 	if err != nil {
 		lib_http.SendError(w, err)
+		span.RecordError(err)
 		return
 	}
 
@@ -128,6 +132,7 @@ func putManifest(w http.ResponseWriter, req *http.Request) {
 	_, _, err = artifact.Ctl.Ensure(req.Context(), repo, dgt, tags...)
 	if err != nil {
 		lib_http.SendError(w, err)
+		span.RecordError(err)
 		return
 	}
 
@@ -135,4 +140,5 @@ func putManifest(w http.ResponseWriter, req *http.Request) {
 	if _, err := buffer.Flush(); err != nil {
 		log.Errorf("failed to flush: %v", err)
 	}
+	span.End()
 }
