@@ -17,6 +17,7 @@ package repoproxy
 import (
 	"context"
 	"fmt"
+	tracelib "github.com/goharbor/harbor/src/lib/trace"
 	"io"
 	"net/http"
 	"time"
@@ -61,7 +62,9 @@ func handleBlob(w http.ResponseWriter, r *http.Request, next http.Handler) error
 		return err
 	}
 	if !canProxy(r.Context(), p) || proxyCtl.UseLocalBlob(ctx, art) {
+		_, span := tracelib.StartTrace(r.Context(), "src/server/middleware/repoproxy", "get blob")
 		next.ServeHTTP(w, r)
+		span.End()
 		return nil
 	}
 	size, reader, err := proxyCtl.ProxyBlob(ctx, p, art)
@@ -113,7 +116,9 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 		return err
 	}
 	if !canProxy(r.Context(), p) {
+		_, span := tracelib.StartTrace(r.Context(), "src/server/middleware/repoproxy", "get blob")
 		next.ServeHTTP(w, r)
+		span.End()
 		return nil
 	}
 	remote, err := proxy.NewRemoteHelper(r.Context(), p.RegistryID)
@@ -136,7 +141,9 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 			}
 			return nil
 		}
+		_, span := tracelib.StartTrace(r.Context(), "src/server/middleware/repoproxy", "get manifest")
 		next.ServeHTTP(w, r)
+		span.End()
 		return nil
 	}
 
