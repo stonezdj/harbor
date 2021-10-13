@@ -34,7 +34,7 @@ func StartSpan(ctx context.Context, name string) (context.Context, oteltrace.Spa
 	return otel.Tracer("goharbor/harbor/src/lib/trace").Start(ctx, name)
 }
 
-// SpanFromContext returns the span from the context.
+// SpanFromHTTPRequest returns the span from the context.
 func SpanFromHTTPRequest(req *http.Request) oteltrace.Span {
 	ctx := req.Context()
 	return oteltrace.SpanFromContext(ctx)
@@ -49,16 +49,21 @@ func RecordError(span oteltrace.Span, err error, description string) {
 	span.SetStatus(codes.Error, description)
 }
 
+func harborHTTPRequestHandlerFormatter(operation string, r *http.Request) string {
+	return r.Method + "_" + r.RequestURI
+}
+
 // NewHandler returns a handler that wraps the given handler with tracing.
 func NewHandler(h http.Handler, operation string) http.Handler {
 	httpOptions := []otelhttp.Option{
 		otelhttp.WithTracerProvider(otel.GetTracerProvider()),
 		otelhttp.WithPropagators(otel.GetTextMapPropagator()),
+		otelhttp.WithSpanNameFormatter(harborHTTPRequestHandlerFormatter),
 	}
 	return otelhttp.NewHandler(h, operation, httpOptions...)
 }
 
-// StarTrace returns a new span with the given name.
+// StartTrace returns a new span with the given name.
 func StartTrace(ctx context.Context, tracerName string, spanName string, opts ...oteltrace.SpanStartOption) (context.Context, oteltrace.Span) {
 	return otel.Tracer(tracerName).Start(ctx, spanName, opts...)
 }
