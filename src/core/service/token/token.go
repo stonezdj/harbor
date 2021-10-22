@@ -17,6 +17,7 @@ package token
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -31,6 +32,8 @@ type Handler struct {
 // and parse service and scope based on docker registry v2 standard,
 // checks the permission against local DB and generates jwt token.
 func (h *Handler) Get() {
+	// sleep for 10s for each request
+	time.Sleep(10 * time.Second)
 	request := h.Ctx.Request
 	log.Debugf("URL for token request: %s", request.URL.String())
 	service := h.GetString("service")
