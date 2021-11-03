@@ -33,7 +33,6 @@ import (
 	"github.com/goharbor/harbor/src/server/middleware/security"
 	"github.com/goharbor/harbor/src/server/middleware/session"
 	"github.com/goharbor/harbor/src/server/middleware/trace"
-	"github.com/goharbor/harbor/src/server/middleware/transaction"
 )
 
 var (
@@ -88,7 +87,7 @@ func MiddleWares() []beego.MiddleWare {
 		csrf.Middleware(),
 		orm.Middleware(pingSkipper),
 		notification.Middleware(pingSkipper), // notification must ahead of transaction ensure the DB transaction execution complete
-		transaction.Middleware(dbTxSkippers...),
+		//transaction.Middleware(dbTxSkippers...),
 		artifactinfo.Middleware(),
 		security.Middleware(pingSkipper),
 		security.UnauthorizedMiddleware(),

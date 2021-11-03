@@ -112,6 +112,8 @@ func gracefulShutdown(closing, done chan struct{}, shutdowns ...func()) {
 	os.Exit(0)
 }
 
+var StandBy = false
+
 func main() {
 	beego.BConfig.WebConfig.Session.SessionOn = true
 	beego.BConfig.WebConfig.Session.SessionName = config.SessionCookieName
@@ -198,8 +200,13 @@ func main() {
 	if err := dao.InitDatabase(database); err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
-	if err = migration.Migrate(database); err != nil {
-		log.Fatalf("failed to migrate: %v", err)
+	if strings.EqualFold("true", os.Getenv("STANDBY")) {
+		StandBy = true
+	}
+	if !StandBy {
+		if err = migration.Migrate(database); err != nil {
+			log.Fatalf("failed to migrate: %v", err)
+		}
 	}
 	ctx = orm.Clone(ctx)
 	if err := config.Load(ctx); err != nil {
