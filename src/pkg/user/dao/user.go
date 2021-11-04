@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	commonmodels "github.com/goharbor/harbor/src/common/models"
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/pkg/user/models"
 	"time"
@@ -94,6 +95,7 @@ func toCommonUser(u *User) *commonmodels.User {
 
 // FilterByUsernameOrEmail generates the query setter to match username or email column to the same value
 func (u *User) FilterByUsernameOrEmail(ctx context.Context, qs orm.QuerySeter, key string, value interface{}) orm.QuerySeter {
+	log.Info("FilterByUsernameOrEmail")
 	usernameOrEmail, ok := value.(string)
 	if !ok {
 		return qs
