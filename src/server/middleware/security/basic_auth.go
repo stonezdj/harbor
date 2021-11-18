@@ -37,7 +37,7 @@ func (b *basicAuth) Generate(req *http.Request) security.Context {
 		Password:  password,
 	})
 	if err != nil {
-		log.Errorf("failed to authenticate %s: %v, source: %v", username, err, req.RemoteAddr)
+		log.Errorf("failed to authenticate %s: %v, source: %v", username, err, req.Header.Get("X-Forwarded-For"))
 		return nil
 	}
 	if user == nil {
