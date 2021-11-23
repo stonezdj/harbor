@@ -32,6 +32,8 @@ const (
 	ProjectPublic = "public"
 	// ProjectPrivate means project is private
 	ProjectPrivate = "private"
+	// ProjectContextKey ...
+	ProjectContextKey = "project_ctx_key"
 )
 
 func init() {
@@ -54,6 +56,32 @@ type Project struct {
 	Metadata     map[string]string      `orm:"-" json:"metadata"`
 	CVEAllowlist allowlist.CVEAllowlist `orm:"-" json:"cve_allowlist"`
 	RegistryID   int64                  `orm:"column(registry_id)" json:"registry_id"`
+}
+
+// WithProject ...
+func WithProject(ctx context.Context, p Project) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, ProjectContextKey, p)
+}
+
+// GetProject ...
+func GetProject(ctx context.Context) (p Project) {
+	if ctx == nil {
+		return
+	}
+	value := ctx.Value(ProjectContextKey)
+	if value != nil {
+		p, _ = value.(Project)
+	}
+	return
+}
+
+// NamesQuery ...
+type NamesQuery struct {
+	Names      []string // the names of project
+	WithPublic bool     // include the public projects
 }
 
 // GetMetadata ...
