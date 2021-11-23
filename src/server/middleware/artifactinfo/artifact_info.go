@@ -17,7 +17,9 @@ package artifactinfo
 import (
 	"fmt"
 	"github.com/docker/distribution/reference"
+	projectCtl "github.com/goharbor/harbor/src/controller/project"
 	lib_http "github.com/goharbor/harbor/src/lib/http"
+	"github.com/goharbor/harbor/src/pkg/project/models"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -92,6 +94,11 @@ func Middleware() func(http.Handler) http.Handler {
 				art.BlobMountRepository = bmr
 			}
 			ctx := lib.WithArtifactInfo(req.Context(), art)
+			p, err := projectCtl.Ctl.Get(ctx, pn, projectCtl.Metadata(true))
+			if err == nil {
+				log.Info("cache project in ctx")
+				ctx = models.WithProject(ctx, *p)
+			}
 			next.ServeHTTP(rw, req.WithContext(ctx))
 		})
 	}

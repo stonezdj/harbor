@@ -16,6 +16,7 @@ package project
 
 import (
 	"context"
+	"github.com/goharbor/harbor/src/lib/log"
 	"regexp"
 	"strings"
 
@@ -100,6 +101,11 @@ func (m *manager) Delete(ctx context.Context, id int64) error {
 
 // Get the project specified by the ID
 func (m *manager) Get(ctx context.Context, idOrName interface{}) (*models.Project, error) {
+	cp := models.GetProject(ctx)
+	if idOrName == cp.Name || idOrName == cp.ProjectID {
+		log.Info("load project from cache")
+		return &cp, nil
+	}
 	id, ok := idOrName.(int64)
 	if ok {
 		return m.dao.Get(ctx, id)

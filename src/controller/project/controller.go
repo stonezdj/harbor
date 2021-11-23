@@ -155,6 +155,11 @@ func (c *controller) Exists(ctx context.Context, projectIDOrName interface{}) (b
 }
 
 func (c *controller) Get(ctx context.Context, projectIDOrName interface{}, options ...Option) (*models.Project, error) {
+	cp := models.GetProject(ctx)
+	if cp.Name == projectIDOrName || cp.ProjectID == projectIDOrName {
+		log.Info("load project from cache")
+		return &cp, nil
+	}
 	p, err := c.projectMgr.Get(ctx, projectIDOrName)
 	if err != nil {
 		return nil, err
@@ -171,7 +176,11 @@ func (c *controller) GetByName(ctx context.Context, projectName string, options 
 	if projectName == "" {
 		return nil, errors.BadRequestError(nil).WithMessage("project name required")
 	}
-
+	cp := models.GetProject(ctx)
+	if cp.Name == projectName {
+		log.Info("load project from cache")
+		return &cp, nil
+	}
 	p, err := c.projectMgr.Get(ctx, projectName)
 	if err != nil {
 		return nil, err
