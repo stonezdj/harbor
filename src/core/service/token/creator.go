@@ -30,6 +30,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
+	pkgModels "github.com/goharbor/harbor/src/pkg/project/models"
 )
 
 var creatorMap map[string]Creator
@@ -185,7 +186,8 @@ func (rep repositoryFilter) filter(ctx context.Context, ctl project.Controller,
 
 	resource := rbac_project.NewNamespace(project.ProjectID).Resource(rbac.ResourceRepository)
 	scopeList := make([]string, 0)
-	for s := range resourceScopes(ctx, resource) {
+
+	for s := range resourceScopes(pkgModels.WithProject(ctx, *project), resource) {
 		scopeList = append(scopeList, s)
 	}
 	a.Actions = scopeList
