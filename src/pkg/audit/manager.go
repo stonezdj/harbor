@@ -16,6 +16,13 @@ package audit
 
 import (
 	"context"
+	"strings"
+	"time"
+
+	beegorm "github.com/astaxie/beego/orm"
+	"github.com/goharbor/harbor/src/lib/config"
+	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/audit/dao"
 	"github.com/goharbor/harbor/src/pkg/audit/model"
@@ -36,6 +43,8 @@ type Manager interface {
 	Create(ctx context.Context, audit *model.AuditLog) (id int64, err error)
 	// Delete the audit log specified by ID
 	Delete(ctx context.Context, id int64) (err error)
+	// StartAuditLogPurger
+	StartAuditLogPurger()
 }
 
 // New returns a default implementation of Manager
@@ -66,7 +75,44 @@ func (m *manager) Get(ctx context.Context, id int64) (*model.AuditLog, error) {
 
 // Create ...
 func (m *manager) Create(ctx context.Context, audit *model.AuditLog) (int64, error) {
+	if strings.EqualFold(audit.Operation, "pull") &&
+		strings.EqualFold(audit.Username, "anonymous") {
+		log.AL.WithField("operator", audit.Username).
+			WithField("time", audit.OpTime).
+			Debugf("%s :%s", audit.Operation, audit.Resource)
+	} else {
+		log.AL.WithField("operator", audit.Username).
+			WithField("time", audit.OpTime).
+			Infof("%s :%s", audit.Operation, audit.Resource)
+	}
+	if config.AuditLogRetentionHour(ctx) == -1 {
+		return 0, nil
+	}
 	return m.dao.Create(ctx, audit)
+}
+
+// Purge ...
+func (m *manager) Purge(ctx context.Context, retentionHours int) error {
+	return m.dao.Purge(ctx, retentionHours)
+}
+
+// StartAuditLogPurger ...
+func (m *manager) StartAuditLogPurger() {
+	ctx := orm.NewContext(context.TODO(), beegorm.NewOrm())
+	interval := config.AuditLogPurgeInterval(ctx)
+	go func() {
+		for {
+			// TODO: create redis lock make sure only one task running
+			retentionHour := config.AuditLogRetentionHour(ctx)
+			if retentionHour == -1 || retentionHour == 0 {
+				continue
+			}
+			if err := m.Purge(ctx, retentionHour); err != nil {
+				log.Errorf("failed to purge audit log, error %v", err)
+			}
+			time.Sleep(time.Duration(interval) * time.Second)
+		}
+	}()
 }
 
 // Delete ...

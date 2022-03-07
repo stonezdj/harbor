@@ -16,12 +16,14 @@ package config
 
 import (
 	"context"
+	"log/syslog"
+	"strings"
+
 	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/common/models"
 	cfgModels "github.com/goharbor/harbor/src/lib/config/models"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
-	"strings"
 )
 
 // It contains all user related configurations, each of user related settings requires a context provided
@@ -240,4 +242,28 @@ func PullTimeUpdateDisable(ctx context.Context) bool {
 // PullAuditLogDisable returns a bool to indicate if pull audit log is disable for pull request.
 func PullAuditLogDisable(ctx context.Context) bool {
 	return defaultMgr().Get(ctx, common.PullAuditLogDisable).GetBool()
+}
+
+// AuditLogForwardEndpoint returns the audit log forward endpoint
+func AuditLogForwardEndpoint(ctx context.Context) string {
+	return defaultMgr().Get(ctx, common.AuditLogForwardEndpoint).GetString()
+}
+
+// AuditLogRetentionHour returns the audit log retention hour
+func AuditLogRetentionHour(ctx context.Context) int {
+	return defaultMgr().Get(ctx, common.AuditLogRetentionHour).GetInt()
+}
+
+// AuditLogLevel returns the audit log level
+func AuditLogLevel(ctx context.Context) syslog.Priority {
+	level := defaultMgr().Get(ctx, common.AuditLogLevel).GetString()
+	if strings.EqualFold("DEBUG", level) {
+		return syslog.LOG_DEBUG
+	}
+	return syslog.LOG_INFO
+}
+
+// AuditLogPurgeInterval returns the interval to purge audit log table
+func AuditLogPurgeInterval(ctx context.Context) int64 {
+	return defaultMgr().Get(ctx, common.AduitLogPurgeInterval).GetInt64()
 }

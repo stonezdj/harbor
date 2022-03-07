@@ -55,6 +55,7 @@ import (
 	"github.com/goharbor/harbor/src/lib/orm"
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
 	"github.com/goharbor/harbor/src/migration"
+	pkgAudit "github.com/goharbor/harbor/src/pkg/audit"
 	dbCfg "github.com/goharbor/harbor/src/pkg/config/db"
 	_ "github.com/goharbor/harbor/src/pkg/config/inmemory"
 	"github.com/goharbor/harbor/src/pkg/notification"
@@ -237,6 +238,15 @@ func main() {
 		log.Error(err)
 	}
 
+	// in docker-compose, it should be harbor-log:10514,
+	// in kubernetes install, it should be re-configured after change
+	auditLogEndpoint := config.AuditLogForwardEndpoint(ctx)
+	level := config.AuditLogLevel(ctx)
+	err = log.InitAuditLog(level, auditLogEndpoint)
+	if err != nil {
+		log.Errorf("failed to init audit log, error %v", err)
+	}
+
 	// Init API handler
 	if err := api.Init(); err != nil {
 		log.Fatalf("Failed to initialize API handlers with error: %s", err.Error())
@@ -274,6 +284,7 @@ func main() {
 
 	log.Info("Fix empty subiss for meta info data.")
 	oidc.FixEmptySubIss(orm.Context())
+	pkgAudit.Mgr.StartAuditLogPurger()
 	beego.RunWithMiddleWares("", middlewares.MiddleWares()...)
 }
 

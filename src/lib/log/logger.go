@@ -17,6 +17,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"log/syslog"
 	"os"
 	"runtime"
 	"sort"
@@ -27,6 +28,9 @@ import (
 
 // NOTE: the default depth for the logger is 3 so that we can get the correct file and line when use the logger to log message
 var logger = New(os.Stdout, NewTextFormatter(), WarningLevel, 3)
+
+var auditLogger = New(os.Stdout, NewTextFormatter(), WarningLevel, 3)
+var auditInited = false
 
 const srcSeparator = "harbor" + string(os.PathSeparator) + "src"
 
@@ -42,8 +46,20 @@ func init() {
 		logger.setLevel(InfoLevel)
 		return
 	}
-
 	logger.setLevel(level)
+
+}
+
+// InitAuditLog redirect the audit log to the forward endpoint
+func InitAuditLog(level syslog.Priority, logEndpoint string) error {
+	al, err := syslog.Dial("tcp", logEndpoint,
+		level, "audit")
+	if err != nil {
+		logger.Errorf("failed to create audit log, error %v", err)
+		return err
+	}
+	auditLogger.setOutput(al)
+	return nil
 }
 
 // Fields type alias to map[string]interface{}
@@ -87,6 +103,10 @@ func New(out io.Writer, fmtter Formatter, lvl Level, options ...interface{}) *Lo
 // DefaultLogger returns the default logger within the pkg, i.e. the one used in log.Infof....
 func DefaultLogger() *Logger {
 	return logger
+}
+
+func AuditLogger() *Logger {
+	return auditLogger
 }
 
 func (l *Logger) clone() *Logger {

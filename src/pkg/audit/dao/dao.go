@@ -16,7 +16,9 @@ package dao
 
 import (
 	"context"
+
 	"github.com/goharbor/harbor/src/lib/errors"
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/audit/model"
@@ -34,6 +36,8 @@ type DAO interface {
 	Get(ctx context.Context, id int64) (access *model.AuditLog, err error)
 	// Delete the audit log specified by ID
 	Delete(ctx context.Context, id int64) (err error)
+	// Purge the audit log
+	Purge(ctx context.Context, retentionHour int) error
 }
 
 // New returns an instance of the default DAO
@@ -42,6 +46,20 @@ func New() DAO {
 }
 
 type dao struct{}
+
+// Purge delete expired audit log
+func (*dao) Purge(ctx context.Context, retentionHour int) error {
+	ormer, err := orm.FromContext(ctx)
+	if err != nil {
+		return err
+	}
+	sql := "DELETE FROM audit_log WHERE op_time < NOW() - ? * interval '1 hour' "
+	n, err := ormer.Raw(sql, retentionHour).Exec()
+	if err == nil {
+		log.Infof("purged %d audit logs in the database", n)
+	}
+	return err
+}
 
 // Count ...
 func (d *dao) Count(ctx context.Context, query *q.Query) (int64, error) {

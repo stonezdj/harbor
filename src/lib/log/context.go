@@ -22,7 +22,8 @@ var (
 	// G shortcut to get logger from the context
 	G = GetLogger
 	// L the default logger
-	L = DefaultLogger()
+	L  = DefaultLogger()
+	AL = AuditLogger()
 )
 
 type loggerKey struct{}

@@ -196,4 +196,12 @@ const (
 	PullTimeUpdateDisable = "pull_time_update_disable"
 	// PullAuditLogDisable indicate if pull audit log is disable for pull request.
 	PullAuditLogDisable = "pull_audit_log_disable"
+	// AuditLogEndpoint indicate to forward the audit log to an endpoint
+	AuditLogForwardEndpoint = "audit_log_forward_endpoint"
+	// AuditLogRetention indicate the hours to keep the audit log
+	AuditLogRetentionHour = "audit_log_retention_hour"
+	// AuditLogLevel the log level of audit
+	AuditLogLevel = "audit_log_level"
+	// AduitLogPurgeInterval the interval to purge audit_log
+	AduitLogPurgeInterval = "audit_log_purge_interval"
 )

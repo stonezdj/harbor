@@ -183,5 +183,10 @@ var (
 		{Name: common.PullTimeUpdateDisable, Scope: UserScope, Group: BasicGroup, EnvKey: "PULL_TIME_UPDATE_DISABLE", DefaultValue: "false", ItemType: &BoolType{}, Editable: false, Description: `The flag to indicate if pull time is disable for pull request.`},
 		{Name: common.PullCountUpdateDisable, Scope: UserScope, Group: BasicGroup, EnvKey: "PULL_COUNT_UPDATE_DISABLE", DefaultValue: "false", ItemType: &BoolType{}, Editable: false, Description: `The flag to indicate if pull count is disable for pull request.`},
 		{Name: common.PullAuditLogDisable, Scope: UserScope, Group: BasicGroup, EnvKey: "PULL_AUDIT_LOG_DISABLE", DefaultValue: "false", ItemType: &BoolType{}, Editable: false, Description: `The flag to indicate if pull audit log is disable for pull request.`},
+
+		{Name: common.AuditLogForwardEndpoint, Scope: UserScope, Group: BasicGroup, EnvKey: "AUDIT_LOG_FORWARD_ENDPOINT", DefaultValue: "harbor-log:10514", ItemType: &StringType{}, Editable: false, Description: `The endpoint to forward the audit log.`},
+		{Name: common.AuditLogRetentionHour, Scope: UserScope, Group: BasicGroup, EnvKey: "AUDIT_LOG_RETENTION_HOUR", DefaultValue: "0", ItemType: &IntType{}, Editable: false, Description: `The hours to keep audit log in database, default is 720(1 month). '0' means it will always keep the audit_log, not rotate it, '-1' means it won't log any data to audit log table`},
+		{Name: common.AuditLogLevel, Scope: UserScope, Group: BasicGroup, EnvKey: "AUDIT_LOG_LEVEL", DefaultValue: "INFO", ItemType: &StringType{}, Editable: false, Description: `The audit log level, default is INFO, it could be INFO, DEBUG`},
+		{Name: common.AduitLogPurgeInterval, Scope: SystemScope, Group: BasicGroup, EnvKey: "AUDIT_LOG_PURGE_INTERVAL_SEC", DefaultValue: "3600", ItemType: &Int64Type{}, Editable: false, Description: `The audit log level purge interval, default is 3600s, 1 hour`},
 	}
 )

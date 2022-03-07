@@ -88,9 +88,30 @@ func (c *controller) UpdateUserConfigs(ctx context.Context, conf map[string]inte
 	if err != nil {
 		return err
 	}
+
+	// update the audig logger to point to the new endpoint
+	err = c.updateAuditLogEndpoint(ctx, conf)
+	if err != nil {
+		return err
+	}
+
 	if err := mgr.UpdateConfig(ctx, conf); err != nil {
 		log.Errorf("failed to upload configurations: %v", err)
 		return fmt.Errorf("failed to validate configuration")
+	}
+	return nil
+}
+
+func (c *controller) updateAuditLogEndpoint(ctx context.Context, cfgs map[string]interface{}) error {
+	// check if the audig log forward endpoint updated
+	if _, ok := cfgs[common.AuditLogForwardEndpoint]; ok {
+		auditLogEndpoint := config.AuditLogForwardEndpoint(ctx)
+		level := config.AuditLogLevel(ctx)
+		err := log.InitAuditLog(level, auditLogEndpoint)
+		if err != nil {
+			log.Errorf("failed to init audit log, error %v", err)
+			return err
+		}
 	}
 	return nil
 }
