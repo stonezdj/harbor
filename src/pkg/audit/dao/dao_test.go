@@ -56,7 +56,6 @@ func (d *daoTestSuite) TearDownSuite() {
 	d.Require().Nil(err)
 	_, err = ormer.Raw("delete from audit_log").Exec()
 	d.Require().Nil(err)
-
 }
 
 func (d *daoTestSuite) TestCount() {
