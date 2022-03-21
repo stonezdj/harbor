@@ -115,6 +115,11 @@ func (s *scheduler) Schedule(ctx context.Context, vendorType string, vendorID in
 	}
 	sched.CallbackFuncParam = string(paramsData)
 
+	params := map[string]interface{}{}
+	err = json.Unmarshal(paramsData, &params)
+	if err != nil {
+		return 0, err
+	}
 	extrasData, err := json.Marshal(extraAttrs)
 	if err != nil {
 		return 0, err
@@ -129,7 +134,7 @@ func (s *scheduler) Schedule(ctx context.Context, vendorType string, vendorID in
 		return 0, err
 	}
 
-	execID, err := s.execMgr.Create(ctx, JobNameScheduler, id, task.ExecutionTriggerManual)
+	execID, err := s.execMgr.Create(ctx, JobNameScheduler, id, task.ExecutionTriggerManual, params)
 	if err != nil {
 		return 0, err
 	}

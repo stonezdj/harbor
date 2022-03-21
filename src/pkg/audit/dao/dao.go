@@ -16,7 +16,11 @@ package dao
 
 import (
 	"context"
+	"fmt"
+	"strings"
+
 	"github.com/goharbor/harbor/src/lib/errors"
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/audit/model"
@@ -34,6 +38,8 @@ type DAO interface {
 	Get(ctx context.Context, id int64) (access *model.AuditLog, err error)
 	// Delete the audit log specified by ID
 	Delete(ctx context.Context, id int64) (err error)
+	// Purge the audit log
+	Purge(ctx context.Context, retentionHour int, includeOperations []string, dryRun bool) (int64, error)
 }
 
 // New returns an instance of the default DAO
@@ -42,6 +48,55 @@ func New() DAO {
 }
 
 type dao struct{}
+
+// Purge delete expired audit log
+func (*dao) Purge(ctx context.Context, retentionHour int, includeOperations []string, dryRun bool) (int64, error) {
+	ormer, err := orm.FromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	var sql string
+	if dryRun {
+		sql = "SELECT count(1) cnt FROM audit_log WHERE op_time < NOW() - ? * interval '1 hour' "
+	} else {
+		sql = "DELETE FROM audit_log WHERE op_time < NOW() - ? * interval '1 hour' "
+	}
+
+	if len(includeOperations) > 0 {
+		//TODO: sql injection?
+		sql = sql + "AND lower(operation) IN ('" + strings.Join(includeOperations, "','") + "')"
+	}
+
+	log.Infof("the sql is %v", sql)
+
+	if dryRun {
+		var cnt []int64
+		r, err := ormer.Raw(sql, retentionHour).QueryRows(&cnt)
+		if err != nil {
+			log.Errorf("failed to dry run purge audit log, error %v", err)
+			return 0, err
+		}
+		if r != 1 {
+			return 0, fmt.Errorf("failed to purge audit log, no result found")
+		}
+		log.Infof("purged %d audit logs in the database", cnt[0])
+		return cnt[0], nil
+	}
+
+	r, err := ormer.Raw(sql, retentionHour).Exec()
+	if err != nil {
+		log.Errorf("failed to purge audit log, error %v", err)
+		return 0, err
+	}
+	delRows, rErr := r.RowsAffected()
+	if rErr != nil {
+		log.Errorf("failed to purge audit log, error %v", rErr)
+		return 0, rErr
+	}
+	log.Infof("purged %d audit logs in the database", delRows)
+
+	return delRows, err
+}
 
 // Count ...
 func (d *dao) Count(ctx context.Context, query *q.Query) (int64, error) {

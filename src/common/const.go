@@ -196,4 +196,8 @@ const (
 	PullTimeUpdateDisable = "pull_time_update_disable"
 	// PullAuditLogDisable indicate if pull audit log is disable for pull request.
 	PullAuditLogDisable = "pull_audit_log_disable"
+
+	PurgeAuditIncludeOperations = "include_operations"
+	PurgeAuditDryRun            = "dry_run"
+	PurgeAuditRetentionHour     = "audit_retention_hour"
 )
