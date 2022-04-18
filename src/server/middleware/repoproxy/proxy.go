@@ -149,7 +149,7 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 		err = proxyManifestGet(ctx, w, proxyCtl, p, art, remote)
 	}
 	if err != nil {
-		if errors.IsNotFoundErr(err) {
+		if errors.IsNotFoundErr(err) || errors.IsRateLimitError(err) {
 			return err
 		}
 		log.Warningf("Proxy to remote failed, fallback to local repo, error: %v", err)
