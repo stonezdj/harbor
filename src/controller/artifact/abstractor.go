@@ -126,6 +126,11 @@ func (a *abstractor) abstractManifestV2Metadata(artifact *artifact.Artifact, con
 	}
 	// use the "manifest.config.mediatype" as the media type of the artifact
 	artifact.MediaType = manifest.Config.MediaType
+
+	if manifest.Annotations["module.wasm.image/variant"]=="compat" || manifest.Annotations["run.oci.handler"]=="wasm" {
+		artifact.MediaType = "application/vnd.wasm.config.v1+json"
+	}
+
 	// set size
 	artifact.Size = int64(len(content)) + manifest.Config.Size
 	for _, layer := range manifest.Layers {

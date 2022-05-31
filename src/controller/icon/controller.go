@@ -56,6 +56,10 @@ var (
 			path:   "./icons/cosign.png",
 			resize: false,
 		},
+		icon.DigestOfIconWASM: {
+			path: 	"./icons/wasm.png",
+			resize: true,
+		},
 		icon.DigestOfIconDefault: {
 			path:   "./icons/default.png",
 			resize: true,
