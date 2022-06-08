@@ -59,6 +59,7 @@ type Logger struct {
 	fields    map[string]interface{}
 	fieldsStr string
 	mu        *sync.Mutex // ptr here to share one sync.Mutex for clone method
+	fallback  *Logger
 }
 
 // New returns a customized Logger
@@ -87,6 +88,11 @@ func New(out io.Writer, fmtter Formatter, lvl Level, options ...interface{}) *Lo
 // DefaultLogger returns the default logger within the pkg, i.e. the one used in log.Infof....
 func DefaultLogger() *Logger {
 	return logger
+}
+
+// SetFallback enable fallback when error happen
+func (l *Logger) SetFallback(logger *Logger) {
+	l.fallback = logger
 }
 
 func (l *Logger) clone() *Logger {
@@ -146,8 +152,8 @@ func (l *Logger) WithField(key string, value interface{}) *Logger {
 	return l.WithFields(Fields{key: value})
 }
 
-// setOutput sets the output of Logger l
-func (l *Logger) setOutput(out io.Writer) {
+// SetOutput sets the output of Logger l
+func (l *Logger) SetOutput(out io.Writer) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -175,12 +181,17 @@ func (l *Logger) output(record *Record) (err error) {
 	if err != nil {
 		return
 	}
-
+	defer func() {
+		if err := recover(); err != nil && l.fallback != nil {
+			l.fallback.output(record)
+		}
+	}()
 	l.mu.Lock()
 	defer l.mu.Unlock()
-
 	_, err = l.out.Write(b)
-
+	if err != nil && l.fallback != nil {
+		l.fallback.output(record)
+	}
 	return
 }
 

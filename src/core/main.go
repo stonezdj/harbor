@@ -47,6 +47,7 @@ import (
 	_ "github.com/goharbor/harbor/src/lib/cache/redis"  // redis cache
 	"github.com/goharbor/harbor/src/lib/config"
 	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/lib/log/audit"
 	"github.com/goharbor/harbor/src/lib/metric"
 	"github.com/goharbor/harbor/src/lib/orm"
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
@@ -200,6 +201,9 @@ func main() {
 	go gracefulShutdown(closing, done, shutdownTracerProvider)
 	// Start health checker for registries
 	go registry.Ctl.StartRegularHealthCheck(orm.Context(), closing, done)
+	// Init audit log
+	auditEP := config.AuditLogForwardEndpoint(ctx)
+	audit.LogMgr.Init(ctx, auditEP)
 
 	log.Info("initializing notification...")
 	notification.Init()

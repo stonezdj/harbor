@@ -16,6 +16,8 @@ package audit
 
 import (
 	"context"
+	"github.com/goharbor/harbor/src/lib/config"
+	auditLog "github.com/goharbor/harbor/src/lib/log/audit"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/audit/dao"
 	"github.com/goharbor/harbor/src/pkg/audit/model"
@@ -68,6 +70,14 @@ func (m *manager) Get(ctx context.Context, id int64) (*model.AuditLog, error) {
 
 // Create ...
 func (m *manager) Create(ctx context.Context, audit *model.AuditLog) (int64, error) {
+	if len(config.AuditLogForwardEndpoint(ctx)) > 0 {
+		auditLog.LogMgr.DefaultLogger(ctx).WithField("operator", audit.Username).
+			WithField("time", audit.OpTime).
+			Infof("action:%s, resource:%s", audit.Operation, audit.Resource)
+	}
+	if config.SkipAuditLogDatabase(ctx) {
+		return 0, nil
+	}
 	return m.dao.Create(ctx, audit)
 }
 
