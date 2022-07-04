@@ -52,6 +52,7 @@ var (
 	// For the PUT Blob Upload API, we will make a transaction manually to write blob info to the database when put blob upload successfully.
 	dbTxSkippers = []middleware.Skipper{
 		middleware.MethodAndPathSkipper(http.MethodPatch, distribution.BlobUploadURLRegexp),
+		middleware.MethodAndPathSkipper(http.MethodPost, regexp.MustCompile(`^/service/notifications/jobs/webhook/`+numericRegexp.String())),
 		middleware.MethodAndPathSkipper(http.MethodPut, distribution.BlobUploadURLRegexp),
 		func(r *http.Request) bool { // skip tx for GET, HEAD and Options requests
 			m := r.Method
