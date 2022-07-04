@@ -16,16 +16,28 @@ package dao
 
 import (
 	"context"
+	"expvar"
+
 	"fmt"
+
 	"strings"
 	"time"
 
 	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/lib/metric"
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/lib/q"
 )
+
+var fail = expvar.NewInt("updateStatus.fail")
+var success = expvar.NewInt("updateStatus.success")
+
+func init() {
+	fail.Set(0)
+	success.Set(0)
+}
 
 // ExecutionDAO is the data access object interface for execution
 type ExecutionDAO interface {
@@ -189,6 +201,11 @@ func (e *executionDAO) RefreshStatus(ctx context.Context, id int64) (bool, strin
 	// we use the optimistic locking to avoid the conflict and retry 5 times at most
 	for i := 0; i < 5; i++ {
 		statusChanged, currentStatus, retry, err := e.refreshStatus(ctx, id)
+		if retry {
+			metric.TotalUpdateFailGuage.Inc()
+		} else {
+			metric.TotalUpdateSucGuage.Inc()
+		}
 		if err != nil {
 			return false, "", err
 		}
