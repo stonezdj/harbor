@@ -12,6 +12,8 @@ func RegisterCollectors() {
 		TotalInFlightGauge,
 		TotalReqCnt,
 		TotalReqDurSummary,
+		TotalUpdateFailGuage,
+		TotalUpdateSucGuage,
 	}...)
 }
 
@@ -47,4 +49,23 @@ var (
 			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 		},
 		[]string{"method", "operation"})
+
+	// TotalUpdateFailGuage used to collect total in flight number
+	TotalUpdateFailGuage = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: os.Getenv(NamespaceEnvKey),
+			Subsystem: os.Getenv(SubsystemEnvKey),
+			Name:      "update_fail",
+			Help:      "The total number of failed update",
+		},
+	)
+	// TotalUpdateSucGuage used to collect total in flight number
+	TotalUpdateSucGuage = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Namespace: os.Getenv(NamespaceEnvKey),
+			Subsystem: os.Getenv(SubsystemEnvKey),
+			Name:      "update_suc",
+			Help:      "The total number of succeed update",
+		},
+	)
 )
