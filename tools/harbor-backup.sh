@@ -18,6 +18,7 @@ create_dir(){
     rm -rf harbor
     mkdir -p harbor/db
     mkdir -p harbor/secret
+    chmod 777 harbor
     chmod 777 harbor/db
     chmod 777 harbor/secret
 }
@@ -27,7 +28,7 @@ launch_db() {
         echo "There is running container, please stop and remove it before backup"
         exit 1
     fi
-    $DOCKER_CMD run -d --name harbor-db -v ${PWD}:/backup -v ${harbor_db_path}:/var/lib/postgresql/data ${harbor_db_image} "postgres"
+    $DOCKER_CMD run -d --name harbor-db -v ${PWD}/harbor:/backup/harbor -v ${harbor_db_path}:/var/lib/postgresql/data ${harbor_db_image} "postgres"
 }
 
 clean_db() {
@@ -78,15 +79,13 @@ backup_redis() {
 }
 
 backup_secret() {
-    if [ -f /data/secretkey ]; then
-        cp /data/secretkey harbor/secret/
+    # backup all files in secret
+    if [ -d /data/secret/ ]; then
+        cp -r /data/secret/* harbor/secret/
     fi
-    if [ -f /data/defaultalias ]; then
-         cp /data/defaultalias harbor/secret/
-    fi
-    # location changed after 1.8.0
-    if [ -d /data/secret/keys/ ]; then
-        cp -r /data/secret/keys/ harbor/secret/
+    # exclude the server.crt and server.key because they should be signed with new ca
+    if [ -d harbor/secret/cert/  ]; then
+        rm -rf harbor/secret/cert/
     fi
 }
 

@@ -28,7 +28,7 @@ launch_db() {
         echo "There is running container, please stop and remove it before restore"
         exit 1
     fi
-    $DOCKER_CMD run -d --name harbor-db -v ${PWD}:/backup -v ${harbor_db_path}:/var/lib/postgresql/data ${harbor_db_image} "postgres" 
+    $DOCKER_CMD run -d --name harbor-db -v ${PWD}/harbor:/backup/harbor -v ${harbor_db_path}:/var/lib/postgresql/data ${harbor_db_image} "postgres" 
 }
 
 clean_db() {
@@ -94,14 +94,8 @@ restore_chartmuseum() {
 }
 
 restore_secret() {
-    if [ -f harbor/secret/secretkey ]; then
-        cp -f harbor/secret/secretkey /data/secretkey 
-    fi
-    if [ -f harbor/secret/defaultalias ]; then
-        cp -f harbor/secret/defaultalias /data/secretkey 
-    fi
-    if [ -d harbor/secret/keys ]; then
-        cp -r harbor/secret/keys/ /data/secret/
+    if [ -d harbor/secret/ ]; then
+        cp -r harbor/secret/* /data/secret/
     fi
 }
 
