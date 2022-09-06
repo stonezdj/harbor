@@ -2,13 +2,24 @@
 NAME=ldap_server
 docker rm -f $NAME 2>/dev/null
 
-docker run --env LDAP_ORGANISATION="Harbor." \
---env LDAP_DOMAIN="example.com" \
---env LDAP_ADMIN_PASSWORD="admin" \
---env LDAP_TLS_VERIFY_CLIENT="never" \
--p 389:389 \
--p 636:636 \
---detach --name $NAME osixia/openldap:1.1.7
+## Generate cert by IP SAN
+## copy server.crt to /data/cert/server.crt
+## copy server.key to /data/cert/server.key
+## copy harbor_ca.crt to /data/cert/harbor_ca.crt
+## After launch ldap server, connect to ldap server by ldaps://<IP>:636
+docker run \
+	--env LDAP_ORGANISATION="Harbor." \
+    --env LDAP_DOMAIN="example.com" \
+    --env LDAP_ADMIN_PASSWORD="admin" \
+    --env LDAP_TLS_VERIFY_CLIENT="never" \
+	--volume /data/cert:/container/service/slapd/assets/certs \
+	--env LDAP_TLS_CRT_FILENAME=server.crt \
+	--env LDAP_TLS_KEY_FILENAME=server.key \
+	--env LDAP_TLS_CA_CRT_FILENAME=harbor_ca.crt \
+    -p 389:389 \
+    -p 636:636 \
+	--detach --name $NAME osixia/openldap:latest
+
 
 sleep 5
 docker cp ldap_test.ldif ldap_server:/
