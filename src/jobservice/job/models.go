@@ -16,6 +16,7 @@ package job
 
 import (
 	"encoding/json"
+	"github.com/goharbor/harbor/src/jobservice/config"
 
 	"github.com/goharbor/harbor/src/jobservice/common/utils"
 	"github.com/goharbor/harbor/src/lib/errors"
@@ -152,4 +153,9 @@ func (st *Stats) Validate() error {
 	}
 
 	return nil
+}
+
+// Config job service config
+type Config struct {
+	RedisPoolConfig *config.RedisPoolConfig `json:"redis_pool_config"`
 }

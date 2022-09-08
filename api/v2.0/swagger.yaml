@@ -4517,6 +4517,189 @@ paths:
           $ref: '#/responses/403'
         '500':
           $ref: '#/responses/500'
+  /jobservice/pools:
+    get:
+      operationId: getWorkerPools
+      summary: Get worker pools
+      description: Get worker pools
+      tags:
+        - jobservice
+      parameters:
+        - $ref: '#/parameters/requestId'
+      responses:
+        '200':
+          description: Get worker pools successfully.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/WorkerPool'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '500':
+          $ref: '#/responses/500'
+  /jobservice/pools/{pool_id}/workers:
+    get:
+      operationId: getWorkers
+      summary: Get workers
+      description: Get workers in current pool
+      tags:
+        - jobservice
+      parameters:
+        - $ref: '#/parameters/requestId'
+        - name: pool_id
+          in: path
+          required: true
+          type: string
+          description: The name of the pool. 'all' stands for all pools
+      responses:
+        '200':
+          description: Get workers successfully.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Worker'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '500':
+          $ref: '#/responses/500'
+  /jobservice/jobs/{job_id}:
+    put:
+      operationId: stopRunningJob
+      summary: Stop running job
+      description: Stop running job
+      tags:
+        - jobservice
+      parameters:
+        - $ref: '#/parameters/requestId'
+        - name: job_id
+          in: path
+          required: true
+          type: string
+          description: The id of the job.
+      responses:
+        '200':
+          description: Stop worker successfully.
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '500':
+          $ref: '#/responses/500'
+  /jobservice/queues:
+    get:
+      operationId: listJobQueues
+      summary: list job queues
+      description: list job queue
+      tags: 
+        - jobservice
+      parameters:
+        - $ref: '#/parameters/requestId'
+      responses:
+        '200':
+          description: List job queue successfully.
+          schema:
+            type: array
+            items:
+             $ref: '#/definitions/JobQueue'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '500':
+          $ref: '#/responses/500'
+  /jobservice/queues/{job_type}:
+    put:
+      operationId: actionPendingJobs 
+      summary: stop and clean, pause, resume pending jobs in the queue
+      description: stop and clean, pause, resume pending jobs in the queue
+      tags: 
+        - jobservice
+      parameters:
+        - $ref: '#/parameters/requestId'
+        - name: job_type
+          in: path
+          required: true
+          type: string
+          description: The type of the job. 'all' stands for all job types
+        - name: action_request
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ActionRequest'
+      responses:
+        '200':
+          description: take action to the jobs in the queue successfully.
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '500':
+          $ref: '#/responses/500'
+  /jobservice/schedules:
+    get:
+      operationId: listSchedules
+      description: List schedules
+      tags:
+        - jobservice
+      parameters:
+        - $ref: '#/parameters/requestId'
+      responses:
+        '200':
+          description: list schedule successfully.
+          schema:
+            type: array
+            items:
+              type: object
+              $ref: '#/definitions/ScheduleTask'
+          headers:
+            X-Total-Count:
+              description: The total count of available items
+              type: integer
+            Link:
+              description: Link to previous page and next page
+              type: string              
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '500':
+          $ref: '#/responses/500'    
+  /jobservice/schedulerstatus:
+    get:
+      operationId: getSchedulerStatus
+      description: Get scheduler status
+      tags:
+        - jobservice
+      parameters:
+        - $ref: '#/parameters/requestId'
+      responses:
+        '200':
+          description: Get scheduler status successfully.
+          schema:
+            type: object
+            $ref: '#/definitions/SchedulerStatus'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '500':
+          $ref: '#/responses/500'
   /ping:
     get:
       operationId: getPing
@@ -9245,3 +9428,109 @@ definitions:
         items:
           $ref: '#/definitions/ScanDataExportExecution'
         description: The list of scan data export executions
+  WorkerPool:
+    type: object
+    description: the job pool
+    properties: 
+      pid:
+        type: integer
+        description: the id of the pool
+      worker_pool_id:
+        type: string
+        description: the id of the worker pool
+      start_at:
+        type: string
+        format: date-time
+        description: The start time of the work pool
+      heartbeat_at:
+        type: string
+        format: date-time
+        description: The heartbeat time of the work pool
+      concurrency:
+        type: integer
+        description: The concurrency of the work pool
+      host: 
+        type: string
+        description: The host of the work pool 
+  Worker:
+    type: object
+    description: the job pool worker
+    properties: 
+      id:
+        type: string
+        description: the id of the worker
+      pool_id:
+        type: string
+        description: the id of the worker pool
+      job_name:
+        type: string
+        description: the name of the job
+      job_id:
+        type: string
+        description: the id of the job
+      start_at:
+        type: string
+        format: date-time
+        description: The start time of the worker
+      args:
+        type: string
+        description: The args of the worker
+      check_in:
+        type: string
+        description: the checkin of the current job
+      checkin_at:
+        type: string
+        format: date-time
+        description: The checkin time of the worker
+  ActionRequest:
+    type: object
+    description: The request to stop, pause or resume 
+    properties:
+      action:
+        type: string
+        description: The action of the request, should be stop, pause or resume 
+  JobQueue:
+    type: object
+    description: the job queue info
+    properties:
+      job_type:
+        type: string
+        description: The type of the current job
+      count: 
+        type: integer
+        description: The count of jobs in the current queue
+      latency:
+        type: integer
+        description: The latency of current queue (seconds)
+      paused: 
+        type: boolean
+        description: The paused status of current queue
+  ScheduleTask:
+    type: object
+    description: the schedule task info
+    properties:
+      id: 
+        type: integer
+        description: the id of the Schedule task
+      vendor_type: 
+        type: string
+        description: the vendor type of the current schedule task
+      vendor_id:
+        type: integer
+        description: the vendor id of the current task
+      extra_attrs:
+        type: string
+        description: the extra attributes
+      creation_time:
+        type: string
+        format: date-time
+      revision:
+        type: integer
+        description: the revision of current schedule
+  SchedulerStatus:
+    type: object
+    description: the scheduler status
+    properties:
+      paused:
+        type: boolean
+        description: if the scheduler is paused
