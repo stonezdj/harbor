@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/goharbor/harbor/src/common/utils"
+
 	"github.com/goharbor/harbor/src/common/security"
 	"github.com/goharbor/harbor/src/common/security/proxycachesecret"
 	"github.com/goharbor/harbor/src/controller/project"
@@ -54,13 +56,31 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 	})
 }
 
+func proxyProjectManifestURL(art lib.ArtifactInfo, mirrorProxyName string) string {
+	return fmt.Sprintf("/v2/%s/%s/manifests/%s", mirrorProxyName, art.Repository, art.Reference)
+}
+
+func proxyProjectBlobURL(art lib.ArtifactInfo, mirrorProxyName string, digest string) string {
+	return fmt.Sprintf("/v2/%s/%s/blobs/%s", mirrorProxyName, art.Repository, digest)
+}
+
 func handleBlob(w http.ResponseWriter, r *http.Request, next http.Handler) error {
 	ctx := r.Context()
 	art, p, proxyCtl, err := preCheck(ctx)
 	if err != nil {
+		if errors.IsNotFoundErr(err) {
+			if mirrorProxy() {
+				http.Redirect(w, r, proxyProjectBlobURL(art, utils.MirrorProxyProject(), art.Digest), http.StatusMovedPermanently)
+				return nil
+			}
+		}
 		return err
 	}
 	if !canProxy(r.Context(), p) || proxyCtl.UseLocalBlob(ctx, art) {
+		if mirrorProxy() {
+			http.Redirect(w, r, proxyProjectBlobURL(art, utils.MirrorProxyProject(), art.Digest), http.StatusMovedPermanently)
+			return nil
+		}
 		next.ServeHTTP(w, r)
 		return nil
 	}
@@ -79,6 +99,10 @@ func handleBlob(w http.ResponseWriter, r *http.Request, next http.Handler) error
 	}
 	setHeaders(w, size, "", art.Digest)
 	return nil
+}
+
+func mirrorProxy() bool {
+	return len(utils.MirrorProxyProject()) > 0
 }
 
 func preCheck(ctx context.Context) (art lib.ArtifactInfo, p *proModels.Project, ctl proxy.Controller, err error) {
@@ -110,9 +134,19 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 	ctx := r.Context()
 	art, p, proxyCtl, err := preCheck(ctx)
 	if err != nil {
+		if errors.IsNotFoundErr(err) {
+			if mirrorProxy() {
+				http.Redirect(w, r, proxyProjectManifestURL(art, utils.MirrorProxyProject()), http.StatusMovedPermanently)
+				return nil
+			}
+		}
 		return err
 	}
 	if !canProxy(r.Context(), p) {
+		if mirrorProxy() {
+			http.Redirect(w, r, proxyProjectManifestURL(art, utils.MirrorProxyProject()), http.StatusMovedPermanently)
+			return nil
+		}
 		next.ServeHTTP(w, r)
 		return nil
 	}

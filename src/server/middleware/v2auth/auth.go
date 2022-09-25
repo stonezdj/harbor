@@ -17,6 +17,7 @@ package v2auth
 import (
 	"context"
 	"fmt"
+	"github.com/goharbor/harbor/src/common/utils"
 	"net/http"
 	"net/url"
 	"strings"
@@ -72,6 +73,10 @@ func (rc *reqChecker) check(req *http.Request) (string, error) {
 				return "", err
 			}
 			resource := rbac_project.NewNamespace(pid).Resource(rbac.ResourceRepository)
+			mirror := utils.MirrorProxyProject()
+			if len(mirror) > 0 && mirror == pn {
+				return "", nil
+			}
 			if !securityCtx.Can(req.Context(), a.action, resource) {
 				return getChallenge(req, al), fmt.Errorf("unauthorized to access repository: %s, action: %s", a.name, a.action)
 			}
@@ -161,11 +166,13 @@ func Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 			if challenge, err := checker.check(req); err != nil {
-				// the header is needed for "docker manifest" commands: https://github.com/docker/cli/issues/989
-				rw.Header().Set("Docker-Distribution-Api-Version", "registry/2.0")
-				rw.Header().Set("Www-Authenticate", challenge)
-				lib_http.SendError(rw, errors.UnauthorizedError(err).WithMessage(err.Error()))
-				return
+				if !errors.IsNotFoundErr(err) {
+					// the header is needed for "docker manifest" commands: https://github.com/docker/cli/issues/989
+					rw.Header().Set("Docker-Distribution-Api-Version", "registry/2.0")
+					rw.Header().Set("Www-Authenticate", challenge)
+					lib_http.SendError(rw, errors.UnauthorizedError(err).WithMessage(err.Error()))
+					return
+				}
 			}
 			next.ServeHTTP(rw, req)
 		})

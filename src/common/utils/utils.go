@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -299,4 +300,9 @@ func NextSchedule(cron string, curTime time.Time) time.Time {
 // CronParser returns the parser of cron string with format of "* * * * * *"
 func CronParser() cronlib.Parser {
 	return cronlib.NewParser(cronlib.Second | cronlib.Minute | cronlib.Hour | cronlib.Dom | cronlib.Month | cronlib.Dow)
+}
+
+// MirrorProxyProject ...
+func MirrorProxyProject() string {
+	return os.Getenv("MIRROR_PROXY_PROJECT")
 }
