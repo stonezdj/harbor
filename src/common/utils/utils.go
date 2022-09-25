@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -325,4 +326,9 @@ func MostMatchSorter(a, b string, matchWord string) bool {
 		return a < b
 	}
 	return len(a) < len(b)
+}
+
+// MirrorProxyProject ...
+func MirrorProxyProject() string {
+	return os.Getenv("MIRROR_PROXY_PROJECT")
 }
