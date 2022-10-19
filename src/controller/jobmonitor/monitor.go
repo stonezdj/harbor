@@ -49,10 +49,12 @@ type WorkerPoolController interface {
 }
 
 type workerPoolController struct {
-	poolManager      jm.PoolManager
-	jobServiceClient jm.JobServiceClient
-	taskManager      task.Manager
-	sch              scheduler.Scheduler
+	poolManager  jm.PoolManager
+	workerClient jm.WorkerClient
+	queueClient  jm.QueueClient
+	taskManager  task.Manager
+	sch          scheduler.Scheduler
+	redisClient  jm.RedisClient
 }
 
 func (w *workerPoolController) GetSchedulerStatus(ctx context.Context) (bool, error) {
@@ -60,7 +62,7 @@ func (w *workerPoolController) GetSchedulerStatus(ctx context.Context) (bool, er
 	if err != nil {
 		return false, err
 	}
-	statusMap, err := w.jobServiceClient.AllJobTypeStatus(ctx, cfg.RedisPoolConfig)
+	statusMap, err := w.redisClient.AllJobTypeStatus(ctx, cfg.RedisPoolConfig)
 	if err != nil {
 		return false, err
 	}
@@ -73,7 +75,7 @@ func (w *workerPoolController) PauseJobQueues(ctx context.Context, jobType strin
 		return err
 	}
 	if strings.EqualFold(jobType, "all") {
-		jobTypes, err := w.jobServiceClient.AllJobTypes(ctx, cfg.RedisPoolConfig)
+		jobTypes, err := w.redisClient.AllJobTypes(ctx, cfg.RedisPoolConfig)
 		if err != nil {
 			return err
 		}
@@ -85,9 +87,9 @@ func (w *workerPoolController) PauseJobQueues(ctx context.Context, jobType strin
 		return nil
 	}
 	if pause {
-		return w.jobServiceClient.PauseJob(ctx, cfg.RedisPoolConfig, jobType)
+		return w.redisClient.PauseJob(ctx, cfg.RedisPoolConfig, jobType)
 	}
-	return w.jobServiceClient.UnpauseJob(ctx, cfg.RedisPoolConfig, jobType)
+	return w.redisClient.UnpauseJob(ctx, cfg.RedisPoolConfig, jobType)
 }
 
 func (w *workerPoolController) ListSchedule(ctx context.Context) ([]*scheduler.Schedule, error) {
@@ -100,7 +102,7 @@ func (w *workerPoolController) StopPendingJob(ctx context.Context, jobType strin
 		return err
 	}
 	if strings.EqualFold(jobType, "all") {
-		jobTypes, err := w.jobServiceClient.AllJobTypes(ctx, cfg.RedisPoolConfig)
+		jobTypes, err := w.redisClient.AllJobTypes(ctx, cfg.RedisPoolConfig)
 		if err != nil {
 			return err
 		}
@@ -111,7 +113,28 @@ func (w *workerPoolController) StopPendingJob(ctx context.Context, jobType strin
 		}
 		return nil
 	}
-	return w.jobServiceClient.StopPendingJobs(ctx, cfg.RedisPoolConfig, jobType)
+	jobIDs, err := w.redisClient.StopPendingJobs(ctx, cfg.RedisPoolConfig, jobType)
+	if err != nil {
+		return err
+	}
+	return w.UpdateJobStatusInTask(ctx, jobIDs)
+}
+
+func (w *workerPoolController) UpdateJobStatusInTask(ctx context.Context, jobIDs []string) error {
+	for _, jobID := range jobIDs {
+		ts, err := w.taskManager.List(ctx, q.New(q.KeyWords{"job_id": jobID}))
+		if err != nil {
+			return err
+		}
+		if len(ts) == 0 {
+			continue
+		}
+		ts[0].Status = "Stopped"
+		if err := w.taskManager.Update(ctx, ts[0], "Status"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (w *workerPoolController) ListQueue(ctx context.Context) ([]*jm.Queue, error) {
@@ -119,11 +142,11 @@ func (w *workerPoolController) ListQueue(ctx context.Context) ([]*jm.Queue, erro
 	if err != nil {
 		return nil, err
 	}
-	qs, err := w.jobServiceClient.ListQueues(ctx, cfg.RedisPoolConfig)
+	qs, err := w.queueClient.ListQueues(ctx, cfg.RedisPoolConfig)
 	if err != nil {
 		return nil, err
 	}
-	statusMap, err := w.jobServiceClient.AllJobTypeStatus(ctx, cfg.RedisPoolConfig)
+	statusMap, err := w.redisClient.AllJobTypeStatus(ctx, cfg.RedisPoolConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +199,7 @@ func (w *workerPoolController) ListWorker(ctx context.Context, poolID string) ([
 	if err != nil {
 		return nil, err
 	}
-	return w.jobServiceClient.ListWorkers(ctx, cfg.RedisPoolConfig, poolID)
+	return w.workerClient.ListWorkers(ctx, cfg.RedisPoolConfig, poolID)
 }
 
 func (w *workerPoolController) List(ctx context.Context) ([]*jm.WorkerPool, error) {
@@ -189,5 +212,11 @@ func (w *workerPoolController) List(ctx context.Context) ([]*jm.WorkerPool, erro
 
 // NewWorkerPoolController ...
 func NewWorkerPoolController() WorkerPoolController {
-	return &workerPoolController{poolManager: jm.NewPoolManager(), jobServiceClient: jm.NewJobServiceClient(), taskManager: task.NewManager(), sch: scheduler.New()}
+	return &workerPoolController{
+		poolManager:  jm.NewPoolManager(),
+		workerClient: jm.NewWorkerClient(),
+		taskManager:  task.NewManager(),
+		sch:          scheduler.New(),
+		redisClient:  jm.NewRedisClient(),
+	}
 }
