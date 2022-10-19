@@ -241,8 +241,8 @@ func (d *DefaultClient) GetJobConfig() (*job.Config, error) {
 		return nil, err
 	}
 	return &config, nil
-
 }
+
 func isStatusBehindError(err error) (string, bool) {
 	if err == nil {
 		return "", false

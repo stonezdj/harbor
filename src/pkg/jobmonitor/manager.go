@@ -93,6 +93,73 @@ type JobServiceClient interface {
 	AllJobTypeStatus(ctx context.Context, config *config.RedisPoolConfig) (map[string]bool, error)
 }
 
+type RedisClient interface {
+	AllJobTypes(ctx context.Context, config *config.RedisPoolConfig) ([]string, error)
+	AllJobTypeStatus(ctx context.Context, config *config.RedisPoolConfig) (map[string]bool, error)
+	PauseJob(ctx context.Context, config *config.RedisPoolConfig, jobName string) error
+	UnpauseJob(ctx context.Context, config *config.RedisPoolConfig, jobName string) error
+}
+
+type RedisClientImpl struct {
+	redisConfig *config.RedisPoolConfig
+}
+
+func (r RedisClientImpl) AllJobTypes(ctx context.Context, config *config.RedisPoolConfig) ([]string, error) {
+	pool, err := redisPool(config)
+	if err != nil {
+		return nil, err
+	}
+	conn := pool.Get()
+	defer conn.Close()
+	return redis.Strings(conn.Do("SMEMBERS", fmt.Sprintf("{%s}:known_jobs", config.Namespace)))
+}
+
+func (r RedisClientImpl) AllJobTypeStatus(ctx context.Context, config *config.RedisPoolConfig) (map[string]bool, error) {
+	result := map[string]bool{}
+	pool, err := redisPool(config)
+	if err != nil {
+		return nil, err
+	}
+	conn := pool.Get()
+	defer conn.Close()
+	redisKeyJobPaused := fmt.Sprintf("{%s}:jobs:*:paused", config.Namespace)
+	keys, err := redis.Strings(conn.Do("KEYS", redisKeyJobPaused))
+	if err != nil {
+		return nil, err
+	}
+	for _, key := range keys {
+		jobType := key[len(config.Namespace)+8 : len(key)-7]
+		result[jobType] = true
+	}
+	return result, nil
+}
+
+func (r RedisClientImpl) PauseJob(ctx context.Context, config *config.RedisPoolConfig, jobName string) error {
+	log.Infof("pause job type:%s", jobName)
+	pool, err := redisPool(config)
+	if err != nil {
+		return err
+	}
+	redisKeyJobPaused := fmt.Sprintf("{%s}:jobs:%s:paused", config.Namespace, jobName)
+	conn := pool.Get()
+	defer conn.Close()
+	_, err = conn.Do("SET", redisKeyJobPaused, "1")
+	return err
+}
+
+func (r RedisClientImpl) UnpauseJob(ctx context.Context, config *config.RedisPoolConfig, jobName string) error {
+	log.Infof("unpause job %s", jobName)
+	pool, err := redisPool(config)
+	if err != nil {
+		return err
+	}
+	redisKeyJobPaused := fmt.Sprintf("{%s}:jobs:%s:paused", config.Namespace, jobName)
+	conn := pool.Get()
+	defer conn.Close()
+	_, err = conn.Do("DEL", redisKeyJobPaused)
+	return err
+}
+
 type jobServiceClientImpl struct {
 	taskMgr task.Manager
 }
