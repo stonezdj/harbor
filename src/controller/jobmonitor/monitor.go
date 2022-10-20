@@ -31,7 +31,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/q"
 	libRedis "github.com/goharbor/harbor/src/lib/redis"
 	jm "github.com/goharbor/harbor/src/pkg/jobmonitor"
-	"github.com/goharbor/harbor/src/pkg/scheduler"
 	"github.com/goharbor/harbor/src/pkg/task"
 )
 
@@ -49,28 +48,39 @@ type MonitorController interface {
 	ListWorkers(ctx context.Context, poolID string) ([]*jm.Worker, error)
 	// StopRunningJob stop the running job
 	StopRunningJob(ctx context.Context, jobID string) error
+	// ListQueue lists job queues
+	ListQueue(ctx context.Context) ([]*jm.Queue, error)
+	// StopPendingJob stop the pending job
+	StopPendingJob(ctx context.Context, jobType string) error
+	// PauseJobQueues suspend the all schedules or resume the all schedules
+	PauseJobQueues(ctx context.Context, jobType string, pause bool) error
+	// SchedulerStatus get the job scheduler status
+	SchedulerStatus(ctx context.Context) (bool, error)
 }
 
 type monitorController struct {
-	poolManager   jm.PoolManager
-	workerManager jm.WorkerManager
-	taskManager   task.Manager
-	sch           scheduler.Scheduler
-	monitorClient func() (jm.JobServiceMonitorClient, error)
+	poolManager           jm.PoolManager
+	workerManager         jm.WorkerManager
+	taskManager           task.Manager
+	queueManager          jm.QueueManager
+	monitorClient         func() (jm.JobServiceMonitorClient, error)
+	jobServiceRedisClient func() (jm.RedisClient, error)
 }
 
-// NewMonitorController ...
+// NewWorkerPoolController ...
 func NewMonitorController() MonitorController {
 	return &monitorController{
-		poolManager:   jm.NewPoolManager(),
-		workerManager: jm.NewWorkerManager(),
-		taskManager:   task.NewManager(),
-		monitorClient: jobServiceMonitorClient,
+		poolManager:           jm.NewPoolManager(),
+		workerManager:         jm.NewWorkerManager(),
+		taskManager:           task.NewManager(),
+		queueManager:          jm.NewQueueClient(),
+		monitorClient:         jobServiceMonitorClient,
+		jobServiceRedisClient: jobServiceRedisClient,
 	}
 }
 
 func (w *monitorController) StopRunningJob(ctx context.Context, jobID string) error {
-	if strings.EqualFold(jobID, All) {
+	if strings.EqualFold(jobID, "all") {
 		allRunningJobs, err := w.allRunningJobs(ctx)
 		if err != nil {
 			log.Errorf("failed to get all running jobs: %v", err)
@@ -121,6 +131,77 @@ func (w *monitorController) allRunningJobs(ctx context.Context) ([]string, error
 	return jobIDs, nil
 }
 
+func (w *monitorController) ListQueue(ctx context.Context) ([]*jm.Queue, error) {
+	mClient, err := w.monitorClient()
+	if err != nil {
+		return nil, err
+	}
+	qs, err := mClient.Queues()
+	if err != nil {
+		return nil, err
+	}
+	redisClient, err := w.jobServiceRedisClient()
+	if err != nil {
+		return nil, err
+	}
+	// the original queue doesn't include the paused status, fetch it from the redis
+	statusMap, err := redisClient.AllJobTypeStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*jm.Queue, 0)
+	for _, q := range qs {
+		result = append(result, &jm.Queue{
+			JobType: q.JobName,
+			Count:   q.Count,
+			Latency: q.Latency,
+			Paused:  statusMap[q.JobName],
+		})
+	}
+	return result, nil
+}
+
+func (w *monitorController) StopPendingJob(ctx context.Context, jobType string) error {
+	redisClient, err := w.jobServiceRedisClient()
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(jobType, "all") {
+		jobTypes, err := redisClient.AllJobTypes(ctx)
+		if err != nil {
+			return err
+		}
+		for _, jobType := range jobTypes {
+			if err := w.StopPendingJob(ctx, jobType); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	jobIDs, err := redisClient.StopPendingJobs(ctx, jobType)
+	if err != nil {
+		return err
+	}
+	return w.UpdateJobStatusInTask(ctx, jobIDs)
+}
+
+func (w *monitorController) UpdateJobStatusInTask(ctx context.Context, jobIDs []string) error {
+	for _, jobID := range jobIDs {
+		ts, err := w.taskManager.List(ctx, q.New(q.KeyWords{"job_id": jobID}))
+		if err != nil {
+			return err
+		}
+		if len(ts) == 0 {
+			continue
+		}
+		ts[0].Status = "Stopped"
+		if err := w.taskManager.Update(ctx, ts[0], "Status"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func jobServiceMonitorClient() (jm.JobServiceMonitorClient, error) {
 	cfg, err := job.GlobalClient.GetJobServiceConfig()
 	if err != nil {
@@ -138,6 +219,15 @@ func jobServiceMonitorClient() (jm.JobServiceMonitorClient, error) {
 	return work.NewClient(fmt.Sprintf("{%s}", config.Namespace), pool), nil
 }
 
+func jobServiceRedisClient() (jm.RedisClient, error) {
+	cfg, err := job.GlobalClient.GetJobServiceConfig()
+	if err != nil {
+		return nil, err
+	}
+	config := cfg.RedisPoolConfig
+	return jm.NewRedisClient(config)
+}
+
 func (w *monitorController) ListWorkers(ctx context.Context, poolID string) ([]*jm.Worker, error) {
 	mClient, err := w.monitorClient()
 	if err != nil {
@@ -152,4 +242,39 @@ func (w *monitorController) ListPools(ctx context.Context) ([]*jm.WorkerPool, er
 		return nil, err
 	}
 	return w.poolManager.List(ctx, mClient)
+}
+
+func (w *monitorController) PauseJobQueues(ctx context.Context, jobType string, pause bool) error {
+	redisClient, err := w.jobServiceRedisClient()
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(jobType, "all") {
+		jobTypes, err := redisClient.AllJobTypes(ctx)
+		if err != nil {
+			return err
+		}
+		for _, jobType := range jobTypes {
+			if err := w.PauseJobQueues(ctx, jobType, pause); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if pause {
+		return redisClient.PauseJob(ctx, jobType)
+	}
+	return redisClient.UnpauseJob(ctx, jobType)
+}
+
+func (w *monitorController) SchedulerStatus(ctx context.Context) (bool, error) {
+	redisClient, err := w.jobServiceRedisClient()
+	if err != nil {
+		return false, err
+	}
+	statusMap, err := redisClient.AllJobTypeStatus(ctx)
+	if err != nil {
+		return false, err
+	}
+	return statusMap["SCHEDULER"], nil
 }

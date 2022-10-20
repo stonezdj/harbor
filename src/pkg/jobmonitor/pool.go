@@ -32,6 +32,8 @@ type JobServiceMonitorClient interface {
 	WorkerPoolHeartbeats() ([]*work.WorkerPoolHeartbeat, error)
 	// WorkerObservations retrieves worker observations
 	WorkerObservations() ([]*work.WorkerObservation, error)
+	// Queues retrieves the job queue information
+	Queues() ([]*work.Queue, error)
 }
 
 type poolManager struct{}

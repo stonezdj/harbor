@@ -35,10 +35,22 @@ type SchedulerController interface {
 	Create(ctx context.Context, vendorType, cronType, cron, callbackFuncName string, policy interface{}, extrasParam map[string]interface{}) (int64, error)
 	// Delete the schedule
 	Delete(ctx context.Context, vendorType string) error
+	// List lists schedules
+	List(ctx context.Context, query *q.Query) ([]*scheduler.Schedule, error)
+	// Count counts schedules
+	Count(ctx context.Context, query *q.Query) (int64, error)
 }
 
 type schedulerController struct {
 	schedulerMgr scheduler.Scheduler
+}
+
+func (s schedulerController) List(ctx context.Context, query *q.Query) ([]*scheduler.Schedule, error) {
+	return s.schedulerMgr.ListSchedules(ctx, query)
+}
+
+func (s schedulerController) Count(ctx context.Context, query *q.Query) (int64, error) {
+	return s.schedulerMgr.CountSchedule(ctx, query)
 }
 
 // NewSchedulerCtrl ...

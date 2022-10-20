@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/goharbor/harbor/src/pkg/scheduler"
+
 	"github.com/gocraft/work"
 	"github.com/stretchr/testify/suite"
 
@@ -35,6 +37,8 @@ type JobServiceMonitorTestSuite struct {
 	workerManager   jobmonitor.WorkerManager
 	monitController MonitorController
 	taskManager     task.Manager
+	sch             scheduler.Scheduler
+	redisClient     jobmonitor.RedisClient
 }
 
 func (s *JobServiceMonitorTestSuite) SetupSuite() {
@@ -48,6 +52,9 @@ func (s *JobServiceMonitorTestSuite) SetupSuite() {
 		taskManager:   s.taskManager,
 		monitorClient: func() (jobmonitor.JobServiceMonitorClient, error) {
 			return s.jmClient, nil
+		},
+		jobServiceRedisClient: func() (jobmonitor.RedisClient, error) {
+			return s.redisClient, nil
 		},
 	}
 }
@@ -88,6 +95,29 @@ func (s *JobServiceMonitorTestSuite) TestStopRunningJob() {
 	mock.OnAnything(s.taskManager, "List").Return([]*task.Task{{ID: 1, VendorType: "GARBAGE_COLLECTION"}}, nil)
 	mock.OnAnything(s.taskManager, "Stop").Return(nil)
 	err := s.monitController.StopRunningJob(nil, "1")
+	s.Assert().Nil(err)
+}
+
+func (s *JobServiceMonitorTestSuite) TestListQueue() {
+	mock.OnAnything(s.jmClient, "Queues").Return([]*work.Queue{
+		{JobName: "GARBAGE_COLLECTION", Count: 100, Latency: 10000}}, nil)
+	mock.OnAnything(s.redisClient, "AllJobTypeStatus").Return(
+		map[string]bool{
+			"GARBAGE_COLLECTION": false,
+		}, nil)
+	queues, err := s.monitController.ListQueue(nil)
+	s.Assert().Nil(err)
+	s.Assert().Equal(1, len(queues))
+	s.Assert().Equal("GARBAGE_COLLECTION", queues[0].JobType)
+	s.Assert().False(queues[0].Paused)
+}
+
+func (s *JobServiceMonitorTestSuite) TestPauseJob() {
+	mock.OnAnything(s.redisClient, "PauseJob").Return(nil).Once()
+	err := s.monitController.PauseJobQueues(nil, "GARBAGE_COLLECTION", true)
+	s.Assert().Nil(err)
+	mock.OnAnything(s.redisClient, "UnpauseJob").Return(nil).Once()
+	err = s.monitController.PauseJobQueues(nil, "GARBAGE_COLLECTION", false)
 	s.Assert().Nil(err)
 }
 

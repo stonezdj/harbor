@@ -60,11 +60,21 @@ func (s *ScheduleTestSuite) TestGetSchedule() {
 			ID:         1,
 			VendorType: purge.VendorType,
 		},
-	}, nil)
+	}, nil).Once()
 
 	schedule, err := s.ctl.Get(nil, purge.VendorType)
 	s.Nil(err)
 	s.Equal(purge.VendorType, schedule.VendorType)
+}
+
+func (s *ScheduleTestSuite) TestListSchedule() {
+	mock.OnAnything(s.scheduler, "ListSchedules").Return([]*scheduler.Schedule{
+		{ID: 1, VendorType: "GARBAGE_COLLECTION", CRON: "0 0 0 * * *", ExtraAttrs: map[string]interface{}{"args": "sample args"}}}, nil).Once()
+	schedules, err := s.scheduler.ListSchedules(nil, nil)
+	s.Assert().Nil(err)
+	s.Assert().Equal(1, len(schedules))
+	s.Assert().Equal(schedules[0].VendorType, "GARBAGE_COLLECTION")
+	s.Assert().Equal(schedules[0].ID, int64(1))
 }
 
 func TestScheduleTestSuite(t *testing.T) {
