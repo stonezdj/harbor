@@ -18,14 +18,16 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/goharbor/harbor/src/lib/config/models"
-	"github.com/goharbor/harbor/src/pkg/ldap/model"
 	"net"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/goharbor/harbor/src/lib/config/models"
+	"github.com/goharbor/harbor/src/pkg/ldap/model"
+
 	goldap "github.com/go-ldap/ldap/v3"
+
 	"github.com/goharbor/harbor/src/lib/log"
 )
 
@@ -154,6 +156,9 @@ func (s *Session) SearchUser(username string) ([]model.User, error) {
 		groupDNList := make([]string, 0)
 		groupAttr := strings.ToLower(s.groupCfg.MembershipAttribute)
 		for _, attr := range ldapEntry.Attributes {
+			if len(attr.Values) == 0 {
+				continue
+			}
 			// OpenLdap sometimes contain leading space in username
 			val := strings.TrimSpace(attr.Values[0])
 			log.Debugf("Current ldap entry attr name: %s\n", attr.Name)
