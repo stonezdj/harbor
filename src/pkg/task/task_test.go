@@ -94,7 +94,6 @@ func (t *taskManagerTestSuite) TestStop() {
 	t.jsClient.On("PostAction", mock.Anything, mock.Anything).Return(cjob.ErrJobNotFound)
 	t.dao.On("Update", mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	t.execDAO.On("RefreshStatus", mock.Anything, mock.Anything).Return(true, "", nil)
 	err := t.mgr.Stop(nil, 1)
 	t.Require().Nil(err)
 	t.dao.AssertExpectations(t.T())

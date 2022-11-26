@@ -80,7 +80,6 @@ func (h *hookHandlerTestSuite) TestHandle() {
 		ID:         1,
 		VendorType: "test",
 	}, nil)
-	h.execDAO.On("RefreshStatus", mock.Anything, mock.Anything).Return(true, job.RunningStatus.String(), nil)
 	sc = &job.StatusChange{
 		Status: job.SuccessStatus.String(),
 		Metadata: &job.StatsInfo{

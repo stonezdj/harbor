@@ -37,12 +37,3 @@ func TestRegisterTaskStatusChangePostFunc(t *testing.T) {
 	err = RegisterTaskStatusChangePostFunc("test", nil)
 	assert.NotNil(t, err)
 }
-
-func TestRegisterExecutionStatusChangePostFunc(t *testing.T) {
-	err := RegisterExecutionStatusChangePostFunc("test", nil)
-	assert.Nil(t, err)
-
-	// already exist
-	err = RegisterExecutionStatusChangePostFunc("test", nil)
-	assert.NotNil(t, err)
-}

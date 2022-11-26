@@ -22,9 +22,8 @@ import (
 )
 
 var (
-	checkInProcessorRegistry              = map[string]CheckInProcessor{}
-	statusChangePostFuncRegistry          = map[string]StatusChangePostFunc{}
-	executionStatusChangePostFuncRegistry = map[string]ExecutionStatusChangePostFunc{}
+	checkInProcessorRegistry     = map[string]CheckInProcessor{}
+	statusChangePostFuncRegistry = map[string]StatusChangePostFunc{}
 )
 
 // CheckInProcessor is the processor to process the check in data which is sent by jobservice via webhook
@@ -51,14 +50,5 @@ func RegisterTaskStatusChangePostFunc(vendorType string, fc StatusChangePostFunc
 		return fmt.Errorf("the task status change post function for %s already exists", vendorType)
 	}
 	statusChangePostFuncRegistry[vendorType] = fc
-	return nil
-}
-
-// RegisterExecutionStatusChangePostFunc registers an execution status change post function for the specific vendor type
-func RegisterExecutionStatusChangePostFunc(vendorType string, fc ExecutionStatusChangePostFunc) error {
-	if _, exist := executionStatusChangePostFuncRegistry[vendorType]; exist {
-		return fmt.Errorf("the execution status change post function for %s already exists", vendorType)
-	}
-	executionStatusChangePostFuncRegistry[vendorType] = fc
 	return nil
 }

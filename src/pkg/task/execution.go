@@ -164,7 +164,7 @@ func (e *executionManager) sweep(ctx context.Context, vendorType string, vendorI
 		PageSize:   1,
 		PageNumber: size,
 	}
-	executions, err := e.executionDAO.List(ctx, query)
+	executions, err := e.List(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -370,7 +370,7 @@ func (e *executionManager) Delete(ctx context.Context, id int64) error {
 }
 
 func (e *executionManager) DeleteByVendor(ctx context.Context, vendorType string, vendorID int64) error {
-	executions, err := e.executionDAO.List(ctx, &q.Query{
+	executions, err := e.List(ctx, &q.Query{
 		Keywords: map[string]interface{}{
 			"VendorType": vendorType,
 			"VendorID":   vendorID,
@@ -448,7 +448,38 @@ func (e *executionManager) populateExecution(ctx context.Context, execution *dao
 		exec.Metrics = metrics
 	}
 
+	// retrieve status from metrics
+	exec.Status = GetStatus(exec, metrics)
+	endTime, err := e.executionDAO.GetEndTime(ctx, execution.ID)
+	if err != nil {
+		log.Errorf("failed to get end time of the execution %d: %v", execution.ID, err)
+		return exec
+	}
+	if endTime != nil {
+		exec.EndTime = *endTime
+	}
 	return exec
+}
+
+// GetStatus get status from metrics
+func GetStatus(exec *Execution, metrics *dao.Metrics) string {
+	if metrics == nil {
+		return job.SuccessStatus.String()
+	}
+	if metrics.RunningTaskCount > 0 || metrics.PendingTaskCount > 0 || metrics.ScheduledTaskCount > 0 {
+		return job.RunningStatus.String()
+	}
+	if metrics.ErrorTaskCount > 0 {
+		return job.ErrorStatus.String()
+	}
+	if metrics.StoppedTaskCount > 0 {
+		return job.StoppedStatus.String()
+	}
+	if metrics.TaskCount == 0 && time.Now().Sub(exec.StartTime) < 10*time.Second {
+		// maybe it is creating tasks
+		return job.RunningStatus.String()
+	}
+	return job.SuccessStatus.String()
 }
 
 // SetExecutionSweeperCount sets the count of execution records retained by the sweeper

@@ -94,16 +94,5 @@ func (h *HookHandler) Handle(ctx context.Context, sc *job.StatusChange) error {
 		}
 	}
 
-	// update execution status
-	statusChanged, currentStatus, err := h.executionDAO.RefreshStatus(ctx, task.ExecutionID)
-	if err != nil {
-		return err
-	}
-	// run the status change post function
-	if fc, exist := executionStatusChangePostFuncRegistry[execution.VendorType]; exist && statusChanged {
-		if err = fc(ctx, task.ExecutionID, currentStatus); err != nil {
-			logger.Errorf("failed to run the execution status change post function for execution %d: %v", task.ExecutionID, err)
-		}
-	}
 	return nil
 }
