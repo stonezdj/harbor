@@ -39,3 +39,7 @@ job_loggers:
 loggers:
   - name: "STD_OUTPUT" # Same with above
     level: "DEBUG"
+
+task_reaper:
+  max_update_hour: 48
+  

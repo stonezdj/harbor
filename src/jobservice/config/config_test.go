@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//    http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -79,6 +79,7 @@ func (suite *ConfigurationTestSuite) TestConfigLoadingWithEnv() {
 	assert.Equal(suite.T(), "js_secret", GetAuthSecret(), "expect auth secret 'js_secret' but got '%s'", GetAuthSecret())
 	assert.Equal(suite.T(), "core_secret", GetUIAuthSecret(), "expect auth secret 'core_secret' but got '%s'", GetUIAuthSecret())
 	assert.Equal(suite.T(), "core_url", GetCoreURL(), "expect core url 'core_url' but got '%s'", GetCoreURL())
+	assert.Equal(suite.T(), 36, cfg.ReaperConfig.MaxUpdateHour, "expect 36 but '%d'", cfg.ReaperConfig.MaxUpdateHour)
 }
 
 // TestDefaultConfig ...
@@ -97,6 +98,9 @@ func (suite *ConfigurationTestSuite) TestDefaultConfig() {
 
 	// Only verify the complicated one
 	theLogger := DefaultConfig.JobLoggerConfigs[1]
+
+	maxUpdateHour := DefaultConfig.ReaperConfig.MaxUpdateHour
+
 	assert.Equal(suite.T(), "FILE", theLogger.Name, "expect FILE logger but got %s", theLogger.Name)
 	assert.Equal(suite.T(), "INFO", theLogger.Level, "expect INFO log level of FILE logger but got %s", theLogger.Level)
 	assert.NotEqual(suite.T(), 0, len(theLogger.Settings), "expect extra settings but got nothing")
@@ -116,6 +120,7 @@ func (suite *ConfigurationTestSuite) TestDefaultConfig() {
 		"expect work dir of sweeper of FILE logger to be '/tmp/job_logs' but got %s",
 		theLogger.Sweeper.Settings["work_dir"],
 	)
+	assert.Equal(suite.T(), 48, maxUpdateHour, "expect task max update duration should be 48")
 }
 
 func setENV(t *testing.T) {
@@ -130,4 +135,5 @@ func setENV(t *testing.T) {
 	t.Setenv("JOBSERVICE_SECRET", "js_secret")
 	t.Setenv("CORE_SECRET", "core_secret")
 	t.Setenv("CORE_URL", "core_url")
+	t.Setenv("JOB_SERVICE_TASK_MAX_UPDATE_HOUR", "36")
 }

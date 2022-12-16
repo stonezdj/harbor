@@ -39,6 +39,7 @@ const (
 	jobServiceRedisURL                   = "JOB_SERVICE_POOL_REDIS_URL"
 	jobServiceRedisNamespace             = "JOB_SERVICE_POOL_REDIS_NAMESPACE"
 	jobServiceRedisIdleConnTimeoutSecond = "JOB_SERVICE_POOL_REDIS_CONN_IDLE_TIMEOUT_SECOND"
+	jobServiceTaskReaperMaxUpdateHour    = "JOB_SERVICE_TASK_MAX_UPDATE_HOUR"
 	jobServiceAuthSecret                 = "JOBSERVICE_SECRET"
 	coreURL                              = "CORE_URL"
 
@@ -82,6 +83,9 @@ type Configuration struct {
 
 	// Metric configurations
 	Metric *MetricConfig `yaml:"metric,omitempty"`
+
+	// Task Reaper Configurations
+	ReaperConfig *TaskReaperConfig `yaml:"task_reaper,omitempty"`
 }
 
 // HTTPSConfig keeps additional configurations when using https protocol
@@ -132,6 +136,10 @@ type LoggerConfig struct {
 	Sweeper  *LogSweeperConfig  `yaml:"sweeper"`
 }
 
+type TaskReaperConfig struct {
+	MaxUpdateHour int `yaml:"max_update_hour"`
+}
+
 // Load the configuration options from the specified yaml file.
 // If the yaml file is specified and existing, load configurations from yaml file first;
 // If detecting env variables is specified, load configurations from env variables;
@@ -166,6 +174,13 @@ func (c *Configuration) Load(yamlFilePath string, detectEnv bool) error {
 			if !strings.Contains(redisAddress, "://") {
 				c.PoolConfig.RedisPoolCfg.RedisURL = fmt.Sprintf("%s%s", redisSchema, redisAddress)
 			}
+		}
+	}
+
+	// set default value for task reaper
+	if c.ReaperConfig == nil || c.ReaperConfig.MaxUpdateHour <= 24 {
+		c.ReaperConfig = &TaskReaperConfig{
+			MaxUpdateHour: 24,
 		}
 	}
 
@@ -273,6 +288,19 @@ func (c *Configuration) loadEnvs() {
 			} else {
 				c.PoolConfig.RedisPoolCfg.IdleTimeoutSecond = int64(v)
 			}
+		}
+	}
+
+	maxHour := utils.ReadEnv(jobServiceTaskReaperMaxUpdateHour)
+	if !utils.IsEmptyStr(maxHour) {
+		if c.ReaperConfig == nil {
+			c.ReaperConfig = &TaskReaperConfig{}
+		}
+		v, err := strconv.Atoi(maxHour)
+		if err != nil {
+			log.Warningf("Invalid %s, will use default value instead", jobServiceTaskReaperMaxUpdateHour)
+		} else {
+			c.ReaperConfig.MaxUpdateHour = v
 		}
 	}
 }

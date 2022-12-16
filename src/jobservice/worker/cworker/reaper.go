@@ -23,6 +23,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 
 	"github.com/goharbor/harbor/src/jobservice/common/rds"
+	"github.com/goharbor/harbor/src/jobservice/config"
 	"github.com/goharbor/harbor/src/jobservice/errs"
 	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/jobservice/lcm"
@@ -31,7 +32,6 @@ import (
 )
 
 const (
-	maxUpdateDuration       = 24 * time.Hour
 	reapLoopInterval        = 1 * time.Hour
 	initialReapLoopInterval = 5 * time.Minute
 )
@@ -170,8 +170,10 @@ func (r *reaper) syncOutdatedStats() error {
 					return
 				}
 			} else {
+				maxUpdateHour := time.Duration(config.DefaultConfig.ReaperConfig.MaxUpdateHour) * time.Hour
+				logger.Infof("Reaper: maxUpdateDuration:%d", config.DefaultConfig.ReaperConfig.MaxUpdateHour)
 				// Ongoing, check the update timestamp to make sure it is not hung
-				if time.Unix(t.Job().Info.UpdateTime, 0).Add(maxUpdateDuration).Before(time.Now()) {
+				if time.Unix(t.Job().Info.UpdateTime, 0).Add(maxUpdateHour).Before(time.Now()) {
 					// Status hung
 					// Mark job status to error state
 					if err = t.Fail(); err != nil {
