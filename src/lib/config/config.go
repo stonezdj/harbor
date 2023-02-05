@@ -78,7 +78,7 @@ func GetManager(name string) (Manager, error) {
 func DefaultMgr() Manager {
 	manager, err := GetManager(DefaultCfgManager)
 	if err != nil {
-		log.Error("failed to get config manager")
+		log.Errorf("failed to get config manager, error: %+v", err)
 	}
 	return manager
 }
