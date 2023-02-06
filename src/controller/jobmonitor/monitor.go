@@ -227,6 +227,10 @@ func (w *monitorController) updateJobStatusInTask(ctx context.Context, vendorTyp
 		log.Debug("context is nil, update job status in task")
 		return nil
 	}
+	// convert queue name to vendor type
+	if vendorType == "PURGE_AUDIT" {
+		vendorType = "PURGE_AUDIT_LOG"
+	}
 	// Task count could be huge, to avoid query executionID by each task, query with vendor type and status
 	// it might include extra executions, but it won't change these executions final status
 	pendingExecs, err := w.taskManager.ExecutionIDsByVendorAndStatus(ctx, vendorType, jobSvc.PendingStatus.String())

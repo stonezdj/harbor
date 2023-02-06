@@ -35,7 +35,7 @@ const (
 	// P2PPreheat : the name of the P2P preheat job
 	P2PPreheat = "P2P_PREHEAT"
 	// PurgeAudit : the name of purge audit job
-	PurgeAudit = "PURGE_AUDIT_LOG"
+	PurgeAudit = "PURGE_AUDIT"
 	// SystemArtifactCleanup : the name of the SystemArtifact cleanup job
 	SystemArtifactCleanup = "SYSTEM_ARTIFACT_CLEANUP"
 	// ScanDataExport : the name of the scan data export job
