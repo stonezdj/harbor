@@ -257,7 +257,7 @@ func (t *taskDAO) ExecutionIDsByVendorAndStatus(ctx context.Context, vendorType,
 		return nil, err
 	}
 	var ids []int64
-	_, err = ormer.Raw("select distinct execution_id from task where vendor_type =? and status = ?", vendorType, status).QueryRows(&ids)
+	_, err = ormer.Raw("select distinct execution_id from task where vendor_type =? and status in ('Stopped', 'Pending')", vendorType).QueryRows(&ids)
 	return ids, err
 }
 
