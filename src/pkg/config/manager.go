@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/common/models"
@@ -137,7 +138,9 @@ func (c *CfgManager) Save(ctx context.Context) error {
 func (c *CfgManager) Get(ctx context.Context, key string) *metadata.ConfigureValue {
 	configValue, err := c.Store.Get(key)
 	if err != nil {
-		log.Debugf("failed to get key %v, error: %v, maybe default value not defined before get", key, err)
+		buf := make([]byte, 4096)
+		runtime.Stack(buf, false)
+		log.Debugf("failed to get key %v, error: %v, maybe default value not defined before get, stacktrace:%v", key, err, string(buf))
 		configValue = &metadata.ConfigureValue{}
 	}
 	return configValue
