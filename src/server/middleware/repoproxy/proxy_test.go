@@ -56,3 +56,23 @@ func TestIsProxySession(t *testing.T) {
 		})
 	}
 }
+
+func Test_parseDigest(t *testing.T) {
+	type args struct {
+		tag string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"normal test", args{"sha256-8d329e5efd84159caada26fd16f498a6d0ceb5411b68a4318637c30666fcfb82.image-locations.imgpkg"}, "sha256:8d329e5efd84159caada26fd16f498a6d0ceb5411b68a4318637c30666fcfb82"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parseDigest(tt.args.tag); got != tt.want {
+				t.Errorf("parseDigest() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

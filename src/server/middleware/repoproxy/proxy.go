@@ -60,7 +60,9 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 func proxyProjectManifestURL(art lib.ArtifactInfo, mirrorProxyName string) string {
 	return fmt.Sprintf("/v2/%s/%s/manifests/%s", mirrorProxyName, art.Repository, art.Reference)
 }
-
+func proxyProjectManifestURLWithDigest(art lib.ArtifactInfo, mirrorProxyName string, digest string) string {
+	return fmt.Sprintf("/v2/%s/%s/manifests/%s", mirrorProxyName, art.Repository, digest)
+}
 func proxyProjectBlobURL(art lib.ArtifactInfo, mirrorProxyName string, digest string) string {
 	return fmt.Sprintf("/v2/%s/%s/blobs/%s", mirrorProxyName, art.Repository, digest)
 }
@@ -166,12 +168,28 @@ func defaultBlobURL(projectName string, name string, digest string) string {
 	return fmt.Sprintf("/v2/%s/library/%s/blobs/%s", projectName, name, digest)
 }
 
+func parseDigest(tag string) string {
+	if strings.HasPrefix(tag, "sha256-") && strings.HasSuffix(tag, "image-locations.imgpkg") {
+		digest := strings.TrimSuffix(tag, ".image-locations.imgpkg")
+		return strings.Replace(digest, "-", ":", 1)
+	}
+	return ""
+}
+
 func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) error {
 	ctx := r.Context()
 	art, p, proxyCtl, err := preCheck(ctx)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			if mirrorProxy() {
+				if len(art.Tag) > 0 && strings.HasPrefix(art.Tag, "sha256-") && strings.HasSuffix(art.Tag, "image-locations.imgpkg") {
+					if len(parseDigest(art.Tag)) > 0 {
+						http.Redirect(w, r, proxyProjectManifestURLWithDigest(art, utils.MirrorProxyProject(), parseDigest(art.Tag)), http.StatusMovedPermanently)
+						return nil
+					}
+					http.Redirect(w, r, proxyProjectManifestURL(art, utils.MirrorProxyProject()), http.StatusMovedPermanently)
+
+				}
 				http.Redirect(w, r, proxyProjectManifestURL(art, utils.MirrorProxyProject()), http.StatusMovedPermanently)
 				return nil
 			}
