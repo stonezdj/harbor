@@ -23,6 +23,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/distribution"
 	"github.com/goharbor/harbor/src/server/middleware"
 	"github.com/goharbor/harbor/src/server/middleware/artifactinfo"
+	"github.com/goharbor/harbor/src/server/middleware/chaos"
 	"github.com/goharbor/harbor/src/server/middleware/csrf"
 	"github.com/goharbor/harbor/src/server/middleware/log"
 	"github.com/goharbor/harbor/src/server/middleware/mergeslash"
@@ -79,6 +80,7 @@ var (
 // MiddleWares returns global middlewares
 func MiddleWares() []web.MiddleWare {
 	return []web.MiddleWare{
+		chaos.Middleware(),
 		url.Middleware(),
 		mergeslash.Middleware(),
 		trace.Middleware(),

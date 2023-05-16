@@ -15,6 +15,8 @@
 package errors
 
 const (
+	// TooManyRequestCode...
+	TooManyRequestCode = "TOO_MANY_REQUEST"
 	// NotFoundCode is code for the error of no object found
 	NotFoundCode = "NOT_FOUND"
 	// ConflictCode ...
