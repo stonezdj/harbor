@@ -157,11 +157,10 @@ func (c *controller) UseLocalManifest(ctx context.Context, art lib.ArtifactInfo,
 	if err != nil {
 		return false, nil, err
 	}
-	if !exist || desc == nil {
-		go func() {
-			c.local.DeleteManifest(remoteRepo, art.Tag)
-		}()
-		return false, nil, errors.NotFoundError(fmt.Errorf("repo %v, tag %v not found", art.Repository, art.Tag))
+	// sometimes server return 404 for with unknown reason, just fallback to local
+	// then local return 404 when artifact is not found
+	if !exist {
+		return true, nil, nil
 	}
 
 	var content []byte
