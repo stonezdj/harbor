@@ -155,11 +155,13 @@ func (c *controller) UseLocalManifest(ctx context.Context, art lib.ArtifactInfo,
 	remoteRepo := getRemoteRepo(art)
 	exist, desc, err := remote.ManifestExist(remoteRepo, getReference(art)) // HEAD
 	if err != nil {
-		return false, nil, err
+		log.Warningf("remote registry return error %v, fall back to local registry", err)
+		return true, nil, err // should fall back to local when remote registry return error
 	}
 	// sometimes server return 404 for with unknown reason, just fallback to local
 	// then local return 404 when artifact is not found
 	if !exist {
+		log.Infof("remote registry return 404, fall back to local registry")
 		return true, nil, nil
 	}
 
