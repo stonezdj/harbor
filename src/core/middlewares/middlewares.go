@@ -29,6 +29,7 @@ import (
 	"github.com/goharbor/harbor/src/server/middleware/metric"
 	"github.com/goharbor/harbor/src/server/middleware/notification"
 	"github.com/goharbor/harbor/src/server/middleware/orm"
+	"github.com/goharbor/harbor/src/server/middleware/profile"
 	"github.com/goharbor/harbor/src/server/middleware/readonly"
 	"github.com/goharbor/harbor/src/server/middleware/requestid"
 	"github.com/goharbor/harbor/src/server/middleware/security"
@@ -79,6 +80,7 @@ var (
 // MiddleWares returns global middlewares
 func MiddleWares() []web.MiddleWare {
 	return []web.MiddleWare{
+		profile.Middleware(),
 		url.Middleware(),
 		mergeslash.Middleware(),
 		trace.Middleware(),
