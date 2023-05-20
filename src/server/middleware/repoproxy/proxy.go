@@ -150,12 +150,14 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 	ctx := r.Context()
 	art, p, proxyCtl, err := preCheck(ctx)
 	if err != nil {
+		log.Errorf("failed on preCheck, error: %v", err)
 		return err
 	}
 
 	// Handle dockerhub request without library prefix
 	defaultProj, name, err := defaultLibrary(ctx, p.RegistryID, art)
 	if err != nil {
+		log.Errorf("failed on defaultLibrary, error: %v", err)
 		return err
 	}
 	if defaultProj {
@@ -169,11 +171,13 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 	}
 	remote, err := proxy.NewRemoteHelper(r.Context(), p.RegistryID)
 	if err != nil {
+		log.Errorf("failed on NewRemoteHelper, error: %v", err)
 		return err
 	}
 	useLocal, man, err := proxyCtl.UseLocalManifest(ctx, art, remote)
 
 	if err != nil {
+		log.Errorf("failed on UseLocalManifest, error: %v", err)
 		return err
 	}
 	if useLocal {
@@ -202,6 +206,7 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 		err = proxyManifestGet(ctx, w, proxyCtl, p, art, remote)
 	}
 	if err != nil {
+		log.Errorf("failed on proxyManifest, error: %v", err)
 		if errors.IsNotFoundErr(err) {
 			return err
 		}
