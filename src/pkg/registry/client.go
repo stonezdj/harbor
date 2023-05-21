@@ -277,6 +277,9 @@ func (c *client) ManifestExist(repository, reference string) (bool, *distributio
 		}
 		return false, nil, err
 	}
+	if resp.StatusCode != http.StatusOK {
+		log.Errorf("unexpected status code: url %v, method %v code:%d, ", resp.StatusCode, req.Method, req.URL)
+	}
 	defer resp.Body.Close()
 	dig := resp.Header.Get("Docker-Content-Digest")
 	contentType := resp.Header.Get("Content-Type")
