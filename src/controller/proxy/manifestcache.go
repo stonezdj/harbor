@@ -64,6 +64,7 @@ type ManifestListCache struct {
 
 // CacheContent ...
 func (m *ManifestListCache) CacheContent(ctx context.Context, remoteRepo string, man distribution.Manifest, art lib.ArtifactInfo, r RemoteInterface, contentType string) {
+	log.Infof("start to cache content for manifest list, repo %v, tag %v", art.Repository, getReference(art))
 	_, payload, err := man.Payload()
 	if err != nil {
 		log.Errorf("failed to get payload, error %v", err)
