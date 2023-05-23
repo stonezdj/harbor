@@ -162,6 +162,7 @@ func (m *ManifestListCache) push(ctx context.Context, repo, reference string, ma
 	if strings.HasPrefix(reference, "sha256:") {
 		reference = string(newDig)
 	}
+	log.Infof("push manifest list to local, repo %v, tag:%v, digest:%v", repo, reference, newDig)
 	return m.local.PushManifest(repo, reference, newMan)
 }
 
