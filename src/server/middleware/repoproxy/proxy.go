@@ -311,6 +311,7 @@ func proxyManifestHead(ctx context.Context, w http.ResponseWriter, ctl proxy.Con
 				return
 			}
 			log.Debugf("Failed to ensure tag %+v , error %v", art, err)
+			log.Debugf("Failed2 to ensure tag %+v , error %v", bArt, err)
 		}
 	}(art)
 
