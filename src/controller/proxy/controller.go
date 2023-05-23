@@ -217,6 +217,7 @@ func (c *controller) ProxyManifest(ctx context.Context, art lib.ArtifactInfo, re
 
 	// Push manifest in background
 	go func(operator string) {
+		log.Info("Push manifest in background")
 		bCtx := orm.Copy(ctx)
 		a, err := c.local.GetManifest(bCtx, art)
 		if err != nil {
