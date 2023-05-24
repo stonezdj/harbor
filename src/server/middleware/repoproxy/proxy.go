@@ -16,6 +16,7 @@ package repoproxy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,6 +29,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/proxy"
 	"github.com/goharbor/harbor/src/controller/registry"
 	"github.com/goharbor/harbor/src/lib"
+	"github.com/goharbor/harbor/src/lib/cache"
 	"github.com/goharbor/harbor/src/lib/errors"
 	httpLib "github.com/goharbor/harbor/src/lib/http"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -44,6 +46,7 @@ const (
 	etag                = "Etag"
 	ensureTagInterval   = 10 * time.Second
 	ensureTagMaxRetry   = 60
+	headerCacheInterval = 7 * 24 * time.Hour
 )
 
 // BlobGetMiddleware handle get blob request
@@ -148,6 +151,16 @@ func defaultBlobURL(projectName string, name string, digest string) string {
 
 func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) error {
 	ctx := r.Context()
+	// fetch from cache
+	if r.Method == http.MethodHead {
+		if headers, err := loadHeader(ctx, r.RequestURI); err == nil {
+			log.Infof("fetch head data from cache %v", r.RequestURI)
+			for k, v := range headers {
+				w.Header().Set(k, strings.Join(v, ","))
+			}
+			return nil
+		}
+	}
 	art, p, proxyCtl, err := preCheck(ctx)
 	if err != nil {
 		return err
@@ -197,6 +210,9 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 	log.Debugf("the tag is %v, digest is %v", art.Tag, art.Digest)
 	if r.Method == http.MethodHead {
 		err = proxyManifestHead(ctx, w, proxyCtl, p, art, remote)
+		if err == nil {
+			cacheHeader(ctx, r.RequestURI, w.Header())
+		}
 	} else if r.Method == http.MethodGet {
 		log.Warningf("Artifact: %v:%v, digest:%v is not found in proxy cache, fetch it from remote repo", art.Repository, art.Tag, art.Digest)
 		err = proxyManifestGet(ctx, w, proxyCtl, p, art, remote)
@@ -209,6 +225,34 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 		next.ServeHTTP(w, r)
 	}
 	return nil
+}
+
+// cacheHeader cache the header to redis
+func cacheHeader(ctx context.Context, url string, header http.Header) error {
+	if header == nil {
+		return nil
+	}
+	jsonData, err := json.Marshal(header)
+	if err != nil {
+		return err
+	}
+	log.Debugf("cache header with url %v", url)
+	return cache.Default().Save(ctx, url, jsonData, headerCacheInterval)
+}
+
+func loadHeader(ctx context.Context, url string) (map[string][]string, error) {
+	var header map[string][]string
+	var jsonData string
+	err := cache.Default().Fetch(ctx, url, &jsonData)
+	if err != nil {
+		log.Debugf("failed to fetch url %v, error %v", url, err)
+		return nil, err
+	}
+	if err = json.Unmarshal([]byte(jsonData), &header); err != nil {
+		log.Errorf("failed to fetch url %v, error %v", url, err)
+		return nil, err
+	}
+	return header, nil
 }
 
 func proxyManifestGet(ctx context.Context, w http.ResponseWriter, ctl proxy.Controller, p *proModels.Project, art lib.ArtifactInfo, remote proxy.RemoteInterface) error {
