@@ -16,7 +16,6 @@ package scan
 
 import (
 	"fmt"
-	"time"
 )
 
 // Report of the scan.
@@ -28,10 +27,13 @@ type Report struct {
 	RegistrationUUID string `orm:"column(registration_uuid)"`
 	MimeType         string `orm:"column(mime_type)"`
 	Report           string `orm:"column(report);type(json)"`
-
-	Status    string    `orm:"-"`
-	StartTime time.Time `orm:"-"`
-	EndTime   time.Time `orm:"-"`
+	CriticalCnt      int    `orm:"column(critical_cnt)"`
+	HighCnt          int    `orm:"column(high_cnt)"`
+	MediumCnt        int    `orm:"column(medium_cnt)"`
+	LowCnt           int    `orm:"column(low_cnt)"`
+	UnknownCnt       int    `orm:"column(unknown_cnt)"`
+	NoneCnt          int    `orm:"column(none_cnt)"`
+	FixableCnt       int    `orm:"column(fixable_cnt)"`
 }
 
 // TableName for Report
@@ -71,6 +73,8 @@ type VulnerabilityRecord struct {
 	Description      string   `orm:"column(description);null"`
 	CWEIDs           string   `orm:"column(cwe_ids);null"` // e.g. CWE-476,CWE-123,CWE-234
 	VendorAttributes string   `orm:"column(vendor_attributes);type(json);null"`
+	NvdV3Score       *float64 `orm:"column(nvd_v3_score);null"`
+	RedhatV3Score    *float64 `orm:"column(redhat_v3_score);null"`
 }
 
 // TableName for VulnerabilityRecord

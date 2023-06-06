@@ -510,3 +510,27 @@ func (suite *TestReportConverterSuite) validateReportSummary(summary string, raw
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), string(data), summary)
 }
+
+func Test_parseScoreFromVendorAttribute(t *testing.T) {
+	type args struct {
+		vendorAttribute string
+	}
+	tests := []struct {
+		name                string
+		args                args
+		wantNvd_v3_score    float64
+		wantRedhat_v3_score float64
+	}{
+		{"normal", args{`{"CVSS":{"nvd":{"V2Score":4.3,"V2Vector":"AV:N/AC:M/Au:N/C:N/I:N/A:P","V3Score":6.5,"V3Vector":"CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:H"}}}`}, 6.5, 0},
+		{"both", args{`{"CVSS":{"nvd":{"V3Score":5.5,"V3Vector":"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"},"redhat":{"V3Score":6.2,"V3Vector":"CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"}}}`}, 5.5, 6.2},
+		{"both2", args{`{"CVSS":{"nvd":{"V2Score":7.2,"V2Vector":"AV:L/AC:L/Au:N/C:C/I:C/A:C","V3Score":7.8,"V3Vector":"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"},"redhat":{"V3Score":7.8,"V3Vector":"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"}}}`}, 7.8, 7.8},
+		{"none", args{`{"CVSS":{"nvd":{"V2Score":7.2,"V2Vector":"AV:L/AC:L/Au:N/C:C/I:C/A:C","V3Vector":"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"},"redhat":{"V3Vector":"CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H"}}}`}, 0, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotNvd_v3_score, gotRedhat_v3_score := parseScoreFromVendorAttribute(tt.args.vendorAttribute)
+			assert.Equalf(t, tt.wantNvd_v3_score, gotNvd_v3_score, "parseScoreFromVendorAttribute(%v)", tt.args.vendorAttribute)
+			assert.Equalf(t, tt.wantRedhat_v3_score, gotRedhat_v3_score, "parseScoreFromVendorAttribute(%v)", tt.args.vendorAttribute)
+		})
+	}
+}
