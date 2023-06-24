@@ -6052,6 +6052,43 @@ paths:
           $ref: '#/responses/404'
         '500':
           $ref: '#/responses/500'
+  /security/cve:
+    get:
+      summary: Get a list of CVEs
+      description: Get a list of CVEs
+      tags:
+        - securitysummary
+      operationId: getCveList
+      parameters:
+        - $ref: '#/parameters/requestId'
+        - $ref: '#/parameters/query'
+        - $ref: '#/parameters/page'
+        - $ref: '#/parameters/pageSize'
+        - $ref: '#/parameters/sort'
+      responses:
+        '200':
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CVERecord'
+          headers:
+            X-Total-Count:
+              description: The total count of projects
+              type: integer
+            Link:
+              description: Link refers to the previous page and next page
+              type: string
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '500':
+          $ref: '#/responses/500'
 
 parameters:
   query:
@@ -9600,3 +9637,26 @@ definitions:
         type: boolean
         description: if the scheduler is paused
         x-omitempty: false
+  CVERecord:
+    type: object
+    description: The CVE record
+    properties:
+      cve_id:
+        type: string
+        description: The CVE ID
+      cvss_v3_score:
+        type: number
+        format: float64
+        description: The nvd v3 score of the CVE
+      severity:
+        type: string
+        description: The severity of the CVE, one of Critical, High, Medium, Low, Unknown
+      description:
+        type: string
+        description: The description of the CVE
+      cwe_ids:
+        type: string
+        description: The CWE IDs of the CVE
+      url: 
+        type: string
+        description: The URL of the CVE
