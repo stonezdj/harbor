@@ -19,29 +19,28 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 
-	"github.com/goharbor/harbor/src/server/v2.0/models"
-	securityModel "github.com/goharbor/harbor/src/server/v2.0/restapi/operations/securityhub"
-
 	"github.com/goharbor/harbor/src/common/security"
-	"github.com/goharbor/harbor/src/controller/securityhub"
+	securityhubCtl "github.com/goharbor/harbor/src/controller/securityhub"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/pkg/scan/dao/scan"
 	secHubModel "github.com/goharbor/harbor/src/pkg/securityhub/model"
+	"github.com/goharbor/harbor/src/server/v2.0/models"
+	"github.com/goharbor/harbor/src/server/v2.0/restapi/operations/securityhub"
 )
 
 func newSecurityAPI() *securityAPI {
 	return &securityAPI{
-		controller: securityhub.Ctl,
+		controller: securityhubCtl.Ctl,
 	}
 }
 
 type securityAPI struct {
 	BaseAPI
-	controller securityhub.Controller
+	controller securityhubCtl.Controller
 }
 
 func (s *securityAPI) GetSecuritySummary(ctx context.Context,
-	params securityModel.GetSecuritySummaryParams) middleware.Responder {
+	params securityhub.GetSecuritySummaryParams) middleware.Responder {
 	secCtx, ok := security.FromContext(ctx)
 	if !ok {
 		return s.SendError(ctx, errors.UnauthorizedError(errors.New("security context not found")))
@@ -54,7 +53,7 @@ func (s *securityAPI) GetSecuritySummary(ctx context.Context,
 		return s.SendError(ctx, err)
 	}
 	sum := toSecuritySummaryModel(summary)
-	return securityModel.NewGetSecuritySummaryOK().WithPayload(sum)
+	return securityhub.NewGetSecuritySummaryOK().WithPayload(sum)
 }
 
 func toSecuritySummaryModel(summary *secHubModel.Summary) *models.SecuritySummary {
@@ -102,12 +101,51 @@ func toDangerousCves(cves []*scan.VulnerabilityRecord) []*models.DangerousCVE {
 	return result
 }
 
-func (s *securityAPI) GetVulnerabilityList(ctx context.Context, params securityModel.GetVulnerabilityListParams) middleware.Responder {
-	// TODO implement me
-	panic("implement me")
+func (s *securityAPI) ListVulnerabilities(ctx context.Context, params securityhub.ListVulnerabilitiesParams) middleware.Responder {
+	secCtx, ok := security.FromContext(ctx)
+	if !ok {
+		return s.SendError(ctx, errors.UnauthorizedError(errors.New("security context not found")))
+	}
+	if !secCtx.IsSysAdmin() {
+		return s.SendError(ctx, errors.UnauthorizedError(errors.New("only admin can access cve list")))
+	}
+	query, err := s.BuildQuery(ctx, params.Q, params.Sort, params.Page, params.PageSize)
+	if err != nil {
+		return s.SendError(ctx, err)
+	}
+	cnt, err := s.controller.CountVuls(ctx, 0, *params.TuneCount, query)
+	if err != nil {
+		return s.SendError(ctx, err)
+	}
+	vuls, err := s.controller.ListVuls(ctx, 0, query)
+	if err != nil {
+		return s.SendError(ctx, err)
+	}
+	link := s.Links(ctx, params.HTTPRequest.URL, cnt, query.PageNumber, query.PageSize).String()
+	return securityhub.NewListVulnerabilitiesOK().WithPayload(toVulnerabilities(vuls)).WithLink(link).WithXTotalCount(cnt)
 }
 
-func (s *securityAPI) GetCVEList(ctx context.Context, params securityModel.GetCVEListParams) middleware.Responder {
-	// TODO implement me
-	panic("implement me")
+func toVulnerabilities(vuls []*secHubModel.VulnerabilityItem) []*models.VulnerabilityItem {
+	result := make([]*models.VulnerabilityItem, 0)
+	for _, item := range vuls {
+		score := float32(0)
+		if item.CVE3Score != nil {
+			score = float32(*item.CVE3Score)
+		}
+		result = append(result, &models.VulnerabilityItem{
+			Project:      item.Project,
+			Repository:   item.Repository,
+			Digest:       item.Digest,
+			CVEID:        item.CVEID,
+			Severity:     item.Severity,
+			Package:      item.Package,
+			Tags:         item.Tags,
+			Version:      item.PackageVersion,
+			FixedVersion: item.Fix,
+			Desc:         item.Description,
+			CvssV3Score:  score,
+			URL:          item.URLs,
+		})
+	}
+	return result
 }

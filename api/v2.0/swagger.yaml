@@ -6086,43 +6086,7 @@ paths:
           $ref: '#/responses/404'
         '500':
           $ref: '#/responses/500'
-  /security/cve:
-    get:
-      summary: Get a list of CVEs
-      description: Get a list of CVEs
-      tags:
-        - securityhub
-      operationId: getCveList
-      parameters:
-        - $ref: '#/parameters/requestId'
-        - $ref: '#/parameters/query'
-        - $ref: '#/parameters/page'
-        - $ref: '#/parameters/pageSize'
-        - $ref: '#/parameters/sort'
-      responses:
-        '200':
-          description: Success
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/CVERecord'
-          headers:
-            X-Total-Count:
-              description: The total count of projects
-              type: integer
-            Link:
-              description: Link refers to the previous page and next page
-              type: string
-        '400':
-          $ref: '#/responses/400'
-        '401':
-          $ref: '#/responses/401'
-        '403':
-          $ref: '#/responses/403'
-        '404':
-          $ref: '#/responses/404'
-        '500':
-          $ref: '#/responses/500'
+
   /security/vul:
     get:
       summary: Get the vulnerability list.
@@ -6130,11 +6094,17 @@ paths:
         Get the vulnerability list.
       tags:
         - securityhub
-      operationId: GetVulnerabilityList
+      operationId: ListVulnerabilities
       parameters:
         - $ref: '#/parameters/requestId'
         - $ref: '#/parameters/query'
         - $ref: '#/parameters/page'
+        - name: tune_count
+          in: query
+          description: Enable to ignore X-Total-Count when the total count > 1000
+          type: boolean
+          required: false
+          default: false
         - $ref: '#/parameters/pageSize'
         - $ref: '#/parameters/sort'
       responses:
@@ -6144,6 +6114,13 @@ paths:
             type: array
             items:
               $ref: '#/definitions/VulnerabilityItem'
+          headers:
+            X-Total-Count:
+              description: The total count of vulnerabilities
+              type: integer
+            Link:
+              description: Link refers to the previous page and next page
+              type: string              
         '400':
           $ref: '#/responses/400'
         '401':
@@ -9811,29 +9788,7 @@ definitions:
         type: integer
         x-omitempty: false
         description: the count of high vulnerabilities
-  CVERecord:
-    type: object
-    description: The CVE record
-    properties:
-      cve_id:
-        type: string
-        description: The CVE ID
-      cvss_v3_score:
-        type: number
-        format: float64
-        description: The nvd v3 score of the CVE
-      severity:
-        type: string
-        description: The severity of the CVE, one of Critical, High, Medium, Low, Unknown
-      description:
-        type: string
-        description: The description of the CVE
-      cwe_ids:
-        type: string
-        description: The CWE IDs of the CVE
-      url: 
-        type: string
-        description: The URL of the CVE
+
   VulnerabilityItem:
     type: object
     description: the vulnerability item info
@@ -9871,3 +9826,9 @@ definitions:
       fixed_version:
         type: string
         description: the fixed version of the package
+      desc:
+        type: string
+        description: The description of the vulnerability
+      url: 
+        type: string
+        description: The URL of the vulnerability

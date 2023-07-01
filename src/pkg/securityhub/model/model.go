@@ -42,3 +42,12 @@ type DangerousArtifact struct {
 	MediumCnt   int64  `json:"medium_cnt", orm:"column(medium_cnt)"`
 	LowCnt      int64  `json:"low_cnt", orm:"column(low_cnt)"`
 }
+
+type VulnerabilityItem struct {
+	scan.VulnerabilityRecord
+	ArtifactID int64    `orm:"column(artifact_id)"`
+	Repository string   `orm:"column(repository)"`
+	Digest     string   `orm:"column(digest)"`
+	Tags       []string `orm:"-"`
+	Project    string   `orm:"-"`
+}

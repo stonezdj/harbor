@@ -21,6 +21,7 @@ import (
 
 	testDao "github.com/goharbor/harbor/src/common/dao"
 	"github.com/goharbor/harbor/src/lib/orm"
+	"github.com/goharbor/harbor/src/lib/q"
 	htesting "github.com/goharbor/harbor/src/testing"
 )
 
@@ -61,7 +62,6 @@ values  (1, 'library/hello-world', 'digest1001', 'IMAGE', '2023-06-02 09:16:47.8
 	})
 }
 
-// TearDownTest clears enf for test case.
 func (suite *SecurityDaoTestSuite) TearDownTest() {
 	testDao.ExecuteBatchSQL([]string{
 		`delete from scan_report where uuid = 'uuid'`,
@@ -101,4 +101,31 @@ func (suite *SecurityDaoTestSuite) TestGetDangerousCVEs() {
 	records, err := suite.dao.DangerousCVEs(suite.Context(), `uuid2`, 0, nil)
 	suite.NoError(err, "Error when fetching most dangerous artifact")
 	suite.Equal(5, len(records))
+}
+
+func Test_checkQFilter(t *testing.T) {
+	type args struct {
+		query         *q.Query
+		allowKeywords map[string]string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"happy_path", args{q.New(q.KeyWords{"sample": 1}), map[string]string{"sample": "int"}}, false},
+		{"happy_path_cve_id", args{q.New(q.KeyWords{"cve_id": "CVE-2023-2345"}), map[string]string{"cve_id": "string"}}, false},
+		{"happy_path_severity", args{q.New(q.KeyWords{"severity": "Critical"}), map[string]string{"severity": "string"}}, false},
+		{"happy_path_cvss_score_v3", args{q.New(q.KeyWords{"cvss_score_v3": &q.Range{Min: 2.0, Max: 3.0}}), map[string]string{"cvss_score_v3": rangeType}}, false},
+		{"unhappy_path", args{q.New(q.KeyWords{"sample": 1}), map[string]string{"a": "int"}}, true},
+		{"unhappy_path2", args{q.New(q.KeyWords{"cve_id": 1}), map[string]string{"cve_id": stringType, "severity": stringType, "cvss_score_v3": rangeType}}, true},
+		{"unhappy_path3", args{q.New(q.KeyWords{"severity": &q.Range{Min: 2.0, Max: 10.0}}), map[string]string{"cve_id": stringType, "severity": stringType, "cvss_score_v3": rangeType}}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := checkQFilter(tt.args.query, tt.args.allowKeywords); (err != nil) != tt.wantErr {
+				t.Errorf("checkQFilter() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }

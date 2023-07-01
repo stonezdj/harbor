@@ -23,6 +23,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/scan/scanner"
 	"github.com/goharbor/harbor/src/pkg/securityhub"
 	secHubModel "github.com/goharbor/harbor/src/pkg/securityhub/model"
+	"github.com/goharbor/harbor/src/pkg/tag"
 )
 
 // Ctl is the global controller for security hub
@@ -32,12 +33,17 @@ var Ctl = NewController()
 type Controller interface {
 	// SecuritySummary returns the security summary of the specified project.
 	SecuritySummary(ctx context.Context, projectID int64, withCVE bool, withArtifact bool) (*secHubModel.Summary, error)
+	// ListVuls list vulnerabilities by query
+	ListVuls(ctx context.Context, projectID int64, query *q.Query) ([]*secHubModel.VulnerabilityItem, error)
+	// CountVuls get all vulnerability count by query
+	CountVuls(ctx context.Context, projectID int64, tuneCount bool, query *q.Query) (int64, error)
 }
 
 type controller struct {
 	artifactMgr artifact.Manager
 	scannerMgr  scanner.Manager
 	secHubMgr   securityhub.Manager
+	tagMgr      tag.Manager
 }
 
 // NewController ...
@@ -46,6 +52,7 @@ func NewController() Controller {
 		artifactMgr: artifact.NewManager(),
 		scannerMgr:  scanner.New(),
 		secHubMgr:   securityhub.Mgr,
+		tagMgr:      tag.Mgr,
 	}
 }
 
@@ -96,4 +103,47 @@ func (c *controller) defaultScannerUUID(ctx context.Context) string {
 		return ""
 	}
 	return reg.UUID
+}
+
+func (c *controller) ListVuls(ctx context.Context, projectID int64, query *q.Query) ([]*secHubModel.VulnerabilityItem, error) {
+	vuls, err := c.secHubMgr.ListVuls(ctx, c.defaultScannerUUID(ctx), projectID, query)
+	if err != nil {
+		return nil, err
+	}
+	resultList, err := c.attachTags(ctx, vuls)
+	if err != nil {
+		return nil, err
+	}
+	return resultList, nil
+}
+
+func (c *controller) attachTags(ctx context.Context, vuls []*secHubModel.VulnerabilityItem) ([]*secHubModel.VulnerabilityItem, error) {
+	var artifactIds []interface{}
+	artifactTagMap := make(map[int64][]string, 0)
+	for _, v := range vuls {
+		artifactTagMap[v.ArtifactID] = make([]string, 0)
+	}
+	for k := range artifactTagMap {
+		artifactIds = append(artifactIds, k)
+	}
+	query := q.New(q.KeyWords{"artifact_id": q.NewOrList(artifactIds)})
+	tags, err := c.tagMgr.List(ctx, query)
+	if err != nil {
+		return vuls, err
+	}
+	for _, tag := range tags {
+		artifactTagMap[tag.ArtifactID] = append(artifactTagMap[tag.ArtifactID], tag.Name)
+	}
+	for _, v := range vuls {
+		if len(artifactTagMap[v.ArtifactID]) > 10 {
+			v.Tags = artifactTagMap[v.ArtifactID][:10]
+			continue
+		}
+		v.Tags = artifactTagMap[v.ArtifactID]
+	}
+	return vuls, nil
+}
+
+func (c *controller) CountVuls(ctx context.Context, projectID int64, tuneCount bool, query *q.Query) (int64, error) {
+	return c.secHubMgr.TotalVuls(ctx, c.defaultScannerUUID(ctx), projectID, tuneCount, query)
 }
