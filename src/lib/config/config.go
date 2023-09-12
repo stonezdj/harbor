@@ -17,6 +17,7 @@ package config
 import (
 	"context"
 	"errors"
+	"os"
 	"sync"
 
 	"github.com/goharbor/harbor/src/common"
@@ -74,11 +75,31 @@ func GetManager(name string) (Manager, error) {
 	return mgr, nil
 }
 
+type dummyCfgMgr struct {
+	Manager
+}
+
+func newDummyCfgMgr() Manager {
+	return &dummyCfgMgr{}
+}
+
+func (d *dummyCfgMgr) Get(ctx context.Context, key string) *metadata.ConfigureValue {
+	md, exist := metadata.Instance().GetByName(key)
+	if !exist {
+		return nil
+	}
+	env := os.Getenv(md.EnvKey)
+	if len(env) > 0 {
+		return &metadata.ConfigureValue{Name: key, Value: env}
+	}
+	return &metadata.ConfigureValue{Name: key, Value: md.DefaultValue}
+}
+
 // DefaultMgr get default config manager
 func DefaultMgr() Manager {
 	manager, err := GetManager(DefaultCfgManager)
 	if err != nil {
-		panic("failed to get config manager")
+		return newDummyCfgMgr()
 	}
 	return manager
 }
