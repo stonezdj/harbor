@@ -20,6 +20,7 @@ import (
 	"github.com/beego/beego/v2/server/web"
 
 	"github.com/goharbor/harbor/src/common"
+	"github.com/goharbor/harbor/src/controller/chartproxy"
 	"github.com/goharbor/harbor/src/core/api"
 	"github.com/goharbor/harbor/src/core/controllers"
 	"github.com/goharbor/harbor/src/core/service/token"
@@ -54,6 +55,10 @@ func registerRoutes() {
 	router.NewRoute().Method(http.MethodPost).Path("/service/notifications/jobs/replication/task/:id([0-9]+)").Handler(handler.NewJobStatusHandler()) // legacy job status hook endpoint for replication task
 	router.NewRoute().Method(http.MethodPost).Path("/service/notifications/jobs/retention/task/:id([0-9]+)").Handler(handler.NewJobStatusHandler())
 	router.NewRoute().Method(http.MethodPost).Path("/service/notifications/tasks/:id").Handler(handler.NewJobStatusHandler())
+
+	router.NewRoute().Method(http.MethodGet).Path("/chartrepo/index.yaml").Handler(chartproxy.NewChartRepoHandler())
+	// /chartrepo/helm_proj/charts/1.8.0-f3da18f/wavefront-proxy.tgz
+	router.NewRoute().Method(http.MethodGet).Path("/chartrepo/:project_name/charts/:tag/:repo_name").Handler(chartproxy.NewChartDownloadHandler())
 
 	web.Router("/service/token", &token.Handler{})
 
