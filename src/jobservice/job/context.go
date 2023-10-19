@@ -66,6 +66,9 @@ type Context interface {
 	// GetLogger returns the logger
 	GetLogger() logger.Interface
 
+	// SetLogger ...
+	SetLogger(l logger.Interface)
+
 	// Tracker of job.
 	Tracker() Tracker
 }

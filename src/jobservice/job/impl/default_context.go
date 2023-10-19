@@ -37,6 +37,10 @@ type DefaultContext struct {
 	tracker job.Tracker
 }
 
+func (dc *DefaultContext) SetLogger(l logger.Interface) {
+	dc.logger = l
+}
+
 // NewDefaultContext is constructor of building DefaultContext
 func NewDefaultContext(sysCtx context.Context) job.Context {
 	return &DefaultContext{

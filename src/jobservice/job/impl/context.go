@@ -179,6 +179,10 @@ func (c *Context) GetLogger() logger.Interface {
 	return c.logger
 }
 
+func (c *Context) SetLogger(p logger.Interface) {
+	c.logger = p
+}
+
 // Tracker returns the job tracker attached with the context
 func (c *Context) Tracker() job.Tracker {
 	return c.tracker
