@@ -99,15 +99,15 @@ func (dc *DefaultContext) Checkin(status string) error {
 
 // OPCommand return the control operational command like stop if have
 func (dc *DefaultContext) OPCommand() (job.OPCommand, bool) {
-	latest, err := dc.tracker.Status()
-	if err != nil {
-		return job.NilCommand, false
-	}
-
-	if job.StoppedStatus == latest {
-		return job.StopCommand, true
-	}
-
+	// latest, err := dc.tracker.Status()
+	// if err != nil {
+	// 	return job.NilCommand, false
+	// }
+	//
+	// if job.StoppedStatus == latest {
+	// 	return job.StopCommand, true
+	// }
+	//
 	return job.NilCommand, false
 }
 
