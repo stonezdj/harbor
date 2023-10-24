@@ -143,7 +143,11 @@ func (c *copyFlow) createTasks(ctx context.Context, srcResources, dstResources [
 				"copy_by_chunk": copyByChunk,
 			},
 		}
-		log.Infof("job parameters: %+v", job.Parameters)
+		params, err := json.Marshal(job.Parameters)
+		if err != nil {
+			return err
+		}
+		log.Infof("job parameters: %+v", params)
 
 		if _, err = c.taskMgr.Create(ctx, c.executionID, job, map[string]interface{}{
 			"operation":            "copy",
