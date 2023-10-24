@@ -147,7 +147,7 @@ func (c *copyFlow) createTasks(ctx context.Context, srcResources, dstResources [
 		if err != nil {
 			return err
 		}
-		log.Infof("job parameters: %+v", params)
+		log.Infof("job parameters: %v", string(params))
 
 		if _, err = c.taskMgr.Create(ctx, c.executionID, job, map[string]interface{}{
 			"operation":            "copy",
