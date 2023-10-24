@@ -110,6 +110,7 @@ func (c *controller) Start(ctx context.Context, policy *replicationmodel.Policy,
 		extra["operator"] = op
 	}
 	id, err := c.execMgr.Create(ctx, job.ReplicationVendorType, policy.ID, trigger, extra)
+	log.Infof("job service parameter is %v", extra)
 	if err != nil {
 		return 0, err
 	}
