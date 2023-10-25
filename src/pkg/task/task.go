@@ -109,10 +109,21 @@ func (m *manager) Count(ctx context.Context, query *q.Query) (int64, error) {
 }
 
 func (m *manager) CreateK8sTask(ctx context.Context, executionID int64, jb *Job, extraAttrs ...map[string]interface{}) (int64, error) {
-	return 0, nil
+	// create task record in database
+	id, err := m.createTaskRecord(ctx, executionID, extraAttrs...)
+	if err != nil {
+		return 0, err
+	}
+	params, err := json.Marshal(jb.Parameters)
+	if err != nil {
+		return 0, err
+	}
+	log.Infof("job parameters: %v", string(params))
+	err = createTaskInK8s(string(params))
+	return id, err
 }
 
-func createTaskInK8s() error {
+func createTaskInK8s(params string) error {
 	kubeconfig := "/kubeconfig/config"
 	// Build the client configuration from the kubeconfig file
 	config, err := k8sCmd.BuildConfigFromFlags("", kubeconfig)
@@ -128,16 +139,16 @@ func createTaskInK8s() error {
 	// Define the job object
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-job",
+			Name: "replication-job",
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:    "my-container",
-							Image:   "nginx:latest",
-							Command: []string{},
+							Name:    "replication-container",
+							Image:   "firstfloor/replication_job:dev",
+							Command: []string{"-extra_attrs_json", params},
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,
