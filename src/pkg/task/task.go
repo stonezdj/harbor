@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	cjob "github.com/goharbor/harbor/src/common/job"
 	"github.com/goharbor/harbor/src/common/job/models"
 	"github.com/goharbor/harbor/src/jobservice/job"
@@ -27,6 +29,11 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/task/dao"
+
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	k8sClient "k8s.io/client-go/kubernetes"
+	k8sCmd "k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -42,6 +49,10 @@ type Manager interface {
 	// An execution must be created first and the task will be linked to it.
 	// The "extraAttrs" can be used to set the customized attributes
 	Create(ctx context.Context, executionID int64, job *Job, extraAttrs ...map[string]interface{}) (id int64, err error)
+
+	// CreateK8sTask creates a task for k8s job
+	CreateK8sTask(ctx context.Context, executionID int64, jb *Job, extraAttrs ...map[string]interface{}) (int64, error)
+
 	// Stop the specified task
 	Stop(ctx context.Context, id int64) (err error)
 	// Get the specified task
@@ -95,6 +106,49 @@ func (m *manager) Update(ctx context.Context, task *Task, props ...string) error
 
 func (m *manager) Count(ctx context.Context, query *q.Query) (int64, error) {
 	return m.dao.Count(ctx, query)
+}
+
+func (m *manager) CreateK8sTask(ctx context.Context, executionID int64, jb *Job, extraAttrs ...map[string]interface{}) (int64, error) {
+	return 0, nil
+}
+
+func createTaskInK8s() error {
+	kubeconfig := "/kubeconfig/config"
+	// Build the client configuration from the kubeconfig file
+	config, err := k8sCmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	// Create a new Kubernetes clientset
+	clientset, err := k8sClient.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+	// Define the job object
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-job",
+		},
+		Spec: batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:    "my-container",
+							Image:   "nginx:latest",
+							Command: []string{},
+						},
+					},
+					RestartPolicy: corev1.RestartPolicyNever,
+				},
+			},
+		},
+	}
+
+	// Create the job in the Kubernetes cluster
+	_, err = clientset.BatchV1().Jobs("default").Create(context.Background(), job, metav1.CreateOptions{})
+	return err
 }
 
 func (m *manager) Create(ctx context.Context, executionID int64, jb *Job, extraAttrs ...map[string]interface{}) (int64, error) {

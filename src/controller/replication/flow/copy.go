@@ -149,13 +149,15 @@ func (c *copyFlow) createTasks(ctx context.Context, srcResources, dstResources [
 		}
 		log.Infof("job parameters: %v", string(params))
 
-		if _, err = c.taskMgr.Create(ctx, c.executionID, job, map[string]interface{}{
-			"operation":            "copy",
-			"resource_type":        string(srcResource.Type),
-			"source_resource":      getResourceName(srcResource),
-			"destination_resource": getResourceName(dstResource)}); err != nil {
-			return err
-		}
+		// create task
+
+		// if _, err = c.taskMgr.Create(ctx, c.executionID, job, map[string]interface{}{
+		// 	"operation":            "copy",
+		// 	"resource_type":        string(srcResource.Type),
+		// 	"source_resource":      getResourceName(srcResource),
+		// 	"destination_resource": getResourceName(dstResource)}); err != nil {
+		// 	return err
+		// }
 
 		taskCnt++
 	}
