@@ -1,4 +1,5 @@
 FROM goharbor/harbor-core:v2.9.0
 
-COPY ../core/harbor_core /harbor/
+COPY ./harbor_core /harbor/
 
+RUN chmod +x /harbor/harbor_core
