@@ -143,21 +143,15 @@ func (c *copyFlow) createTasks(ctx context.Context, srcResources, dstResources [
 				"copy_by_chunk": copyByChunk,
 			},
 		}
-		params, err := json.Marshal(job.Parameters)
-		if err != nil {
-			return err
-		}
-		log.Infof("job parameters: %v", string(params))
 
 		// create task
-
-		// if _, err = c.taskMgr.Create(ctx, c.executionID, job, map[string]interface{}{
-		// 	"operation":            "copy",
-		// 	"resource_type":        string(srcResource.Type),
-		// 	"source_resource":      getResourceName(srcResource),
-		// 	"destination_resource": getResourceName(dstResource)}); err != nil {
-		// 	return err
-		// }
+		if _, err = c.taskMgr.Create(ctx, c.executionID, job, map[string]interface{}{
+			"operation":            "copy",
+			"resource_type":        string(srcResource.Type),
+			"source_resource":      getResourceName(srcResource),
+			"destination_resource": getResourceName(dstResource)}); err != nil {
+			return err
+		}
 
 		taskCnt++
 	}
