@@ -623,3 +623,8 @@ build_core_debug: compile_core
 	cp ./make/photon/core/harbor_core  ./make/photon/core_debug
 	docker build ./make/photon/core_debug -t firstfloor/core:v2.9.0-debug
 	docker push firstfloor/core:v2.9.0-debug
+
+build_replication_job: compile_replication_job
+	@echo "build replication job container"
+	docker build $(GOBUILDPATHINCONTAINER)/$(GOBUILDMAKEPATH_REPLICATION_JOB)/$(REPLICATION_JOB) -t firstfloor/replication_job:dev
+	docker push firstfloor/replication_job:dev
