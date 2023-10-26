@@ -617,3 +617,9 @@ clean:
 	@echo "  make cleanpackage:		remove online and offline install package"
 
 all: install
+
+build_core_debug:
+	@echo "build core debug container"
+	cp ./make/photon/core/harbor_core  ./make/photon/core_debug
+	docker build ./make/photon/core_debug -t firstfloor/core:v2.9.0-debug
+	docker push firstfloor/core:v2.9.0-debug
