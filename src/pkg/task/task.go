@@ -130,20 +130,21 @@ func (m *manager) CreateK8sTask(ctx context.Context, executionID int64, jb *Job,
 func createTaskInK8s(params string, id int64) error {
 	kubeconfig := "/kubeconfig/config"
 	// Build the client configuration from the kubeconfig file
-	config, err := k8sCmd.BuildConfigFromFlags("", kubeconfig)
+	cfg, err := k8sCmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		log.Errorf("error while createTaskInK8s %v", err)
 		return err
 	}
 
 	// Create a new Kubernetes clientset
-	clientset, err := k8sClient.NewForConfig(config)
+	clientset, err := k8sClient.NewForConfig(cfg)
 	if err != nil {
 		log.Errorf("error while createTaskInK8s %v", err)
 		return err
 	}
 	jobName := fmt.Sprintf("replication-job-%d", id)
 	ttlAfterFinished := int32(100)
+	coreURL := config.GetCoreURL()
 	// Define the job object
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -156,7 +157,7 @@ func createTaskInK8s(params string, id int64) error {
 						{
 							Name:    "replication-container",
 							Image:   "firstfloor/replication_job:dev",
-							Command: []string{"/harbor/replication_job", "-extra_attrs_json", params},
+							Command: []string{"/harbor/replication_job", "-extra_attrs_json", params, "-id", fmt.Sprintf("%d", id), "-core_url", coreURL},
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,
