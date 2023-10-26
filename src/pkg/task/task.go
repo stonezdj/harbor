@@ -120,14 +120,14 @@ func (m *manager) CreateK8sTask(ctx context.Context, executionID int64, jb *Job,
 		return 0, err
 	}
 	log.Infof("job parameters: %v", string(params))
-	err = createTaskInK8s(string(params))
+	err = createTaskInK8s(string(params), id)
 	if err != nil {
 		log.Errorf("failed to create task in k8s, err %v", err)
 	}
 	return id, err
 }
 
-func createTaskInK8s(params string) error {
+func createTaskInK8s(params string, id int64) error {
 	kubeconfig := "/kubeconfig/config"
 	// Build the client configuration from the kubeconfig file
 	config, err := k8sCmd.BuildConfigFromFlags("", kubeconfig)
@@ -142,10 +142,11 @@ func createTaskInK8s(params string) error {
 		log.Errorf("error while createTaskInK8s %v", err)
 		return err
 	}
+	jobName := fmt.Sprintf("replication-job-%d", id)
 	// Define the job object
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "replication-job",
+			Name: jobName,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
