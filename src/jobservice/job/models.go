@@ -103,6 +103,7 @@ type StatusChange struct {
 	Status   string     `json:"status"`
 	CheckIn  string     `json:"check_in,omitempty"`
 	Metadata *StatsInfo `json:"metadata,omitempty"`
+	ID       int64      `json:"id,omitempty"`
 }
 
 // SimpleStatusChange only keeps job ID and the target status

@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"github.com/goharbor/harbor/src/jobservice/job"
+	"github.com/goharbor/harbor/src/jobservice/logger"
 	"github.com/goharbor/harbor/src/lib/config"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -63,6 +64,12 @@ func (h *HookHandler) Handle(ctx context.Context, sc *job.StatusChange) error {
 
 	h.init()
 	jobID := sc.JobID
+
+	if sc.ID > 0 {
+		// handle Status Update with task ID
+		return h.HandleStatusUpdateWithTaskID(ctx, sc)
+	}
+
 	// the "JobID" field of some kinds of jobs are set as "87bbdee19bed5ce09c48a149@1605104520" which contains "@".
 	// In this case, read the parent periodical job ID from "sc.Metadata.UpstreamJobID"
 	if len(sc.Metadata.UpstreamJobID) > 0 {
@@ -86,6 +93,59 @@ func (h *HookHandler) Handle(ctx context.Context, sc *job.StatusChange) error {
 		return err
 	}
 
+	// process check in data
+	if len(sc.CheckIn) > 0 {
+		processor, exist := checkInProcessorRegistry[execution.VendorType]
+		if !exist {
+			return fmt.Errorf("the check in processor for task %d not found", task.ID)
+		}
+		t := &Task{}
+		t.From(task)
+		return processor(ctx, t, sc)
+	}
+
+	// update task status
+	if err = h.taskDAO.UpdateStatus(ctx, task.ID, sc.Status, sc.Metadata.Revision); err != nil {
+		return err
+	}
+	// run the status change post function
+	if fc, exist := statusChangePostFuncRegistry[execution.VendorType]; exist {
+		if err = fc(ctx, task.ID, sc.Status); err != nil {
+			logger.Errorf("failed to run the task status change post function for task %d: %v", task.ID, err)
+		}
+	}
+	// 1. execution status refresh interval <= 0 means update the status immediately
+	// 2. if the status is Stopped, we should also update the status immediately to avoid long wait time for user
+	if config.GetExecutionStatusRefreshIntervalSeconds() <= 0 || sc.Status == job.StoppedStatus.String() {
+		// update execution status immediately which may have optimistic lock
+		statusChanged, currentStatus, err := h.executionDAO.RefreshStatus(ctx, task.ExecutionID)
+		if err != nil {
+			return err
+		}
+		// run the status change post function
+		if fc, exist := executionStatusChangePostFuncRegistry[execution.VendorType]; exist && statusChanged {
+			if err = fc(ctx, task.ExecutionID, currentStatus); err != nil {
+				logger.Errorf("failed to run the execution status change post function for execution %d: %v", task.ExecutionID, err)
+			}
+		}
+
+		return nil
+	}
+	// by default, the execution status is updated in asynchronous mode
+	return h.executionDAO.AsyncRefreshStatus(ctx, task.ExecutionID, task.VendorType)
+}
+
+// HandleStatusUpdateWithTaskID handles the status update with task ID
+func (h *HookHandler) HandleStatusUpdateWithTaskID(ctx context.Context, sc *job.StatusChange) error {
+	task, err := h.taskDAO.Get(ctx, sc.ID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New(nil).WithCode(errors.NotFoundCode).
+			WithMessage("task with ID %d not found", sc.ID)
+	}
+	execution, err := h.executionDAO.Get(ctx, task.ExecutionID)
 	// process check in data
 	if len(sc.CheckIn) > 0 {
 		processor, exist := checkInProcessorRegistry[execution.VendorType]
