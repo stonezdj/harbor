@@ -155,7 +155,7 @@ func createTaskInK8s(params string, id int64) error {
 						{
 							Name:    "replication-container",
 							Image:   "firstfloor/replication_job:dev",
-							Command: []string{"-extra_attrs_json", params},
+							Command: []string{"/harbor/replication_job", "-extra_attrs_json", params},
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,
