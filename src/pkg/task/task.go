@@ -109,6 +109,7 @@ func (m *manager) Count(ctx context.Context, query *q.Query) (int64, error) {
 }
 
 func (m *manager) CreateK8sTask(ctx context.Context, executionID int64, jb *Job, extraAttrs ...map[string]interface{}) (int64, error) {
+	log.Infof("creating k8s task for job %v", jb.Name)
 	// create task record in database
 	id, err := m.createTaskRecord(ctx, executionID, extraAttrs...)
 	if err != nil {
@@ -175,22 +176,22 @@ func (m *manager) Create(ctx context.Context, executionID int64, jb *Job, extraA
 	// when the job is submitted to the jobservice and running, the task record may not
 	// insert yet, this will cause the status hook handler returning 404, and the jobservice
 	// will re-send the status hook again
-	jobID, err := m.submitJob(ctx, id, jb)
-	if err != nil {
-		// failed to submit job to jobservice, delete the task record
-		log.Errorf("delete task %d from db due to failed to submit job %v, error: %v", id, jb.Name, err)
-		if err := m.dao.Delete(ctx, id); err != nil {
-			log.Errorf("failed to delete the task %d: %v", id, err)
-		}
-		return 0, err
-	}
+	// jobID, err := m.submitJob(ctx, id, jb)
+	// if err != nil {
+	// 	// failed to submit job to jobservice, delete the task record
+	// 	log.Errorf("delete task %d from db due to failed to submit job %v, error: %v", id, jb.Name, err)
+	// 	if err := m.dao.Delete(ctx, id); err != nil {
+	// 		log.Errorf("failed to delete the task %d: %v", id, err)
+	// 	}
+	// 	return 0, err
+	// }
 
-	log.Debugf("the task %d is submitted to jobservice, the job ID is %s", id, jobID)
+	// log.Debugf("the task %d is submitted to jobservice, the job ID is %s", id, jobID)
 
 	// populate the job ID for the task
 	if err = m.dao.Update(ctx, &dao.Task{
 		ID:    id,
-		JobID: jobID,
+		JobID: "",
 	}, "JobID"); err != nil {
 		log.Errorf("failed to populate the job ID for the task %d: %v", id, err)
 	}

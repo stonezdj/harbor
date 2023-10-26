@@ -145,7 +145,7 @@ func (c *copyFlow) createTasks(ctx context.Context, srcResources, dstResources [
 		}
 
 		// create task
-		if _, err = c.taskMgr.Create(ctx, c.executionID, job, map[string]interface{}{
+		if _, err = c.taskMgr.CreateK8sTask(ctx, c.executionID, job, map[string]interface{}{
 			"operation":            "copy",
 			"resource_type":        string(srcResource.Type),
 			"source_resource":      getResourceName(srcResource),
