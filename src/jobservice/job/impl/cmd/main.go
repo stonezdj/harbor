@@ -20,16 +20,22 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/goharbor/harbor/src/jobservice/env"
+	"github.com/goharbor/harbor/src/jobservice/hook"
 	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/jobservice/job/impl"
 	"github.com/goharbor/harbor/src/jobservice/job/impl/replication"
+	"github.com/goharbor/harbor/src/jobservice/logger"
 	"github.com/goharbor/harbor/src/lib/log"
 )
 
 func main() {
 	// command line to run the job service
 	extralAttr := flag.String("extra_attrs_json", "", "extra attributes for the job")
+	id := flag.Int64("id", 0, "job id")
+	coreUrl := flag.String("core_url", "http://core", "core url")
 	flag.Parse()
 
 	param := job.Parameters{}
@@ -42,9 +48,25 @@ func main() {
 	ctx := impl.NewDefaultContext(context.Background())
 	ctx.SetLogger(log.New(os.Stdout, log.NewTextFormatter(), log.WarningLevel, 3))
 
-	job := &replication.Replication{}
-	if err = job.Run(ctx, param); err != nil {
+	j := &replication.Replication{}
+	if err = j.Run(ctx, param); err != nil {
 		fmt.Println(err)
+	}
+
+	evt := &hook.Event{
+		URL:       fmt.Sprintf("%s/service/notifications/tasks/%d", *coreUrl, *id),
+		Timestamp: time.Now().Unix(),
+		Data:      &job.StatusChange{Status: job.SuccessStatus.String(), ID: *id},
+		Message:   "replication job status changed",
+	}
+
+	rootCtx := &env.Context{
+		SystemContext: context.Background(),
+	}
+	hookAgent := hook.NewAgent(rootCtx, "{job_service_namespace}", nil, 3)
+	// Hook event sending should not influence the main job flow (because job may call checkin() in the job run).
+	if err := hookAgent.Trigger(evt); err != nil {
+		logger.Error(err)
 	}
 
 }
