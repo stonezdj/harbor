@@ -121,6 +121,9 @@ func (m *manager) CreateK8sTask(ctx context.Context, executionID int64, jb *Job,
 	}
 	log.Infof("job parameters: %v", string(params))
 	err = createTaskInK8s(string(params))
+	if err != nil {
+		log.Errorf("failed to create task in k8s, err %v", err)
+	}
 	return id, err
 }
 
@@ -129,12 +132,14 @@ func createTaskInK8s(params string) error {
 	// Build the client configuration from the kubeconfig file
 	config, err := k8sCmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
+		log.Errorf("error while createTaskInK8s %v", err)
 		return err
 	}
 
 	// Create a new Kubernetes clientset
 	clientset, err := k8sClient.NewForConfig(config)
 	if err != nil {
+		log.Errorf("error while createTaskInK8s %v", err)
 		return err
 	}
 	// Define the job object
