@@ -626,5 +626,5 @@ build_core_debug: compile_core
 
 build_replication_job: compile_replication_job
 	@echo "build replication job container"
-	docker build $(GOBUILDPATHINCONTAINER)/$(GOBUILDMAKEPATH_REPLICATION_JOB)/$(REPLICATION_JOB) -t firstfloor/replication_job:dev
+	docker build ./make/photon/replication_job -t firstfloor/replication_job:dev
 	docker push firstfloor/replication_job:dev
