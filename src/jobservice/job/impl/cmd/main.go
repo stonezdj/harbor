@@ -35,7 +35,7 @@ func main() {
 	// command line to run the job service
 	extralAttr := flag.String("extra_attrs_json", "", "extra attributes for the job")
 	id := flag.Int64("id", 0, "job id")
-	coreUrl := flag.String("core_url", "http://core", "core url")
+	coreURL := flag.String("core_url", "http://core", "core url")
 	flag.Parse()
 
 	param := job.Parameters{}
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	evt := &hook.Event{
-		URL:       fmt.Sprintf("%s/service/notifications/tasks/%d", *coreUrl, *id),
+		URL:       fmt.Sprintf("%s/service/notifications/tasks/%d", *coreURL, *id),
 		Timestamp: time.Now().Unix(),
 		Data:      &job.StatusChange{Status: job.SuccessStatus.String(), ID: *id, Metadata: &job.StatsInfo{Revision: int64(1000)}},
 		Message:   "replication job status changed",
