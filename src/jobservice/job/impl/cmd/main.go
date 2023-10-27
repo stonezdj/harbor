@@ -22,12 +22,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/goharbor/harbor/src/jobservice/env"
 	"github.com/goharbor/harbor/src/jobservice/hook"
 	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/jobservice/job/impl"
 	"github.com/goharbor/harbor/src/jobservice/job/impl/replication"
-	"github.com/goharbor/harbor/src/jobservice/logger"
 	"github.com/goharbor/harbor/src/lib/log"
 )
 
@@ -60,13 +58,10 @@ func main() {
 		Message:   "replication job status changed",
 	}
 
-	rootCtx := &env.Context{
-		SystemContext: context.Background(),
-	}
-	hookAgent := hook.NewAgent(rootCtx, "{job_service_namespace}", nil, 3)
-	// Hook event sending should not influence the main job flow (because job may call checkin() in the job run).
-	if err := hookAgent.Trigger(evt); err != nil {
-		logger.Error(err)
+	// send the event to the hook
+	hookClient := hook.NewClient(context.Background())
+	if err := hookClient.SendEvent(evt); err != nil {
+		log.Error(err)
 	}
 
 }
