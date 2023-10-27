@@ -56,7 +56,7 @@ func main() {
 	evt := &hook.Event{
 		URL:       fmt.Sprintf("%s/service/notifications/tasks/%d", *coreUrl, *id),
 		Timestamp: time.Now().Unix(),
-		Data:      &job.StatusChange{Status: job.SuccessStatus.String(), ID: *id},
+		Data:      &job.StatusChange{Status: job.SuccessStatus.String(), ID: *id, Metadata: &job.StatsInfo{Revision: int64(1000)}},
 		Message:   "replication job status changed",
 	}
 
