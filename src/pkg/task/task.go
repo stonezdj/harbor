@@ -157,7 +157,7 @@ func createTaskInK8s(params string, id int64) error {
 						{
 							Name:            "replication-container",
 							Image:           "firstfloor/replication_job:dev",
-							ImagePullPolicy: corev1.PullPolicy("Always"),
+							ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 							Command:         []string{"/harbor/replication_job", "-extra_attrs_json", params, "-id", fmt.Sprintf("%d", id), "-core_url", coreURL},
 						},
 					},
