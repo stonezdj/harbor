@@ -155,9 +155,10 @@ func createTaskInK8s(params string, id int64) error {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:    "replication-container",
-							Image:   "firstfloor/replication_job:dev",
-							Command: []string{"/harbor/replication_job", "-extra_attrs_json", params, "-id", fmt.Sprintf("%d", id), "-core_url", coreURL},
+							Name:            "replication-container",
+							Image:           "firstfloor/replication_job:dev",
+							ImagePullPolicy: corev1.PullPolicy("Always"),
+							Command:         []string{"/harbor/replication_job", "-extra_attrs_json", params, "-id", fmt.Sprintf("%d", id), "-core_url", coreURL},
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,
