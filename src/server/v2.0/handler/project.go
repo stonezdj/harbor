@@ -304,7 +304,12 @@ func (a *projectAPI) GetLogs(ctx context.Context, params operation.GetLogsParams
 	}
 	query.Keywords["ProjectID"] = pro.ProjectID
 
-	total, err := a.auditMgr.Count(ctx, query)
+	tuneCount := false
+	if params.TuneCount != nil {
+		tuneCount = *params.TuneCount
+	}
+
+	total, err := a.auditMgr.Count(ctx, query, tuneCount)
 	if err != nil {
 		return a.SendError(ctx, err)
 	}

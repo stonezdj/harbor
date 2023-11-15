@@ -61,14 +61,14 @@ func (d *daoTestSuite) TearDownSuite() {
 }
 
 func (d *daoTestSuite) TestCount() {
-	total, err := d.dao.Count(d.ctx, nil)
+	total, err := d.dao.Count(d.ctx, nil, false)
 	d.Require().Nil(err)
 	d.True(total > 0)
 	total, err = d.dao.Count(d.ctx, &q.Query{
 		Keywords: map[string]interface{}{
 			"Resource": "library/test-audit",
 		},
-	})
+	}, false)
 	d.Require().Nil(err)
 	d.Equal(int64(1), total)
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/orm"
@@ -298,7 +299,7 @@ func (d *dao) countExceedLimit(ctx context.Context, sqlStr string, params []inte
 	if err != nil {
 		return false, err
 	}
-	queryExceed := fmt.Sprintf(`SELECT EXISTS (%s LIMIT 1 OFFSET 1000)`, sqlStr)
+	queryExceed := fmt.Sprintf(`SELECT EXISTS (%s LIMIT 1 OFFSET %d)`, sqlStr, common.TuneCountRowLimit)
 	var exceed bool
 	err = o.Raw(queryExceed, params).QueryRow(&exceed)
 	if err != nil {

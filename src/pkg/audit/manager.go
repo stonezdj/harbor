@@ -29,7 +29,7 @@ var Mgr = New()
 // Manager is used for audit log management
 type Manager interface {
 	// Count returns the total count of audit logs according to the query
-	Count(ctx context.Context, query *q.Query) (total int64, err error)
+	Count(ctx context.Context, query *q.Query, tuneCount bool) (total int64, err error)
 	// List audit logs according to the query
 	List(ctx context.Context, query *q.Query) (audits []*model.AuditLog, err error)
 	// Get the audit log specified by ID
@@ -54,8 +54,8 @@ type manager struct {
 }
 
 // Count ...
-func (m *manager) Count(ctx context.Context, query *q.Query) (int64, error) {
-	return m.dao.Count(ctx, query)
+func (m *manager) Count(ctx context.Context, query *q.Query, tuneCount bool) (int64, error) {
+	return m.dao.Count(ctx, query, tuneCount)
 }
 
 // List ...

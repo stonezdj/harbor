@@ -85,7 +85,12 @@ func (a *auditlogAPI) ListAuditLogs(ctx context.Context, params auditlog.ListAud
 		query.Keywords["ProjectID"] = ol
 	}
 
-	total, err := a.auditMgr.Count(ctx, query)
+	tuneCount := false
+	if params.TuneCount != nil {
+		tuneCount = *params.TuneCount
+	}
+
+	total, err := a.auditMgr.Count(ctx, query, tuneCount)
 	if err != nil {
 		return a.SendError(ctx, err)
 	}

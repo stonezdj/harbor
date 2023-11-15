@@ -1622,6 +1622,7 @@ paths:
         - $ref: '#/parameters/sort'
         - $ref: '#/parameters/page'
         - $ref: '#/parameters/pageSize'
+        - $ref: '#/parameters/tune_count'
       responses:
         '200':
           description: Success
@@ -1656,6 +1657,7 @@ paths:
         - $ref: '#/parameters/sort'
         - $ref: '#/parameters/page'
         - $ref: '#/parameters/pageSize'
+        - $ref: '#/parameters/tune_count'
       responses:
         '200':
           description: Success
@@ -6109,12 +6111,7 @@ paths:
         - $ref: '#/parameters/query'
         - $ref: '#/parameters/page'
         - $ref: '#/parameters/pageSize'
-        - name: tune_count
-          in: query
-          description: Enable to ignore X-Total-Count when the total count > 1000, if the total count is less than 1000, the real total count is returned, else -1.
-          type: boolean
-          required: false
-          default: false
+        - $ref: '#/parameters/tune_count'
         - name: with_tag
           in: query
           description: Specify whether the tag information is included inside vulnerability information
@@ -6203,6 +6200,13 @@ parameters:
     type: string
     required: false
     minLength: 1
+  tune_count:
+    name: tune_count
+    in: query
+    description: Enable to ignore X-Total-Count when the total count > 1000, if the total count is less than 1000, the real total count is returned, else -1.
+    type: boolean
+    required: false
+    default: false
   resourceNameInLocation:
     name: X-Resource-Name-In-Location
     description: The flag to indicate whether to return the name of the resource in Location. When X-Resource-Name-In-Location is true, the Location will return the name of the resource.

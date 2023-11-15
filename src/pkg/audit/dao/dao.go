@@ -20,6 +20,7 @@ import (
 
 	beegorm "github.com/beego/beego/v2/client/orm"
 
+	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/common/rbac"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -33,7 +34,7 @@ type DAO interface {
 	// Create the audit log
 	Create(ctx context.Context, access *model.AuditLog) (id int64, err error)
 	// Count returns the total count of audit logs according to the query
-	Count(ctx context.Context, query *q.Query) (total int64, err error)
+	Count(ctx context.Context, query *q.Query, tuneCount bool) (total int64, err error)
 	// List audit logs according to the query
 	List(ctx context.Context, query *q.Query) (access []*model.AuditLog, err error)
 	// Get the audit log specified by ID
@@ -126,11 +127,22 @@ func permitOps(includeOperations []string) []string {
 }
 
 // Count ...
-func (d *dao) Count(ctx context.Context, query *q.Query) (int64, error) {
+func (d *dao) Count(ctx context.Context, query *q.Query, tuneCount bool) (int64, error) {
 	qs, err := orm.QuerySetterForCount(ctx, &model.AuditLog{}, query)
 	if err != nil {
 		return 0, err
 	}
+	if tuneCount {
+		exceed, err := qs.Offset(common.TuneCountRowLimit).Limit(1).Count()
+		if err != nil {
+			return 0, err
+		}
+		if exceed > 0 {
+			log.Warningf("the query %v exceeds the limit %d, will return -1 ", common.TuneCountRowLimit, query)
+			return -1, nil
+		}
+	}
+
 	return qs.Count()
 }
 

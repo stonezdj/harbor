@@ -111,11 +111,19 @@ func (s *securityAPI) ListVulnerabilities(ctx context.Context, params securityMo
 	if err != nil {
 		return s.SendError(ctx, err)
 	}
-	cnt, err := s.controller.CountVuls(ctx, scannerUUID, 0, *params.TuneCount, query)
+	tuneCount := false
+	if params.TuneCount != nil {
+		tuneCount = *params.TuneCount
+	}
+	withTag := false
+	if params.WithTag != nil {
+		withTag = *params.WithTag
+	}
+	cnt, err := s.controller.CountVuls(ctx, scannerUUID, 0, tuneCount, query)
 	if err != nil {
 		return s.SendError(ctx, err)
 	}
-	vuls, err := s.controller.ListVuls(ctx, scannerUUID, 0, *params.WithTag, query)
+	vuls, err := s.controller.ListVuls(ctx, scannerUUID, 0, withTag, query)
 	if err != nil {
 		return s.SendError(ctx, err)
 	}

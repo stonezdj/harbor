@@ -230,4 +230,6 @@ const (
 	QuotaUpdateProvider = "quota_update_provider"
 	// IllegalCharsInUsername is the illegal chars in username
 	IllegalCharsInUsername = `,"~#%$`
+
+	TuneCountRowLimit = 1000
 )
