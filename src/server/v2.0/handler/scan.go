@@ -82,12 +82,19 @@ func (s *scanAPI) ScanArtifact(ctx context.Context, params operation.ScanArtifac
 	if !distribution.IsDigest(params.Reference) {
 		options = append(options, scan.WithTag(params.Reference))
 	}
+	if params.ScanRequestType != nil && validScanType(params.ScanRequestType.ScanType) {
+		options = append(options, scan.WithScanType(params.ScanRequestType.ScanType))
+	}
 
 	if err := s.scanCtl.Scan(ctx, artifact, options...); err != nil {
 		return s.SendError(ctx, err)
 	}
 
 	return operation.NewScanArtifactAccepted()
+}
+
+func validScanType(scanType string) bool {
+	return scanType == "sbom" || scanType == "vulnerability"
 }
 
 func (s *scanAPI) GetReportLog(ctx context.Context, params operation.GetReportLogParams) middleware.Responder {

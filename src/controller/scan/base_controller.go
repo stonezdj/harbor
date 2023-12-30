@@ -65,13 +65,13 @@ const (
 	configRegistryEndpoint = "registryEndpoint"
 	configCoreInternalAddr = "coreInternalAddr"
 
-	artfiactKey     = "artifact"
-	registrationKey = "registration"
-
-	artifactIDKey  = "artifact_id"
-	artifactTagKey = "artifact_tag"
-	reportUUIDsKey = "report_uuids"
-	robotIDKey     = "robot_id"
+	artfiactKey         = "artifact"
+	registrationKey     = "registration"
+	enableCapabilityKey = "enabled_capabilities"
+	artifactIDKey       = "artifact_id"
+	artifactTagKey      = "artifact_tag"
+	reportUUIDsKey      = "report_uuids"
+	robotIDKey          = "robot_id"
 )
 
 // uuidGenerator is a func template which is for generating UUID.
@@ -296,6 +296,11 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 		return errs[0]
 	}
 
+	scanType := opts.ScanType
+	if len(scanType) == 0 {
+		scanType = v1.ScanTypeVulnerability
+	}
+
 	if opts.ExecutionID == 0 {
 		extraAttrs := map[string]interface{}{
 			artfiactKey: map[string]interface{}{
@@ -307,6 +312,9 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 			registrationKey: map[string]interface{}{
 				"id":   r.ID,
 				"name": r.Name,
+			},
+			enableCapabilityKey: map[string]interface{}{
+				"type": scanType,
 			},
 		}
 		if op := operator.FromContext(ctx); op != "" {

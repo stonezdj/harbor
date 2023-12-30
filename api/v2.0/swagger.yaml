@@ -1164,6 +1164,11 @@ paths:
         - $ref: '#/parameters/projectName'
         - $ref: '#/parameters/repositoryName'
         - $ref: '#/parameters/reference'
+        - name: scan_request_type
+          in: body
+          required: false
+          schema: 
+            $ref: '#/definitions/ScanRequestType'
       responses:
         '202':
           $ref: '#/responses/202'
@@ -6739,6 +6744,13 @@ definitions:
         type: string
         description: Version of the scanner adapter
         example: "v0.9.1"
+  ScanRequestType:
+    type: object
+    properties:
+      scan_type: 
+        type: string
+        description: 'The scan type for scan requst, it could be vulnerability or sbom'
+        example: "sbom"
   ScanOverview:
     type: object
     description: 'The scan overview attached in the metadata of tag'

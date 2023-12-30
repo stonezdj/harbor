@@ -18,6 +18,7 @@ package scan
 type Options struct {
 	ExecutionID int64  // The execution id to scan artifact
 	Tag         string // The tag of the artifact to scan
+	ScanType    string
 }
 
 // Option represents an option item by func template.
@@ -41,6 +42,13 @@ func WithTag(tag string) Option {
 	return func(options *Options) error {
 		options.Tag = tag
 
+		return nil
+	}
+}
+
+func WithScanType(scanType string) Option {
+	return func(options *Options) error {
+		options.ScanType = scanType
 		return nil
 	}
 }

@@ -21,6 +21,11 @@ import (
 	"github.com/goharbor/harbor/src/lib/errors"
 )
 
+const (
+	ScanTypeVulnerability = "vulnerability"
+	ScanTypeSbom          = "sbom"
+)
+
 // Scanner represents metadata of a Scanner Adapter which allow Harbor to lookup a scanner capable of
 // scanning a given Artifact stored in its registry and making sure that it can interpret a
 // returned result.
@@ -168,6 +173,18 @@ type ScanRequest struct {
 	Registry *Registry `json:"registry"`
 	// Artifact to be scanned.
 	Artifact *Artifact `json:"artifact"`
+	// RequestType
+	RequestType *ScanType `json:"enabled_capabilities"`
+}
+
+// ScanType represent the type of the scan request
+type ScanType struct {
+	// Type sets the type of the scan, it could be sbom or vulnerability, default is vulnerability
+	Type string `json:"type"`
+	// ProducesMimeTypes defines scanreport should be
+	ProducesMimeTypes []string `json:"producesMimeTypes"`
+	// Parameters extra parameters
+	Parameters map[string]string `json:"parameters"`
 }
 
 // FromJSON parses ScanRequest from json data
