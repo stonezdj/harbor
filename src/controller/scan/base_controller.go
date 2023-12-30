@@ -300,6 +300,7 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 	if len(scanType) == 0 {
 		scanType = v1.ScanTypeVulnerability
 	}
+	log.Infof("The scan type is %v", scanType)
 
 	if opts.ExecutionID == 0 {
 		extraAttrs := map[string]interface{}{
