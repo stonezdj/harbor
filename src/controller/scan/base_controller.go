@@ -91,6 +91,7 @@ type launchScanJobParam struct {
 	Artifact     *ar.Artifact
 	Tag          string
 	Reports      []*scan.Report
+	ScanType     string
 }
 
 // basicController is default implementation of api.Controller interface
@@ -287,6 +288,7 @@ func (bc *basicController) Scan(ctx context.Context, artifact *ar.Artifact, opti
 				Artifact:     art,
 				Tag:          tag,
 				Reports:      reports,
+				ScanType:     opts.ScanType,
 			})
 		}
 	}
@@ -1003,6 +1005,9 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 			Tag:         param.Tag,
 			MimeType:    param.Artifact.ManifestMediaType,
 		},
+		RequestType: &v1.ScanType{
+			Type: param.ScanType,
+		},
 	}
 
 	rJSON, err := param.Registration.ToJSON()
@@ -1045,10 +1050,11 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 	// keep the report uuids in array so that when ?| operator support by the FilterRaw method of beego's orm
 	// we can list the tasks of the scan reports by one SQL
 	extraAttrs := map[string]interface{}{
-		artifactIDKey:  param.Artifact.ID,
-		artifactTagKey: param.Tag,
-		robotIDKey:     robot.ID,
-		reportUUIDsKey: reportUUIDs,
+		artifactIDKey:       param.Artifact.ID,
+		artifactTagKey:      param.Tag,
+		robotIDKey:          robot.ID,
+		reportUUIDsKey:      reportUUIDs,
+		enableCapabilityKey: map[string]string{"type": scanReq.RequestType.Type},
 	}
 
 	_, err = bc.taskMgr.Create(ctx, param.ExecutionID, j, extraAttrs)
