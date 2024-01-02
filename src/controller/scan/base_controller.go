@@ -993,6 +993,11 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 		return errors.Wrap(err, "scan controller: launch scan job")
 	}
 
+	scanType := param.ScanType
+	if len(scanType) == 0 {
+		scanType = v1.ScanTypeVulnerability
+	}
+
 	// Set job parameters
 	scanReq := &v1.ScanRequest{
 		Registry: &v1.Registry{
@@ -1006,7 +1011,7 @@ func (bc *basicController) launchScanJob(ctx context.Context, param *launchScanJ
 			MimeType:    param.Artifact.ManifestMediaType,
 		},
 		RequestType: &v1.ScanType{
-			Type: param.ScanType,
+			Type: scanType,
 		},
 	}
 

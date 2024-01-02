@@ -184,6 +184,8 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	var authorization string
 	var tokenURL string
 
+	myLogger.Infof("The job request type is %v", req.RequestType.Type)
+
 	authType, _ := extractAuthType(params)
 	if authType == authorizationBearer {
 		tokenURL, err = getInternalTokenServiceEndpoint(ctx)
