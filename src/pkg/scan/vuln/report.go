@@ -33,6 +33,8 @@ type Report struct {
 	Vulnerabilities []*VulnerabilityItem `json:"vulnerabilities"`
 
 	vulnerabilityItemList *VulnerabilityItemList
+
+	Sbom map[string]interface{} `json:"sbom,omitempty"`
 }
 
 // GetVulnerabilityItemList returns VulnerabilityItemList from the Vulnerabilities of report
