@@ -23,6 +23,12 @@ https:
   # The path of cert and key files for nginx
   certificate: {{ https.certificate }}
   private_key: {{ https.private_key }}
+  # enable strong ssl ciphers (default: false)
+  {% if strong_ssl_ciphers is defined %}
+  strong_ssl_ciphers: {{ strong_ssl_ciphers | lower }}
+  {% else %}
+  strong_ssl_ciphers: false
+  {% endif %}
 {% else %}
 # https related config
 # https:
