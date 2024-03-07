@@ -1102,6 +1102,12 @@ paths:
           type: boolean
           required: false
           default: false
+        - name: with_sbom_overview
+          in: query
+          description: Specify whether the sbom overview is inclued inside the returning artifacts
+          type: boolean
+          required: false
+          default: false
         - name: with_accessory
           in: query
           description: Specify whether the accessories are included of the returning artifacts.
