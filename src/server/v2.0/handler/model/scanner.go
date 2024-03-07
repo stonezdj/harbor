@@ -34,7 +34,10 @@ func (s *ScannerRegistration) ToSwagger(_ context.Context) *models.ScannerRegist
 	if s.Registration == nil {
 		return nil
 	}
-
+	capabilities := map[string]interface{}{
+		"support_vulnerability": true,
+		"support_sbom":          true,
+	}
 	return &models.ScannerRegistration{
 		UUID:             s.UUID,
 		Name:             s.Name,
@@ -52,6 +55,7 @@ func (s *ScannerRegistration) ToSwagger(_ context.Context) *models.ScannerRegist
 		Vendor:           s.Vendor,
 		Version:          s.Version,
 		Health:           s.Health,
+		Capabilities:     capabilities,
 	}
 }
 
