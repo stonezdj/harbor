@@ -787,6 +787,7 @@ func GetSummaryFromSBOMReport(rpts []*scan.Report) (map[string]interface{}, erro
 	if err != nil {
 		return result, err
 	}
+	result["report_id"] = rpts[0].UUID
 	return result, nil
 }
 

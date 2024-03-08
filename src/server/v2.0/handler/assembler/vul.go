@@ -100,6 +100,7 @@ func (assembler *VulAssembler) Assemble(ctx context.Context) error {
 				"scan_status": overview["scan_status"],
 				"sbom_digest": overview["sbom_digest"],
 				"duration":    overview["duration"],
+				"report_id":   overview["report_id"],
 			}
 			sbomDigest := fmt.Sprintf("%s", overview["sbom_digest"])
 			artifact.SetAdditionLinkWithDigest(sbom, version, sbomDigest)
