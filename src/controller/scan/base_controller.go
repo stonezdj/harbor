@@ -623,13 +623,13 @@ func deleteArtifactAccessory(ctx context.Context, report string) error {
 	if len(report) == 0 {
 		return nil
 	}
-	reportMap := map[string]string{}
+	reportMap := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(report), &reportMap); err != nil {
 		log.Errorf("fail to unmarshal %v", err)
 		return nil
 	}
-	repo := reportMap["sbom_repository"]
-	dgst := reportMap["sbom_digest"]
+	repo := fmt.Sprintf("%s", reportMap["sbom_repository"])
+	dgst := fmt.Sprintf("%s", reportMap["sbom_digest"])
 	accessoryMgr := accessory.NewManager()
 	artifactMgr := artifact.NewManager()
 	if len(repo) > 0 && len(dgst) > 0 {
