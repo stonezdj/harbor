@@ -16,6 +16,7 @@ package assembler
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/goharbor/harbor/src/controller/scan"
 	"github.com/goharbor/harbor/src/lib"
@@ -26,6 +27,7 @@ import (
 
 const (
 	vulnerabilitiesAddition = "vulnerabilities"
+	sbom                    = "sbom"
 )
 
 // NewVulAssembler returns vul assembler
@@ -99,6 +101,8 @@ func (assembler *VulAssembler) Assemble(ctx context.Context) error {
 				"sbom_digest": overview["sbom_digest"],
 				"duration":    overview["duration"],
 			}
+			sbomDigest := fmt.Sprintf("%s", overview["sbom_digest"])
+			artifact.SetAdditionLinkWithDigest(sbom, version, sbomDigest)
 		}
 	}
 
