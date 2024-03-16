@@ -299,6 +299,29 @@ func (t *taskDAOTestSuite) TestExecutionIDsByVendorAndStatus() {
 	defer t.taskDAO.Delete(t.ctx, tid)
 }
 
+func TestIsValidUUID(t *testing.T) {
+	tests := []struct {
+		name     string
+		uuid     string
+		expected bool
+	}{
+		{"Valid UUID", "7f20b1b9-6117-4a2e-820b-e4cc0401f15f", true},
+		{"Invalid UUID - Short", "7f20b1b9-6117-4a2e-820b", false},
+		{"Invalid UUID - Long", "7f20b1b9-6117-4a2e-820b-e4cc0401f15f-extra", false},
+		{"Invalid UUID - Invalid Characters", "7f20b1b9-6117-4z2e-820b-e4cc0401f15f", false},
+		{"Empty String", "", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := isValidUUID(test.uuid)
+			if result != test.expected {
+				t.Errorf("Expected isValidUUID(%s) to be %t, got %t", test.uuid, test.expected, result)
+			}
+		})
+	}
+}
+
 func TestTaskDAOSuite(t *testing.T) {
 	suite.Run(t, &taskDAOTestSuite{})
 }
