@@ -20,6 +20,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/scan"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
+	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
 	"github.com/goharbor/harbor/src/server/v2.0/handler/model"
 )
 
@@ -28,12 +29,12 @@ const (
 )
 
 // NewVulAssembler returns vul assembler
-func NewVulAssembler(withScanOverview bool, mimeTypes []string) *VulAssembler {
+func NewVulAssembler(withScanOverview bool, withSBOMOverview bool, mimeTypes []string) *VulAssembler {
 	return &VulAssembler{
-		scanChecker: scan.NewChecker(),
-		scanCtl:     scan.DefaultController,
-
+		scanChecker:      scan.NewChecker(),
+		scanCtl:          scan.DefaultController,
 		withScanOverview: withScanOverview,
+		withSBOMOverview: withSBOMOverview,
 		mimeTypes:        mimeTypes,
 	}
 }
@@ -45,6 +46,7 @@ type VulAssembler struct {
 
 	artifacts        []*model.Artifact
 	withScanOverview bool
+	withSBOMOverview bool
 	mimeTypes        []string
 }
 
@@ -81,6 +83,21 @@ func (assembler *VulAssembler) Assemble(ctx context.Context) error {
 					artifact.ScanOverview = overview
 					break
 				}
+			}
+		}
+		log.Infof("with sbom overview %v", assembler.withSBOMOverview)
+		overview, err := assembler.scanCtl.GetSummary(ctx, &artifact.Artifact, []string{v1.MimeTypeSBOMReport})
+		if err != nil {
+			log.Warningf("get scan summary of artifact %s@%s for %s failed, error:%v", artifact.RepositoryName, artifact.Digest, v1.MimeTypeSBOMReport, err)
+		}
+		log.Infof("over view is %v", overview)
+		if assembler.withSBOMOverview {
+			artifact.SBOMOverView = map[string]interface{}{
+				"start_time":  overview["start_time"],
+				"end_time":    overview["end_time"],
+				"scan_status": overview["scan_status"],
+				"sbom_digest": overview["sbom_digest"],
+				"duration":    overview["duration"],
 			}
 		}
 	}

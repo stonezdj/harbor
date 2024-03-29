@@ -74,6 +74,9 @@ const (
 	// TypeNydusAccelerator ...
 	TypeNydusAccelerator = "accelerator.nydus"
 
+	// Type HarborSBOM
+	TypeHarborSBOM = "harbor.sbom"
+
 	// TypeSubject ...
 	TypeSubject = "subject.accessory"
 )

@@ -41,6 +41,8 @@ const (
 	MimeTypeScanResponse = "application/vnd.scanner.adapter.scan.response+json; version=1.0"
 	// MimeTypeGenericVulnerabilityReport defines the MIME type for the generic report with enhanced information
 	MimeTypeGenericVulnerabilityReport = "application/vnd.security.vulnerability.report; version=1.1"
+	// MimeTypeSBOMReport
+	MimeTypeSBOMReport = "application/vnd.security.sbom.report+json; version=1.0"
 
 	apiPrefix = "/api/v1"
 )

@@ -41,6 +41,8 @@ var (
 
 	// annotation of nydus image
 	layerAnnotationNydusBootstrap = "containerd.io/snapshot/nydus-bootstrap"
+
+	mediaTypeHarborSBOM = "application/vnd.goharbor.harbor.sbom.v1"
 )
 
 /*
@@ -149,6 +151,8 @@ func Middleware() func(http.Handler) http.Handler {
 				}
 			case mediaTypeNotationLayer:
 				accData.Type = model.TypeNotationSignature
+			case mediaTypeHarborSBOM:
+				accData.Type = model.TypeHarborSBOM
 			}
 			if subjectArt != nil {
 				accData.SubArtifactID = subjectArt.ID

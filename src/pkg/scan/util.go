@@ -30,11 +30,11 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
+	"github.com/samber/lo"
+
 	"github.com/goharbor/harbor/src/controller/robot"
 	v1sq "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
 )
-
-type Insecure bool
 
 func (i Insecure) RemoteOptions() []remote.Option {
 	tr := http.DefaultTransport.(*http.Transport).Clone()
@@ -42,8 +42,16 @@ func (i Insecure) RemoteOptions() []remote.Option {
 	return []remote.Option{remote.WithTransport(tr)}
 }
 
+func (i Insecure) NameOptions() []name.Option {
+	return lo.Ternary(bool(i), []name.Option{name.Insecure}, nil)
+}
+
 type referrer struct {
 	Insecure
+	annotations     map[string]string
+	mediaType       types.MediaType
+	bytes           []byte
+	targetReference name.Reference
 }
 
 // GenAccessoryArt composes the accessory oci object and push it back to harbor core as an accessory of the scanned artifact.

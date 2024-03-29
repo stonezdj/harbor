@@ -29,6 +29,7 @@ import (
 type Artifact struct {
 	artifact.Artifact
 	ScanOverview map[string]interface{} `json:"scan_overview"`
+	SBOMOverView map[string]interface{} `json:"sbom_overview"`
 }
 
 // ToSwagger converts the artifact to the swagger model
@@ -83,6 +84,18 @@ func (a *Artifact) ToSwagger() *models.Artifact {
 
 			art.ScanOverview[key] = summary
 		}
+	}
+	if len(a.SBOMOverView) > 0 {
+		sbomOverview := &models.SBOMOverview{}
+		js, err := json.Marshal(a.SBOMOverView)
+		if err != nil {
+			log.Warningf("convert sbom summary failed, error: %v", err)
+		}
+		err = json.Unmarshal(js, sbomOverview)
+		if err != nil {
+			log.Warningf("failed to get sbom summary: error: %v", err)
+		}
+		art.SbomOverview = sbomOverview
 	}
 	return art
 }

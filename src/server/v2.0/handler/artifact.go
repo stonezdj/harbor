@@ -108,7 +108,7 @@ func (a *artifactAPI) ListArtifacts(ctx context.Context, params operation.ListAr
 		return a.SendError(ctx, err)
 	}
 
-	assembler := assembler.NewVulAssembler(lib.BoolValue(params.WithScanOverview), parseScanReportMimeTypes(params.XAcceptVulnerabilities))
+	assembler := assembler.NewVulAssembler(lib.BoolValue(params.WithScanOverview), lib.BoolValue(params.WithSbomOverview), parseScanReportMimeTypes(params.XAcceptVulnerabilities))
 	var artifacts []*models.Artifact
 	for _, art := range arts {
 		artifact := &model.Artifact{}
@@ -139,7 +139,7 @@ func (a *artifactAPI) GetArtifact(ctx context.Context, params operation.GetArtif
 	art := &model.Artifact{}
 	art.Artifact = *artifact
 
-	err = assembler.NewVulAssembler(lib.BoolValue(params.WithScanOverview), parseScanReportMimeTypes(params.XAcceptVulnerabilities)).WithArtifacts(art).Assemble(ctx)
+	err = assembler.NewVulAssembler(lib.BoolValue(params.WithScanOverview), false, parseScanReportMimeTypes(params.XAcceptVulnerabilities)).WithArtifacts(art).Assemble(ctx)
 	if err != nil {
 		log.Warningf("failed to assemble vulnerabilities with artifact, error: %v", err)
 	}

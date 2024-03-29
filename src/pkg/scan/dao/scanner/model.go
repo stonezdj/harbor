@@ -20,6 +20,7 @@ import (
 
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/errors"
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/scan/rest/auth"
 	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
 )
@@ -135,7 +136,9 @@ func (r *Registration) Client(pool v1.ClientPool) (v1.Client, error) {
 
 // HasCapability returns true when mime type of the artifact support by the scanner
 func (r *Registration) HasCapability(manifestMimeType string) bool {
+	log.Info("enter HasCapability")
 	if r.Metadata == nil {
+		log.Info("exit HasCapability with false, nil metadata")
 		return false
 	}
 
@@ -146,12 +149,16 @@ func (r *Registration) HasCapability(manifestMimeType string) bool {
 			}
 		}
 	}
-
+	log.Info("exit HasCapability with false")
 	return false
 }
 
 // GetProducesMimeTypes returns produces mime types for the artifact
-func (r *Registration) GetProducesMimeTypes(mimeType string) []string {
+func (r *Registration) GetProducesMimeTypes(mimeType string, scanType string) []string {
+	// specify the mime types returned in the request
+	if scanType == v1.ScanTypeSbom {
+		return []string{v1.MimeTypeSBOMReport}
+	}
 	if r.Metadata == nil {
 		return nil
 	}

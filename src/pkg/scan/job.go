@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,6 +39,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/scan/postprocessors"
 	"github.com/goharbor/harbor/src/pkg/scan/report"
 	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
+	"github.com/goharbor/harbor/src/pkg/scan/vuln"
 )
 
 const (
@@ -59,6 +61,8 @@ const (
 	authorizationBasic  = "Basic"
 
 	service = "harbor-registry"
+
+	sbomMimeType = "application/vnd.goharbor.harbor.sbom.v1"
 )
 
 // CheckInReport defines model for checking in the scan report with specified mime.
@@ -145,7 +149,7 @@ func (j *Job) Validate(params job.Parameters) error {
 func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	// Get logger
 	myLogger := ctx.GetLogger()
-
+	startTime := time.Now()
 	// shouldStop checks if the job should be stopped
 	shouldStop := func() bool {
 		if cmd, ok := ctx.OPCommand(); ok && cmd == job.StopCommand {
@@ -183,14 +187,18 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 
 	var authorization string
 	var tokenURL string
+	tokenURL, err = getInternalTokenServiceEndpoint(ctx)
+	if err != nil {
+		return errors.Wrap(err, "scan job: get token service endpoint")
+	}
+
+	myLogger.Infof("The token url is %v", tokenURL)
+
+	myLogger.Infof("The job request type is %v", req.RequestType[0].Type)
 
 	authType, _ := extractAuthType(params)
 	if authType == authorizationBearer {
-		tokenURL, err = getInternalTokenServiceEndpoint(ctx)
-		if err != nil {
-			return errors.Wrap(err, "scan job: get token service endpoint")
-		}
-		authorization, err = makeBearerAuthorization(robotAccount, tokenURL, req.Artifact.Repository)
+		authorization, err = makeBearerAuthorization(robotAccount, tokenURL, req.Artifact.Repository, "pull")
 	} else {
 		authorization, err = makeBasicAuthorization(robotAccount)
 	}
@@ -235,8 +243,13 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 					}
 
 					myLogger.Debugf("check scan report for mime %s at %s", m, t.Format("2006/01/02 15:04:05"))
-
-					rawReport, err := client.GetScanReport(resp.ID, m)
+					parameters := map[string]string{}
+					// default using application/spdx+json todo:
+					if req.RequestType[0].Type == "sbom" {
+						parameters["sbom_media_type"] = "application/spdx+json"
+					}
+					rawReport, err := client.GetScanReport(resp.ID, m, parameters)
+					myLogger.Infof("get scan report %v", rawReport)
 					if err != nil {
 						// Not ready yet
 						if notReadyErr, ok := err.(*v1.ReportNotReadyError); ok {
@@ -326,6 +339,52 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// this is required since the top level layers relay on the vuln.Report struct that
 		// contains additional metadata within the report which if stored in the new columns within the scan_report table
 		// would be redundant
+		myLogger.Infof("report data is %v", reportData)
+		if req.RequestType[0].Type == v1.ScanTypeSbom {
+			rpt := vuln.Report{}
+			err := json.Unmarshal([]byte(reportData), &rpt)
+			if err != nil {
+				return err
+			}
+			sbomContent, err := json.Marshal(rpt.Sbom)
+			if err != nil {
+				return err
+			}
+			// should use the external registry name as the subject
+			subject := fmt.Sprintf("%s/%s@%s", getRegistryServer(ctx), req.Artifact.Repository, req.Artifact.Digest)
+			mediaType := sbomMimeType
+			// FIXME: remove hardcode
+			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
+			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
+			if err != nil {
+				myLogger.Errorf("failed to create token, error %v", err)
+				return err
+			}
+			token = strings.TrimPrefix(token, "Bearer ")
+			// upload sbom as artifact accessory
+			myLogger.Infof("subject: %v", subject)
+			myLogger.Infof("token: %v", token)
+			dgst, err := createAccessoryForImage([]byte(sbomContent), subject, mediaType, token)
+			if err != nil {
+				myLogger.Errorf("error when create accessory from image %v", err)
+			}
+
+			// store digest in the report field, it is used in the sbom status summary and makeReportPlaceholder to delete previous sbom
+			myLogger.Infof("acccessory image digest is %v", dgst)
+			endTime := time.Now()
+			reportMap := map[string]interface{}{}
+			reportMap["start_time"] = startTime
+			reportMap["end_time"] = endTime
+			reportMap["duration"] = int64(endTime.Sub(startTime).Seconds())
+			reportMap["scan_status"] = "Success"
+			reportMap["sbom_repository"] = req.Artifact.Repository
+			reportMap["sbom_digest"] = dgst
+			rep, err := json.Marshal(reportMap)
+			if err != nil {
+				return err
+			}
+			reportData = string(rep)
+		}
 		if err := report.Mgr.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
 			myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)
 
@@ -336,6 +395,23 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	}
 
 	return nil
+}
+
+// extract server name from config
+func getRegistryServer(ctx job.Context) string {
+	cfgMgr, ok := config.FromContext(ctx.SystemContext())
+	myLogger := ctx.GetLogger()
+
+	if ok {
+		extUrl := cfgMgr.Get(ctx.SystemContext(), common.ExtEndpoint).GetString()
+		myLogger.Infof("The external url is %v", extUrl)
+		server := strings.TrimPrefix(extUrl, "https://")
+		server = strings.TrimPrefix(server, "http://")
+		myLogger.Infof("The server is %v", server)
+		return server
+	}
+	myLogger.Error("empty registry server!")
+	return ""
 }
 
 // ExtractScanReq extracts the scan request from the job parameters.
@@ -358,6 +434,13 @@ func ExtractScanReq(params job.Parameters) (*v1.ScanRequest, error) {
 	if err := req.FromJSON(jsonData); err != nil {
 		return nil, err
 	}
+	if req.RequestType[0].Type == v1.ScanTypeVulnerability && len(req.RequestType[0].ProducesMimeTypes) == 0 {
+		req.RequestType[0].ProducesMimeTypes = []string{v1.MimeTypeGenericVulnerabilityReport}
+	} else if req.RequestType[0].Type == v1.ScanTypeSbom {
+		req.RequestType[0].ProducesMimeTypes = []string{v1.MimeTypeSBOMReport}
+		req.RequestType[0].Parameters = map[string]interface{}{"sbom_media_types": []string{"application/spdx+json"}}
+	}
+
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
@@ -392,8 +475,9 @@ func removeScanAuthInfo(sr *v1.ScanRequest) string {
 		Artifact: sr.Artifact,
 		Registry: &v1.Registry{
 			URL:           sr.Registry.URL,
-			Authorization: "[HIDDEN]",
+			Authorization: sr.Registry.Authorization,
 		},
+		RequestType: sr.RequestType,
 	}
 
 	str, err := req.ToJSON()
@@ -549,7 +633,7 @@ func makeBasicAuthorization(robotAccount *model.Robot) (string, error) {
 }
 
 // makeBearerAuthorization creates bearer token from a robot account
-func makeBearerAuthorization(robotAccount *model.Robot, tokenURL string, repository string) (string, error) {
+func makeBearerAuthorization(robotAccount *model.Robot, tokenURL string, repository string, action string) (string, error) {
 	u, err := url.Parse(tokenURL)
 	if err != nil {
 		return "", err
@@ -557,7 +641,7 @@ func makeBearerAuthorization(robotAccount *model.Robot, tokenURL string, reposit
 
 	query := u.Query()
 	query.Add("service", service)
-	query.Add("scope", fmt.Sprintf("repository:%s:pull", repository))
+	query.Add("scope", fmt.Sprintf("repository:%s:%s", repository, action))
 	u.RawQuery = query.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
