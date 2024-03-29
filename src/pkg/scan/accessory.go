@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -155,5 +156,15 @@ func createAccessoryForImage(content []byte, subject string, artifactMediaType s
 	if err := remote.Write(tag, img, remoteOpts...); err != nil {
 		return "", err
 	}
+	man, err := img.Manifest()
+	if err != nil {
+		return "", err
+	}
+	if man != nil {
+		log.Infof("the manifest is not empty, subject is %v", man.Subject)
+	} else {
+		log.Info("manifest is emtpy!")
+	}
+
 	return digest.String(), nil
 }
