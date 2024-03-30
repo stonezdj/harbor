@@ -354,17 +354,10 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 			subject := fmt.Sprintf("%s/%s@%s", getRegistryServer(ctx), req.Artifact.Repository, req.Artifact.Digest)
 			mediaType := sbomMimeType
 			// FIXME: remove hardcode
-			account := &model.Robot{Name: "admin", Secret: "Harbor12345"}
-			token, err := makeBearerAuthorization(account, tokenURL, req.Artifact.Repository, "push")
-			if err != nil {
-				myLogger.Errorf("failed to create token, error %v", err)
-				return err
-			}
-			token = strings.TrimPrefix(token, "Bearer ")
+			robot := &model.Robot{Name: "admin", Secret: "Harbor12345"}
 			// upload sbom as artifact accessory
 			myLogger.Infof("subject: %v", subject)
-			myLogger.Infof("token: %v", token)
-			dgst, err := createAccessoryForImage([]byte(sbomContent), subject, mediaType, token)
+			dgst, err := createAccessoryForImage([]byte(sbomContent), subject, mediaType, robot)
 			if err != nil {
 				myLogger.Errorf("error when create accessory from image %v", err)
 			}

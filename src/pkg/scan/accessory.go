@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/pkg/robot/model"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -107,7 +108,7 @@ func getBearerToken(harborURL, username, password string, repository string, com
 	return fmt.Sprintf("%s", token), nil
 }
 
-func createAccessoryForImage(content []byte, subject string, artifactMediaType string, token string) (string, error) {
+func createAccessoryForImage(content []byte, subject string, artifactMediaType string, robot *model.Robot) (string, error) {
 	putOptions := putOptions{
 		Insecure: true,
 		Subject:  subject,
@@ -129,7 +130,7 @@ func createAccessoryForImage(content []byte, subject string, artifactMediaType s
 		return "", err
 	}
 	// remoteOpts := append(ref.RemoteOptions(), remote.WithAuthFromKeychain(authn.DefaultKeychain))
-	remoteOpts := append(ref.RemoteOptions(), remote.WithAuth(&authn.Bearer{Token: token}))
+	remoteOpts := append(ref.RemoteOptions(), remote.WithAuth(&authn.Basic{Username: robot.Name, Password: robot.Secret}))
 	ref.targetReference = targetRef
 	targetDesc, err := remote.Head(ref.targetReference, remoteOpts...)
 	if err != nil {
