@@ -151,7 +151,11 @@ func (r *Registration) HasCapability(manifestMimeType string) bool {
 }
 
 // GetProducesMimeTypes returns produces mime types for the artifact
-func (r *Registration) GetProducesMimeTypes(mimeType string) []string {
+func (r *Registration) GetProducesMimeTypes(mimeType string, scanType string) []string {
+	// specify the mime types returned in the request
+	if scanType == v1.ScanTypeSbom {
+		return []string{v1.MimeTypeSBOMReport}
+	}
 	if r.Metadata == nil {
 		return nil
 	}

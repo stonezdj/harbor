@@ -38,23 +38,23 @@ func (_m *Client) GetMetadata() (*v1.ScannerAdapterMetadata, error) {
 	return r0, r1
 }
 
-// GetScanReport provides a mock function with given fields: scanRequestID, reportMIMEType
-func (_m *Client) GetScanReport(scanRequestID string, reportMIMEType string) (string, error) {
-	ret := _m.Called(scanRequestID, reportMIMEType)
+// GetScanReport provides a mock function with given fields: scanRequestID, reportMIMEType, urlParameter
+func (_m *Client) GetScanReport(scanRequestID string, reportMIMEType string, urlParameter string) (string, error) {
+	ret := _m.Called(scanRequestID, reportMIMEType, urlParameter)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
-		return rf(scanRequestID, reportMIMEType)
+	if rf, ok := ret.Get(0).(func(string, string, string) (string, error)); ok {
+		return rf(scanRequestID, reportMIMEType, urlParameter)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(scanRequestID, reportMIMEType)
+	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
+		r0 = rf(scanRequestID, reportMIMEType, urlParameter)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(scanRequestID, reportMIMEType)
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(scanRequestID, reportMIMEType, urlParameter)
 	} else {
 		r1 = ret.Error(1)
 	}

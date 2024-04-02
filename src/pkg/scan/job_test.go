@@ -212,7 +212,8 @@ func (suite *JobTestSuite) TestfetchScanReportFromScanner() {
 	require.NoError(suite.T(), err)
 	client := &v1testing.Client{}
 	client.On("GetScanReport", mock.Anything, v1.MimeTypeGenericVulnerabilityReport).Return(rawContent, nil)
-	rawRept, err := fetchScanReportFromScanner(client, "abc", v1.MimeTypeGenericVulnerabilityReport)
+	parameters := "sbom_media_type=application/spdx+json"
+	rawRept, err := fetchScanReportFromScanner(client, "abc", v1.MimeTypeGenericVulnerabilityReport, parameters)
 	require.NoError(suite.T(), err)
 	require.Equal(suite.T(), rawContent, rawRept)
 }
