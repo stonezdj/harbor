@@ -28,6 +28,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/proxy"
 	"github.com/goharbor/harbor/src/controller/registry"
 	"github.com/goharbor/harbor/src/lib"
+	"github.com/goharbor/harbor/src/lib/config"
 	"github.com/goharbor/harbor/src/lib/errors"
 	httpLib "github.com/goharbor/harbor/src/lib/http"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -259,13 +260,21 @@ func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string)
 }
 
 // isProxySession check if current security context is proxy session
-func isProxySession(ctx context.Context) bool {
+func isProxySession(ctx context.Context, projectName string) bool {
 	sc, ok := security.FromContext(ctx)
 	if !ok {
 		log.Error("Failed to get security context")
 		return false
 	}
-	if sc.GetUsername() == proxycachesecret.ProxyCacheService {
+	username := sc.GetUsername()
+	if username == proxycachesecret.ProxyCacheService {
+		return true
+	}
+	// it should include the auto generate SBOM session, so that it could generate SBOM accessory in proxy cache project
+	robotPrefix := config.RobotPrefix(ctx)
+	scannerPrefix := config.ScannerRobotPrefix(ctx)
+	prefix := fmt.Sprintf("%s%s+%s", robotPrefix, projectName, scannerPrefix)
+	if strings.HasPrefix(username, prefix) {
 		return true
 	}
 	return false
@@ -281,7 +290,7 @@ func DisableBlobAndManifestUploadMiddleware() func(http.Handler) http.Handler {
 			httpLib.SendError(w, err)
 			return
 		}
-		if p.IsProxy() && !isProxySession(ctx) {
+		if p.IsProxy() && !isProxySession(ctx, art.ProjectName) {
 			httpLib.SendError(w,
 				errors.DeniedError(
 					errors.Errorf("can not push artifact to a proxy project: %v", p.Name)))
