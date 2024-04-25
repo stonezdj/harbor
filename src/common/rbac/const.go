@@ -51,7 +51,7 @@ const (
 	ResourceRobot              = Resource("robot")
 	ResourceNotificationPolicy = Resource("notification-policy")
 	ResourceScan               = Resource("scan")
-	ResourceSBOM               = Resource("sbom")
+	ResourceSBOM               = Resource("SBOM")
 	ResourceScanner            = Resource("scanner")
 	ResourceArtifact           = Resource("artifact")
 	ResourceTag                = Resource("tag")
