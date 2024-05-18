@@ -96,15 +96,6 @@ type Controller interface {
 	//     error  : non nil error if any errors occurred
 	GetScanLog(ctx context.Context, art *artifact.Artifact, uuid string) ([]byte, error)
 
-	// Delete the reports related with the specified digests
-	//
-	//  Arguments:
-	//    digests ...string : specify one or more digests whose reports will be deleted
-	//
-	//  Returns:
-	//    error        : non nil error if any errors occurred
-	DeleteReports(ctx context.Context, digests ...string) error
-
 	// Scan all the artifacts
 	//
 	//   Arguments:

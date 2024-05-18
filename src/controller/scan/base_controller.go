@@ -49,6 +49,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/scan/postprocessors"
 	"github.com/goharbor/harbor/src/pkg/scan/report"
 	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
+	"github.com/goharbor/harbor/src/pkg/scan/sbom"
 	sbomModel "github.com/goharbor/harbor/src/pkg/scan/sbom/model"
 	"github.com/goharbor/harbor/src/pkg/scan/vuln"
 	"github.com/goharbor/harbor/src/pkg/task"
@@ -99,7 +100,8 @@ type launchScanJobParam struct {
 // basicController is default implementation of api.Controller interface
 type basicController struct {
 	// Manage the scan report records
-	manager report.Manager
+	manager     report.Manager
+	sbomManager sbom.Manager
 	// Artifact controller
 	ar ar.Controller
 	// Accessory manager
@@ -130,7 +132,8 @@ type basicController struct {
 func NewController() Controller {
 	return &basicController{
 		// New report manager
-		manager: report.NewManager(),
+		manager:     report.NewManager(),
+		sbomManager: sbom.NewManager(),
 		// Refer to the default artifact controller
 		ar: ar.Ctl,
 		// Refer to the default accessory manager
@@ -568,10 +571,12 @@ func (bc *basicController) startScanAll(ctx context.Context, executionID int64) 
 
 func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact, opts *Options) ([]*scan.Report, error) {
 	mimeTypes := r.GetProducesMimeTypes(art.ManifestMediaType, opts.GetScanType())
+
 	oldReports, err := bc.manager.GetBy(bc.cloneCtx(ctx), art.Digest, r.UUID, mimeTypes)
 	if err != nil {
 		return nil, err
 	}
+
 	if err := bc.deleteArtifactAccessories(ctx, oldReports); err != nil {
 		return nil, err
 	}
@@ -750,7 +755,8 @@ func (bc *basicController) GetSBOMSummary(ctx context.Context, art *ar.Artifact,
 	if err != nil {
 		return nil, errors.Wrap(err, "scan controller: get sbom summary")
 	}
-	reports, err := bc.manager.GetBy(ctx, art.Digest, r.UUID, mimeTypes)
+	// SBOM related
+	reports, err := bc.sbomManager.GetBy(ctx, art.ID, r.UUID, mimeTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -900,14 +906,6 @@ func scanTaskForArtifacts(task *task.Task, artifactMap map[int64]interface{}) bo
 	}
 	_, exist := artifactMap[artifactID]
 	return exist
-}
-
-// DeleteReports ...
-func (bc *basicController) DeleteReports(ctx context.Context, digests ...string) error {
-	if err := bc.manager.DeleteByDigests(ctx, digests...); err != nil {
-		return errors.Wrap(err, "scan controller: delete reports")
-	}
-	return nil
 }
 
 func (bc *basicController) GetVulnerable(ctx context.Context, artifact *ar.Artifact, allowlist allowlist.CVESet, allowlistIsExpired bool) (*Vulnerable, error) {
