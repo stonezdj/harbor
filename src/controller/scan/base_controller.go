@@ -570,62 +570,69 @@ func (bc *basicController) startScanAll(ctx context.Context, executionID int64) 
 }
 
 func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact, opts *Options) ([]*scan.Report, error) {
+	scanType := opts.GetScanType()
 	mimeTypes := r.GetProducesMimeTypes(art.ManifestMediaType, opts.GetScanType())
-
-	oldReports, err := bc.manager.GetBy(bc.cloneCtx(ctx), art.Digest, r.UUID, mimeTypes)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := bc.deleteArtifactAccessories(ctx, oldReports); err != nil {
-		return nil, err
-	}
-
-	if err := bc.assembleReports(ctx, oldReports...); err != nil {
-		return nil, err
-	}
-
-	if len(oldReports) > 0 {
-		for _, oldReport := range oldReports {
-			if !job.Status(oldReport.Status).Final() {
-				return nil, errors.ConflictError(nil).WithMessage("a previous scan process is %s", oldReport.Status)
-			}
+	if scanType == v1.ScanTypeSbom {
+		sbomReports, err := bc.sbomManager.GetBy(bc.cloneCtx(ctx), art.ID, r.UUID, mimeTypes)
+		if err != nil {
+			return nil, err
 		}
-
-		for _, oldReport := range oldReports {
-			if err := bc.manager.Delete(ctx, oldReport.UUID); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	var reports []*scan.Report
-
-	for _, pm := range r.GetProducesMimeTypes(art.ManifestMediaType, opts.GetScanType()) {
-		report := &scan.Report{
-			Digest:           art.Digest,
-			RegistrationUUID: r.UUID,
-			MimeType:         pm,
-		}
-
-		create := func(ctx context.Context) error {
-			reportUUID, err := bc.manager.Create(ctx, report)
-			if err != nil {
-				return err
-			}
-			report.UUID = reportUUID
-
-			return nil
-		}
-
-		if err := orm.WithTransaction(create)(orm.SetTransactionOpNameToContext(ctx, "tx-make-report-placeholder")); err != nil {
+		if err := bc.deleteArtifactAccessories(ctx, sbomReports); err != nil {
 			return nil, err
 		}
 
-		reports = append(reports, report)
-	}
+	} else {
+		oldReports, err := bc.manager.GetBy(bc.cloneCtx(ctx), art.Digest, r.UUID, mimeTypes)
+		if err != nil {
+			return nil, err
+		}
 
-	return reports, nil
+		if err := bc.assembleReports(ctx, oldReports...); err != nil {
+			return nil, err
+		}
+
+		if len(oldReports) > 0 {
+			for _, oldReport := range oldReports {
+				if !job.Status(oldReport.Status).Final() {
+					return nil, errors.ConflictError(nil).WithMessage("a previous scan process is %s", oldReport.Status)
+				}
+			}
+
+			for _, oldReport := range oldReports {
+				if err := bc.manager.Delete(ctx, oldReport.UUID); err != nil {
+					return nil, err
+				}
+			}
+		}
+		var reports []*scan.Report
+
+		for _, pm := range r.GetProducesMimeTypes(art.ManifestMediaType, opts.GetScanType()) {
+			report := &scan.Report{
+				Digest:           art.Digest,
+				RegistrationUUID: r.UUID,
+				MimeType:         pm,
+			}
+
+			create := func(ctx context.Context) error {
+				reportUUID, err := bc.manager.Create(ctx, report)
+				if err != nil {
+					return err
+				}
+				report.UUID = reportUUID
+
+				return nil
+			}
+
+			if err := orm.WithTransaction(create)(orm.SetTransactionOpNameToContext(ctx, "tx-make-report-placeholder")); err != nil {
+				return nil, err
+			}
+
+			reports = append(reports, report)
+		}
+
+		return reports, nil
+	}
+	return nil, nil
 }
 
 // GetReport ...
@@ -1314,7 +1321,7 @@ func parseOptions(options ...Option) (*Options, error) {
 }
 
 // deleteArtifactAccessories delete the accessory in reports, only delete sbom accessory
-func (bc *basicController) deleteArtifactAccessories(ctx context.Context, reports []*scan.Report) error {
+func (bc *basicController) deleteArtifactAccessories(ctx context.Context, reports []*sbomModel.Report) error {
 	for _, rpt := range reports {
 		if rpt.MimeType != v1.MimeTypeSBOMReport {
 			continue
