@@ -39,7 +39,6 @@ import (
 	"github.com/goharbor/harbor/src/pkg/scan/dao/scanner"
 	"github.com/goharbor/harbor/src/pkg/scan/report"
 	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
-	"github.com/goharbor/harbor/src/pkg/scan/sbom"
 )
 
 const (
@@ -315,18 +314,10 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 		// this is required since the top level layers relay on the vuln.Report struct that
 		// contains additional metadata within the report which if stored in the new columns within the scan_report table
 		// would be redundant
-		if scanType == v1.ScanTypeSbom {
-			if err := sbom.Mgr.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
-				myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)
-				return err
-			}
-		} else {
-			if err := report.Mgr.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
-				myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)
-				return err
-			}
+		if err := handler.UpdateReportData(ctx.SystemContext(), rp.UUID, reportData); err != nil {
+			myLogger.Errorf("Failed to update report data for report %s, error %v", rp.UUID, err)
+			return err
 		}
-
 		myLogger.Debugf("Converted report ID %s to the new V2 schema", rp.UUID)
 	}
 

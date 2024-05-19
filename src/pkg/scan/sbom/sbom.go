@@ -138,6 +138,13 @@ func (v *scanHandler) generateReport(startTime time.Time, repository, digest, st
 	return string(rep), nil
 }
 
+func (v *scanHandler) UpdateReportData(ctx context.Context, uuid string, report string) error {
+	if err := Mgr.UpdateReportData(ctx, uuid, report); err != nil {
+		return err
+	}
+	return nil
+}
+
 // extract server name from config, and remove the protocol prefix
 func registry(ctx context.Context) (string, bool) {
 	cfgMgr, ok := config.FromContext(ctx)
