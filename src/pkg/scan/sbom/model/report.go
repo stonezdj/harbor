@@ -10,3 +10,8 @@ type Report struct {
 	MimeType         string `orm:"column(mime_type)"`
 	Report           string `orm:"column(report);type(json)"`
 }
+
+// TableName for Report
+func (r *Report) TableName() string {
+	return "sbom_report"
+}
