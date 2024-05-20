@@ -93,7 +93,7 @@ type launchScanJobParam struct {
 	Registration *scanner.Registration
 	Artifact     *ar.Artifact
 	Tag          string
-	Reports      []*scan.Report
+	Reports      []*scan.BaseReport
 	Type         string
 }
 
@@ -569,7 +569,7 @@ func (bc *basicController) startScanAll(ctx context.Context, executionID int64) 
 	return nil
 }
 
-func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact, opts *Options) ([]*scan.Report, error) {
+func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner.Registration, art *ar.Artifact, opts *Options) ([]*scan.BaseReport, error) {
 	scanType := opts.GetScanType()
 	mimeTypes := r.GetProducesMimeTypes(art.ManifestMediaType, opts.GetScanType())
 	if scanType == v1.ScanTypeSbom {
@@ -580,7 +580,6 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 		if err := bc.deleteArtifactAccessories(ctx, sbomReports); err != nil {
 			return nil, err
 		}
-
 	} else {
 		oldReports, err := bc.manager.GetBy(bc.cloneCtx(ctx), art.Digest, r.UUID, mimeTypes)
 		if err != nil {
@@ -604,35 +603,51 @@ func (bc *basicController) makeReportPlaceholder(ctx context.Context, r *scanner
 				}
 			}
 		}
-		var reports []*scan.Report
+	}
+	var reports []*scan.BaseReport
 
-		for _, pm := range r.GetProducesMimeTypes(art.ManifestMediaType, opts.GetScanType()) {
-			report := &scan.Report{
-				Digest:           art.Digest,
-				RegistrationUUID: r.UUID,
-				MimeType:         pm,
-			}
+	for _, pm := range r.GetProducesMimeTypes(art.ManifestMediaType, opts.GetScanType()) {
+		report := &scan.Report{
+			Digest:           art.Digest,
+			RegistrationUUID: r.UUID,
+			MimeType:         pm,
+		}
 
-			create := func(ctx context.Context) error {
+		create := func(ctx context.Context) error {
+			if scanType == v1.ScanTypeSbom {
+				sbomRept := &sbomModel.Report{
+					ArtifactID:       art.ID,
+					MimeType:         pm,
+					RegistrationUUID: r.UUID,
+				}
+				reportUUID, err := bc.sbomManager.Create(ctx, sbomRept)
+				if err != nil {
+					return err
+				}
+				report.UUID = reportUUID
+				return nil
+			} else {
 				reportUUID, err := bc.manager.Create(ctx, report)
 				if err != nil {
 					return err
 				}
 				report.UUID = reportUUID
-
 				return nil
 			}
 
-			if err := orm.WithTransaction(create)(orm.SetTransactionOpNameToContext(ctx, "tx-make-report-placeholder")); err != nil {
-				return nil, err
-			}
-
-			reports = append(reports, report)
 		}
 
-		return reports, nil
+		if err := orm.WithTransaction(create)(orm.SetTransactionOpNameToContext(ctx, "tx-make-report-placeholder")); err != nil {
+			return nil, err
+		}
+
+		reports = append(reports, &scan.BaseReport{
+			UUID:     report.UUID,
+			MimeType: report.MimeType,
+		})
 	}
-	return nil, nil
+
+	return reports, nil
 }
 
 // GetReport ...

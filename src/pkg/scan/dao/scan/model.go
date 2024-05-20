@@ -19,6 +19,11 @@ import (
 	"time"
 )
 
+type BaseReport struct {
+	UUID     string
+	MimeType string
+}
+
 // Report of the scan.
 // Identified by the `digest`, `registration_uuid` and `mime_type`.
 type Report struct {

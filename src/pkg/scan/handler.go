@@ -48,7 +48,7 @@ type Handler interface {
 	// ReportURLParameter defines the parameters for scan report
 	ReportURLParameter(sr *v1.ScanRequest) (string, error)
 	// PostScan defines the operation after scan
-	PostScan(ctx job.Context, sr *v1.ScanRequest, rp *scan.Report, rawReport string, startTime time.Time, robot *model.Robot) (string, error)
+	PostScan(ctx job.Context, sr *v1.ScanRequest, rp *scan.BaseReport, rawReport string, startTime time.Time, robot *model.Robot) (string, error)
 	// UpdateReportData ...
 	UpdateReportData(ctx context.Context, uuid string, report string) error
 }

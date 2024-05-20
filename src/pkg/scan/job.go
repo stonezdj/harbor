@@ -30,6 +30,7 @@ import (
 	"github.com/goharbor/harbor/src/common"
 	commonhttp "github.com/goharbor/harbor/src/common/http"
 	"github.com/goharbor/harbor/src/common/models"
+	"github.com/goharbor/harbor/src/controller/artifact"
 	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/jobservice/logger"
 	"github.com/goharbor/harbor/src/lib/config"
@@ -39,6 +40,7 @@ import (
 	"github.com/goharbor/harbor/src/pkg/scan/dao/scanner"
 	"github.com/goharbor/harbor/src/pkg/scan/report"
 	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
+	"github.com/goharbor/harbor/src/pkg/scan/sbom"
 )
 
 const (
@@ -298,7 +300,7 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	}
 
 	for i, mimeType := range mimeTypes {
-		rp, err := getReportPlaceholder(ctx.SystemContext(), req.Artifact.Digest, r.UUID, mimeType, myLogger)
+		rp, err := getReportPlaceholder(ctx.SystemContext(), req.Artifact, r.UUID, scanType, mimeType, myLogger)
 		if err != nil {
 			return err
 		}
@@ -324,8 +326,26 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	return nil
 }
 
-func getReportPlaceholder(ctx context.Context, digest string, reportUUID string, mimeType string, logger logger.Interface) (*scan.Report, error) {
-	reports, err := report.Mgr.GetBy(ctx, digest, reportUUID, []string{mimeType})
+func getReportPlaceholder(ctx context.Context, art *v1.Artifact, scannerUUID string, scanType string, mimeType string, logger logger.Interface) (*scan.BaseReport, error) {
+	if scanType == v1.ScanTypeSbom {
+		// Get ArtifactID by digest and repository
+		// art.Repository, art.Digest
+		artifact, err := artifact.Ctl.GetByReference(ctx, art.Repository, art.Digest, nil)
+		if err != nil {
+			return nil, err
+		}
+		reports, err := sbom.Mgr.GetBy(ctx, artifact.ID, scannerUUID, []string{mimeType})
+		if err != nil {
+			return nil, err
+		}
+		if len(reports) == 0 {
+			logger.Errorf("No report found for artifact %s of mimetype %s", art.Digest, mimeType)
+			return nil, errors.NotFoundError(nil).WithMessage("no report found to update data")
+		}
+		return &scan.BaseReport{UUID: reports[0].UUID, MimeType: reports[0].MimeType}, nil
+	}
+	digest := art.Digest
+	reports, err := report.Mgr.GetBy(ctx, digest, scannerUUID, []string{mimeType})
 	if err != nil {
 		logger.Error("Failed to get report for artifact %s of mimetype %s, error %v", digest, mimeType, err)
 		return nil, err
@@ -334,7 +354,7 @@ func getReportPlaceholder(ctx context.Context, digest string, reportUUID string,
 		logger.Errorf("No report found for artifact %s of mimetype %s, error %v", digest, mimeType, err)
 		return nil, errors.NotFoundError(nil).WithMessage("no report found to update data")
 	}
-	return reports[0], nil
+	return &scan.BaseReport{UUID: reports[0].UUID, MimeType: reports[0].MimeType}, nil
 }
 
 func fetchScanReportFromScanner(client v1.Client, requestID string, mimType string, urlParameter string) (rawReport string, err error) {
