@@ -185,18 +185,11 @@ func (e *executionDAO) GetMetrics(ctx context.Context, id int64) (*Metrics, erro
 }
 
 func (e *executionDAO) RefreshStatus(ctx context.Context, id int64) (bool, string, error) {
-	// as the status of the execution can be refreshed by multiple operators concurrently
-	// we use the optimistic locking to avoid the conflict and retry 5 times at most
-	for i := 0; i < 5; i++ {
-		statusChanged, currentStatus, retry, err := e.refreshStatus(ctx, id)
-		if err != nil {
-			return false, "", err
-		}
-		if !retry {
-			return statusChanged, currentStatus, nil
-		}
+	statusChanged, currentStatus, _, err := e.refreshStatus(ctx, id)
+	if err != nil {
+		return false, "", err
 	}
-	return false, "", fmt.Errorf("failed to refresh the status of the execution %d after %d retries", id, 5)
+	return statusChanged, currentStatus, nil
 }
 
 // the returning values:
@@ -205,10 +198,6 @@ func (e *executionDAO) RefreshStatus(ctx context.Context, id int64) (bool, strin
 // 3. bool: whether a retry is needed
 // 4. error: the error
 func (e *executionDAO) refreshStatus(ctx context.Context, id int64) (bool, string, bool, error) {
-	execution, err := e.Get(ctx, id)
-	if err != nil {
-		return false, "", false, err
-	}
 	metrics, err := e.GetMetrics(ctx, id)
 	if err != nil {
 		return false, "", false, err
@@ -234,64 +223,33 @@ func (e *executionDAO) refreshStatus(ctx context.Context, id int64) (bool, strin
 		return false, "", false, err
 	}
 
-	sql := `update execution set status = ?, revision = revision+1, update_time = ? where id = ? and revision = ?`
-	result, err := ormer.Raw(sql, status, time.Now(), id, execution.Revision).Exec()
-	if err != nil {
-		return false, "", false, err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return false, "", false, err
-	}
+	statusChanged := false
+	var newStatus string
 
-	// if the count of affected rows is 0, that means the execution is updating by others, retry
-	if n == 0 {
-		return false, "", true, nil
-	}
+	updateFunc := func(ctx context.Context) error {
+		var oldStatus string
+		// lock current row for update
+		err := ormer.Raw("select status from execution where id = ? for update", id).QueryRow(&oldStatus)
+		if err != nil {
+			return err
+		}
+		if oldStatus == status {
+			statusChanged = false
+		} else {
+			statusChanged = true
+			newStatus = status
+		}
 
-	/* this is another solution to solve the concurrency issue for refreshing the execution status
-	// set a score for each status:
-	// 		pending, running, scheduled - 4
-	// 		error - 3
-	//		stopped - 2
-	//		success - 1
-	// and set the status of record with highest score as the status of execution
-	sql := `with status_score as (
-				select status,
-					case
-						when status='%s' or status='%s' or status='%s' then 4
-						when status='%s' then 3
-						when status='%s' then 2
-						when status='%s' then 1
-						else 0
-					end as score
-				from task
-				where execution_id=?
-				group by status
-			)
-			update execution
-			set status=(
-				select
-					case
-						when max(score)=4 then '%s'
-						when max(score)=3 then '%s'
-						when max(score)=2 then '%s'
-						when max(score)=1 then '%s'
-						when max(score)=0 then ''
-					end as status
-				from status_score)
-			where id = ?`
-	sql = fmt.Sprintf(sql, job.PendingStatus.String(), job.RunningStatus.String(), job.ScheduledStatus.String(),
-		job.ErrorStatus.String(), job.StoppedStatus.String(), job.SuccessStatus.String(),
-		job.RunningStatus.String(), job.ErrorStatus.String(), job.StoppedStatus.String(), job.SuccessStatus.String())
-	if _, err = ormer.Raw(sql, id, id).Exec(); err != nil {
-		return err
-	}
-	*/
+		// update execution
+		sql := `update execution set status = ?, update_time = ? where id = ? `
+		_, err = ormer.Raw(sql, status, time.Now(), id).Exec()
+		if err != nil {
+			return err
+		}
 
-	// update the end time if the status is final, otherwise set the end time as NULL, this is useful
-	// for retrying jobs
-	sql = `update execution
+		// update the end time if the status is final, otherwise set the end time as NULL, this is useful
+		// for retrying jobs
+		sql = `update execution
 			set end_time = (
 				case
 					when status='%s' or status='%s' or status='%s' then  (
@@ -301,9 +259,15 @@ func (e *executionDAO) refreshStatus(ctx context.Context, id int64) (bool, strin
 					else NULL
 				end)
 			where id=?`
-	sql = fmt.Sprintf(sql, job.ErrorStatus.String(), job.StoppedStatus.String(), job.SuccessStatus.String())
-	_, err = ormer.Raw(sql, id, id).Exec()
-	return status != execution.Status, status, false, err
+		sql = fmt.Sprintf(sql, job.ErrorStatus.String(), job.StoppedStatus.String(), job.SuccessStatus.String())
+		_, err = ormer.Raw(sql, id, id).Exec()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	err = orm.WithTransaction(updateFunc)(ctx)
+	return statusChanged, newStatus, false, err
 }
 
 func (e *executionDAO) querySetter(ctx context.Context, query *q.Query) (orm.QuerySeter, error) {
