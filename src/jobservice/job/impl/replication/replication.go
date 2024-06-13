@@ -53,6 +53,8 @@ import (
 	_ "github.com/goharbor/harbor/src/pkg/reg/adapter/tencentcr"
 	// register the VolcEngine CR Registry adapter
 	_ "github.com/goharbor/harbor/src/pkg/reg/adapter/volcenginecr"
+	// register the Ollama adapter
+	_ "github.com/goharbor/harbor/src/pkg/reg/adapter/ollama"
 	"github.com/goharbor/harbor/src/pkg/reg/model"
 )
 
