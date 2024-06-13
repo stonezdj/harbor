@@ -307,6 +307,11 @@ func (c *client) PullManifest(repository, reference string, acceptedMediaTypes .
 		return nil, "", err
 	}
 	mediaType := resp.Header.Get("Content-Type")
+	// the registry.ollama.ai may return "text/plain; charset=utf-8" for manifest
+	// it will fail to UnmarshalManifest with this mediaType
+	if mediaType == "text/plain; charset=utf-8" {
+		mediaType = "application/vnd.docker.distribution.manifest.v2+json"
+	}
 	manifest, _, err := distribution.UnmarshalManifest(mediaType, payload)
 	if err != nil {
 		return nil, "", err

@@ -1,16 +1,10 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, throwError as observableThrowError } from 'rxjs';
-import {
-    buildHttpRequestOptions,
-    HTTP_JSON_OPTIONS,
-    HTTP_GET_OPTIONS,
-    CURRENT_BASE_HREF,
-} from '../units/utils';
-import { RequestQueryParams } from './index';
-import { Endpoint, PingEndpoint } from './index';
-import { catchError, map } from 'rxjs/operators';
-import { ReplicationPolicy } from '../../../../ng-swagger-gen/models/replication-policy';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable, throwError as observableThrowError} from 'rxjs';
+import {buildHttpRequestOptions, CURRENT_BASE_HREF, HTTP_GET_OPTIONS, HTTP_JSON_OPTIONS,} from '../units/utils';
+import {Endpoint, PingEndpoint, RequestQueryParams} from './index';
+import {catchError, map} from 'rxjs/operators';
+import {ReplicationPolicy} from '../../../../ng-swagger-gen/models/replication-policy';
 
 export const ADAPTERS_MAP = {
     'ali-acr': 'Alibaba ACR',
@@ -30,6 +24,7 @@ export const ADAPTERS_MAP = {
     'tencent-tcr': 'Tencent TCR',
     'github-ghcr': 'Github GHCR',
     'volcengine-cr': 'VolcEngine CR',
+    'ollama': 'Ollama',
 };
 
 /**
