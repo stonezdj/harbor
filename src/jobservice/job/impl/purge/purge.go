@@ -17,6 +17,7 @@ package purge
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/goharbor/harbor/src/common"
 	"github.com/goharbor/harbor/src/jobservice/job"
@@ -106,6 +107,16 @@ func (j *Job) Run(ctx job.Context, params job.Parameters) error {
 	if j.retentionHour > common.MaxAuditRetentionHour {
 		j.retentionHour = common.MaxAuditRetentionHour
 	}
+
+	for i := 0; i < 2880; i++ {
+		if j.shouldStop(ctx) {
+			logger.Info("received the stop signal, stop the purge job")
+			return nil
+		}
+		time.Sleep(1 * time.Minute)
+		logger.Infof("Purge audit job running, sleep time:%v minutes....", i)
+	}
+
 	n, err := j.auditMgr.Purge(ormCtx, j.retentionHour, j.includeOperations, j.dryRun)
 	if err != nil {
 		logger.Errorf("failed to purge audit log, error: %v", err)
