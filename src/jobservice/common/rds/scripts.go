@@ -230,3 +230,38 @@ return nil`, requeueKeysPerJob)
 func RedisLuaReenqueueScript(jobTypesCount int) *redis.Script {
 	return redis.NewScript(jobTypesCount*requeueKeysPerJob, redisLuaReenqueueJob)
 }
+
+var redisRuaPersistWorker = fmt.Sprintf(`
+-- Initialize the cursor
+local cursor = "0"
+-- Initialize the namespace pattern
+local pattern = ARGV[1]
+
+-- Iterate over all keys matching the pattern
+repeat
+    -- Perform SCAN operation
+    local result = redis.call("SCAN", cursor, "MATCH", pattern)
+    -- Update the cursor
+    cursor = result[1]
+    -- Get the keys from the result
+    local keys = result[2]
+
+    for _, key in ipairs(keys) do
+        -- Check if the key has an expiration
+        local ttl = redis.call("TTL", key)
+        -- If ttl is greater than 0, the key has an expiration
+        if ttl > 0 then
+            -- Make the key persistent
+            redis.call("PERSIST", key)
+        end
+    end
+-- Continue until the cursor is "0" again
+until cursor == "0"
+
+return nil
+`)
+
+// RedisPersistWorkerScript returns redis script of redisRuaPersistWorker
+func RedisLuaPersistWorkerScript(workerKeyPattern string) *redis.Script {
+	return redis.NewScript(1, redisRuaPersistWorker)
+}

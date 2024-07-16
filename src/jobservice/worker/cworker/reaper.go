@@ -64,6 +64,9 @@ func (r *reaper) start() {
 					// Just log
 					logger.Error(err)
 				}
+				if err := r.PersistWorker(); err != nil {
+					logger.Error(err)
+				}
 			case <-r.context.Done():
 				return // Terminated
 			}
@@ -382,4 +385,17 @@ func compare(j *job.StatsInfo) int {
 
 	// Revision and status are same, then compare the checkin
 	return (int)(j.CheckInAt - j.HookAck.CheckInAt)
+}
+
+func (r *reaper) PersistWorker() error {
+	redisPersistScript := rds.RedisLuaPersistWorkerScript("{harbor_job_service_namespace}:worker:*")
+	conn := r.pool.Get()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			logger.Errorf("Failed to close redis connection: %s : %s", "re enqueue in-progress jobs", err)
+		}
+	}()
+	logger.Error("start to run lua script to persist worker")
+	_, err := redisPersistScript.Do(conn)
+	return err
 }
