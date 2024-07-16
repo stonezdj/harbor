@@ -235,7 +235,7 @@ var redisRuaPersistWorker = fmt.Sprintf(`
 -- Initialize the cursor
 local cursor = "0"
 -- Initialize the namespace pattern
-local pattern = ARGV[1]
+local pattern = "{harbor_job_service_namespace}:worker:*"
 
 -- Iterate over all keys matching the pattern
 repeat
@@ -262,6 +262,6 @@ return nil
 `)
 
 // RedisPersistWorkerScript returns redis script of redisRuaPersistWorker
-func RedisLuaPersistWorkerScript(workerKeyPattern string) *redis.Script {
-	return redis.NewScript(1, redisRuaPersistWorker)
+func RedisLuaPersistWorkerScript() *redis.Script {
+	return redis.NewScript(0, redisRuaPersistWorker)
 }

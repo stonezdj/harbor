@@ -388,7 +388,7 @@ func compare(j *job.StatsInfo) int {
 }
 
 func (r *reaper) PersistWorker() error {
-	redisPersistScript := rds.RedisLuaPersistWorkerScript("{harbor_job_service_namespace}:worker:*")
+	redisPersistScript := rds.RedisLuaPersistWorkerScript()
 	conn := r.pool.Get()
 	defer func() {
 		if err := conn.Close(); err != nil {
