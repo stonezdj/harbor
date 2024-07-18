@@ -18,6 +18,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/goharbor/harbor/src/common/security"
 	"github.com/goharbor/harbor/src/jobservice/logger"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/config"
@@ -90,6 +91,7 @@ func MiddlewareWithConfig(config Config, skippers ...middleware.Skipper) func(ht
 		}
 		enableAudit := false
 		urlStr := r.URL.String()
+		username := "unknown"
 		var requestContent string
 		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete {
 			enableAudit = true
@@ -100,7 +102,9 @@ func MiddlewareWithConfig(config Config, skippers ...middleware.Skipper) func(ht
 				return
 			}
 			requestContent = string(body)
-
+			if secCtx, ok := security.FromContext(r.Context()); ok {
+				username = secCtx.GetUsername()
+			}
 		}
 		rw := &ResponseWriter{
 			ResponseWriter: w,
@@ -108,6 +112,8 @@ func MiddlewareWithConfig(config Config, skippers ...middleware.Skipper) func(ht
 		}
 		next.ServeHTTP(rw, r)
 		if rw.statusCode >= 200 && rw.statusCode <= 300 && enableAudit {
+			logger.Infof("the request user is %v", username)
+			logger.Infof("the request Method is %v", r.Method)
 			logger.Infof("the request URL is %v", urlStr)
 			logger.Infof("the request body is %v", requestContent)
 		}
