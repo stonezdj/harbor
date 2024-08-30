@@ -227,38 +227,15 @@
                 [style.visibility]="
                     isSystemAdmin && enableProxyCache ? 'visible' : 'hidden'
                 ">
-                <label for="bandwidth" class="clr-control-label required"
-                    >Bandwidth</label
-                >
-                <div class="clr-input-wrapper">
-                    <input
-                        type="text"
-                        id="bandwidth"
-                        [(ngModel)]="project.bandwidth"
-                        name="bandwidth"
-                        class="clr-input width-164 mr-10"
-                        placeholder="Enter bandwidth"
-                        autocomplete="off"
-                        (ngModelChange)="validateBandwidth()" />
-
-                    <div class="clr-select-wrapper mr-10">
-                        <select
-                            id="bandwidth_unit"
-                            name="bandwidth_unit"
-                            [(ngModel)]="project.bandwidthUnit">
-                            <option value="kbps" selected>kbps</option>
-                            <option value="Mbps">Mbps</option>
-                            <option value="Gbps">Gbps</option>
-                        </select>
-                    </div>
-
+                <label for="bandwidth" class="clr-control-label required">
+                {{ 'PROJECT.BANDWIDTH' | translate }}
                     <clr-tooltip>
                         <clr-icon
                             clrTooltipTrigger
                             shape="info-circle"
                             size="24"></clr-icon>
                         <clr-tooltip-content
-                            clrPosition="top-left"
+                            clrPosition="bottom-left"
                             clrSize="lg"
                             *clrIfOpen>
                             <span>{{
@@ -266,11 +243,40 @@
                             }}</span>
                         </clr-tooltip-content>
                     </clr-tooltip>
+                </label>
+                <div 
+                    class="clr-control-container"
+                    [class.clr-error]="bandwidthError"
+                >
+                    <input
+                        type="number"
+                        id="bandwidth"
+                        [(ngModel)]="speedLimit"
+                        name="bandwidth"
+                        class="clr-input width-164 mr-10"
+                        placeholder="Enter bandwidth"
+                        autocomplete="off"
+                        (ngModelChange)="validateBandwidth()" />
+                    <clr-icon
+                        class="clr-validate-icon"
+                        shape="exclamation-circle">
+                    </clr-icon>    
+                    <div class="clr-select-wrapper mr-10">
+                        <select
+                            id="bandwidth_unit"
+                            name="bandwidth_unit"
+                            [(ngModel)]="selectedSpeedLimitUnit">
+                            <option
+                                *ngFor="let unit of speedUnits"
+                                [value]="unit.UNIT">
+                                {{ unit.UNIT }}
+                            </option>
+                        </select>
+                    </div>
+                    <clr-control-error *ngIf="bandwidthError" class="tooltip-content" >
+                        {{ 'PROJECT.SPEED_LIMIT_TIP' | translate }}
+                    </clr-control-error>
                 </div>
-            </div>
-            <!-- Inline error message -->
-            <div *ngIf="bandwidthError" class="alert-label ml-8">
-                {{ bandwidthError }}
             </div>
         </form>
     </div>
