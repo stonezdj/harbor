@@ -15,12 +15,28 @@
 package log
 
 import (
+	"io"
 	"net/http"
 
+	"github.com/goharbor/harbor/src/common/security"
+	"github.com/goharbor/harbor/src/jobservice/logger"
+	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
 	"github.com/goharbor/harbor/src/server/middleware"
 )
+
+// ResponseWriter ...
+type ResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+// WriteHeader ...
+func (rw *ResponseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
 
 // Middleware middleware which add logger to context
 func Middleware() func(http.Handler) http.Handler {
@@ -40,6 +56,35 @@ func Middleware() func(http.Handler) http.Handler {
 			r = r.WithContext(ctx)
 		}
 
-		next.ServeHTTP(w, r)
+		enableAudit := false
+		urlStr := r.URL.String()
+		username := "unknown"
+		var requestContent string
+		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete {
+			enableAudit = true
+			lib.NopCloseRequest(r)
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+				return
+			}
+			requestContent = string(body)
+			if secCtx, ok := security.FromContext(r.Context()); ok {
+				username = secCtx.GetUsername()
+			}
+		}
+		rw := &ResponseWriter{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK,
+		}
+
+		next.ServeHTTP(rw, r)
+
+		if enableAudit {
+			logger.Infof("the request user is %v", username)
+			logger.Infof("the request Method is %v", r.Method)
+			logger.Infof("the request URL is %v", urlStr)
+			logger.Infof("the request body is %v", requestContent)
+		}
 	})
 }
