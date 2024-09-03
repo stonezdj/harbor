@@ -219,6 +219,8 @@ const (
 	MaxAuditRetentionHour = 240000
 	// ScannerSkipUpdatePullTime
 	ScannerSkipUpdatePullTime = "scanner_skip_update_pulltime"
+	// AuditLogDisable
+	AuditLogDisable = "audit_log_disable"
 
 	// AuditLogEventsDisabled
 	AuditLogEventsDisabled = "audit_log_events_disabled"

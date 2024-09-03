@@ -63,6 +63,14 @@ import (
 	_ "github.com/goharbor/harbor/src/pkg/accessory/model/sbom"
 	_ "github.com/goharbor/harbor/src/pkg/accessory/model/subject"
 	"github.com/goharbor/harbor/src/pkg/audit"
+	_ "github.com/goharbor/harbor/src/pkg/auditext/event/login"
+
+	// disable it, because already have project audit log
+	// _ "github.com/goharbor/harbor/src/pkg/auditv2/event/project"
+	// _ "github.com/goharbor/harbor/src/pkg/auditv2/event/tagretention"
+	_ "github.com/goharbor/harbor/src/pkg/auditext/event/config"
+
+	_ "github.com/goharbor/harbor/src/pkg/auditext/event/user"
 	dbCfg "github.com/goharbor/harbor/src/pkg/config/db"
 	_ "github.com/goharbor/harbor/src/pkg/config/inmemory"
 	"github.com/goharbor/harbor/src/pkg/notification"

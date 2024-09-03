@@ -21,7 +21,7 @@ import (
 	"github.com/goharbor/harbor/src/common/rbac"
 	"github.com/goharbor/harbor/src/lib/selector"
 	"github.com/goharbor/harbor/src/pkg/artifact"
-	"github.com/goharbor/harbor/src/pkg/audit/model"
+	"github.com/goharbor/harbor/src/pkg/auditext/model"
 	proModels "github.com/goharbor/harbor/src/pkg/project/models"
 	robotModel "github.com/goharbor/harbor/src/pkg/robot/model"
 	v1 "github.com/goharbor/harbor/src/pkg/scan/rest/v1"
@@ -50,6 +50,7 @@ const (
 	TopicTagRetention    = "TAG_RETENTION"
 	TopicCreateRobot     = "CREATE_ROBOT"
 	TopicDeleteRobot     = "DELETE_ROBOT"
+	TopicCommonEvent     = "COMMON_API"
 )
 
 // CreateProjectEvent is the creating project event
@@ -62,8 +63,8 @@ type CreateProjectEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (c *CreateProjectEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (c *CreateProjectEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    c.ProjectID,
 		OpTime:       c.OccurAt,
 		Operation:    rbac.ActionCreate.String(),
@@ -88,8 +89,8 @@ type DeleteProjectEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (d *DeleteProjectEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (d *DeleteProjectEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    d.ProjectID,
 		OpTime:       d.OccurAt,
 		Operation:    rbac.ActionDelete.String(),
@@ -114,8 +115,8 @@ type DeleteRepositoryEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (d *DeleteRepositoryEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (d *DeleteRepositoryEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    d.ProjectID,
 		OpTime:       d.OccurAt,
 		Operation:    rbac.ActionDelete.String(),
@@ -154,8 +155,8 @@ type PushArtifactEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (p *PushArtifactEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (p *PushArtifactEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    p.Artifact.ProjectID,
 		OpTime:       p.OccurAt,
 		Operation:    rbac.ActionCreate.String(),
@@ -183,8 +184,8 @@ type PullArtifactEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (p *PullArtifactEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (p *PullArtifactEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    p.Artifact.ProjectID,
 		OpTime:       p.OccurAt,
 		Operation:    rbac.ActionPull.String(),
@@ -219,8 +220,8 @@ type DeleteArtifactEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (d *DeleteArtifactEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (d *DeleteArtifactEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    d.Artifact.ProjectID,
 		OpTime:       d.OccurAt,
 		Operation:    rbac.ActionDelete.String(),
@@ -246,8 +247,8 @@ type CreateTagEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (c *CreateTagEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (c *CreateTagEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    c.AttachedArtifact.ProjectID,
 		OpTime:       c.OccurAt,
 		Operation:    rbac.ActionCreate.String(),
@@ -275,8 +276,8 @@ type DeleteTagEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (d *DeleteTagEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (d *DeleteTagEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    d.AttachedArtifact.ProjectID,
 		OpTime:       d.OccurAt,
 		Operation:    rbac.ActionDelete.String(),
@@ -385,8 +386,8 @@ type CreateRobotEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (c *CreateRobotEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (c *CreateRobotEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    c.Robot.ProjectID,
 		OpTime:       c.OccurAt,
 		Operation:    rbac.ActionCreate.String(),
@@ -410,8 +411,8 @@ type DeleteRobotEvent struct {
 }
 
 // ResolveToAuditLog ...
-func (c *DeleteRobotEvent) ResolveToAuditLog() (*model.AuditLog, error) {
-	auditLog := &model.AuditLog{
+func (c *DeleteRobotEvent) ResolveToAuditLog() (*model.AuditLogExt, error) {
+	auditLog := &model.AuditLogExt{
 		ProjectID:    c.Robot.ProjectID,
 		OpTime:       c.OccurAt,
 		Operation:    rbac.ActionDelete.String(),

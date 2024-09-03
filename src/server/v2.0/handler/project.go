@@ -46,6 +46,7 @@ import (
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg"
 	"github.com/goharbor/harbor/src/pkg/audit"
+	"github.com/goharbor/harbor/src/pkg/auditext"
 	"github.com/goharbor/harbor/src/pkg/member"
 	"github.com/goharbor/harbor/src/pkg/project/metadata"
 	pkgModels "github.com/goharbor/harbor/src/pkg/project/models"
@@ -65,6 +66,7 @@ const defaultDaysToRetentionForProxyCacheProject = 7
 func newProjectAPI() *projectAPI {
 	return &projectAPI{
 		auditMgr:      audit.Mgr,
+		auditextMgr:   auditext.Mgr,
 		artCtl:        artifact.Ctl,
 		metadataMgr:   pkg.ProjectMetaMgr,
 		userCtl:       user.Ctl,
@@ -82,6 +84,7 @@ func newProjectAPI() *projectAPI {
 type projectAPI struct {
 	BaseAPI
 	auditMgr      audit.Manager
+	auditextMgr   auditext.Manager
 	artCtl        artifact.Controller
 	metadataMgr   metadata.Manager
 	userCtl       user.Controller
@@ -334,6 +337,48 @@ func (a *projectAPI) GetLogs(ctx context.Context, params operation.GetLogsParams
 		})
 	}
 	return operation.NewGetLogsOK().
+		WithXTotalCount(total).
+		WithLink(a.Links(ctx, params.HTTPRequest.URL, total, query.PageNumber, query.PageSize).String()).
+		WithPayload(auditLogs)
+}
+
+func (a *projectAPI) GetLogExts(ctx context.Context, params operation.GetLogExtsParams) middleware.Responder {
+	if err := a.RequireProjectAccess(ctx, params.ProjectName, rbac.ActionList, rbac.ResourceLog); err != nil {
+		return a.SendError(ctx, err)
+	}
+	pro, err := a.projectCtl.GetByName(ctx, params.ProjectName)
+	if err != nil {
+		return a.SendError(ctx, err)
+	}
+	query, err := a.BuildQuery(ctx, params.Q, params.Sort, params.Page, params.PageSize)
+	if err != nil {
+		return a.SendError(ctx, err)
+	}
+	query.Keywords["ProjectID"] = pro.ProjectID
+
+	total, err := a.auditextMgr.Count(ctx, query)
+	if err != nil {
+		return a.SendError(ctx, err)
+	}
+	logs, err := a.auditextMgr.List(ctx, query)
+	if err != nil {
+		return a.SendError(ctx, err)
+	}
+
+	var auditLogs []*models.AuditLogExt
+	for _, log := range logs {
+		auditLogs = append(auditLogs, &models.AuditLogExt{
+			ID:                   log.ID,
+			Resource:             log.Resource,
+			ResourceType:         log.ResourceType,
+			Username:             log.Username,
+			Operation:            log.Operation,
+			OperationDescription: log.OperationDescription,
+			OperationResult:      log.OperationResult,
+			OpTime:               strfmt.DateTime(log.OpTime),
+		})
+	}
+	return operation.NewGetLogExtsOK().
 		WithXTotalCount(total).
 		WithLink(a.Links(ctx, params.HTTPRequest.URL, total, query.PageNumber, query.PageSize).String()).
 		WithPayload(auditLogs)
@@ -937,12 +982,4 @@ func highestRole(roles []int) int {
 		}
 	}
 	return highest
-}
-
-func (a *projectAPI) GetLogExts(ctx context.Context, params operation.GetLogExtsParams) middleware.Responder {
-	// TODO: implement the function
-	return operation.NewGetLogExtsOK().
-		WithXTotalCount(0).
-		WithLink(a.Links(ctx, params.HTTPRequest.URL, 0, 0, 15).String()).
-		WithPayload(nil)
 }
