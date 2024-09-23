@@ -90,7 +90,6 @@ func MiddleWares() []web.MiddleWare {
 		trace.Middleware(),
 		metric.Middleware(),
 		requestid.Middleware(),
-		log.Middleware(),
 		session.Middleware(),
 		csrf.Middleware(),
 		orm.Middleware(pingSkipper),
@@ -98,6 +97,7 @@ func MiddleWares() []web.MiddleWare {
 		transaction.Middleware(dbTxSkippers...),
 		artifactinfo.Middleware(),
 		security.Middleware(pingSkipper),
+		log.Middleware(),
 		security.UnauthorizedMiddleware(),
 		readonly.Middleware(readonlySkippers...),
 	}

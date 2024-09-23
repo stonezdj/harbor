@@ -19,7 +19,6 @@ import (
 	"net/http"
 
 	"github.com/goharbor/harbor/src/common/security"
-	"github.com/goharbor/harbor/src/jobservice/logger"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
@@ -81,10 +80,11 @@ func Middleware() func(http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		if enableAudit {
-			logger.Infof("the request user is %v", username)
-			logger.Infof("the request Method is %v", r.Method)
-			logger.Infof("the request URL is %v", urlStr)
-			logger.Infof("the request body is %v", requestContent)
+			log.Infof("the request user is %v", username)
+			log.Infof("the request Method is %v", r.Method)
+			log.Infof("the request URL is %v", urlStr)
+			log.Infof("the request body is %v", requestContent)
+			log.Infof("Response code is: %v", rw.statusCode)
 		}
 	})
 }
