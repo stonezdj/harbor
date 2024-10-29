@@ -19,9 +19,11 @@ import (
 	"net/http"
 
 	"github.com/goharbor/harbor/src/common/security"
+	"github.com/goharbor/harbor/src/controller/event/metadata"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
+	"github.com/goharbor/harbor/src/pkg/notification"
 	"github.com/goharbor/harbor/src/server/middleware"
 )
 
@@ -80,6 +82,16 @@ func Middleware() func(http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 
 		if enableAudit {
+			ctx := r.Context()
+			event := &metadata.CommonEventMetadata{
+				Ctx:            ctx,
+				Username:       username,
+				RequestMethod:  r.Method,
+				RequestPayload: requestContent,
+				RequestURL:     urlStr,
+				ResponseCode:   rw.statusCode,
+			}
+			notification.AddEvent(ctx, event)
 			log.Infof("the request user is %v", username)
 			log.Infof("the request Method is %v", r.Method)
 			log.Infof("the request URL is %v", urlStr)

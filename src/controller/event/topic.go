@@ -50,6 +50,7 @@ const (
 	TopicTagRetention    = "TAG_RETENTION"
 	TopicCreateRobot     = "CREATE_ROBOT"
 	TopicDeleteRobot     = "DELETE_ROBOT"
+	TopicCommonEvent     = "COMMON_API"
 )
 
 // CreateProjectEvent is the creating project event
@@ -421,4 +422,29 @@ func (c *DeleteRobotEvent) ResolveToAuditLog() (*model.AuditLog, error) {
 func (c *DeleteRobotEvent) String() string {
 	return fmt.Sprintf("Name-%s Operator-%s OccurAt-%s",
 		c.Robot.Name, c.Operator, c.OccurAt.Format("2006-01-02 15:04:05"))
+}
+
+// CommonEvent ...
+type CommonEvent struct {
+	Operator        string
+	ProjectID       int64
+	OcurrAt         time.Time
+	Operation       string
+	Payload         string
+	SourceIP        string
+	ResourceType    string
+	ResourceName    string
+	OperationResult string
+}
+
+func (c *CommonEvent) ResolveToAuditLog() (*model.AuditLog, error) {
+	auditLog := &model.AuditLog{
+		ProjectID:    c.ProjectID,
+		OpTime:       c.OcurrAt,
+		Operation:    c.Operation,
+		Username:     c.Operator,
+		ResourceType: "robot",
+		Resource:     c.ResourceName,
+	}
+	return auditLog, nil
 }
