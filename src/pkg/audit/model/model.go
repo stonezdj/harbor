@@ -29,15 +29,15 @@ type AuditLog struct {
 	ID                   int64  `orm:"pk;auto;column(id)" json:"id"`
 	ProjectID            int64  `orm:"column(project_id)" json:"project_id"`
 	Operation            string `orm:"column(operation)" json:"operation"`
-	OperationDescription string `json:"operation_description"`
-	OperationOutcome     string `json:"operation_outcome"`
+	OperationDescription string `orm:"column(op_desc)" json:"operation_description"`
+	OperationResult      string `orm:"column(op_result)" json:"operation_result"`
 
 	ResourceType string    `orm:"column(resource_type)"  json:"resource_type"`
 	Resource     string    `orm:"column(resource)" json:"resource"`
 	Username     string    `orm:"column(username)"  json:"username"`
 	OpTime       time.Time `orm:"column(op_time)" json:"op_time" sort:"default:desc"`
-	SourceIP     string    `json:"source_ip"`
-	Payload      string    `json:"payload"`
+	SourceIP     string    `orm:"column(source_ip)" json:"source_ip"`
+	Payload      string    `orm:"column(payload)" json:"payload"`
 }
 
 // TableName for audit log

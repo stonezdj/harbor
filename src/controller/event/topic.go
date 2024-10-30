@@ -426,25 +426,29 @@ func (c *DeleteRobotEvent) String() string {
 
 // CommonEvent ...
 type CommonEvent struct {
-	Operator        string
-	ProjectID       int64
-	OcurrAt         time.Time
-	Operation       string
-	Payload         string
-	SourceIP        string
-	ResourceType    string
-	ResourceName    string
-	OperationResult string
+	Operator             string
+	ProjectID            int64
+	OcurrAt              time.Time
+	Operation            string
+	Payload              string
+	SourceIP             string
+	ResourceType         string
+	ResourceName         string
+	OperationDescription string
+	OperationResult      string
 }
 
 func (c *CommonEvent) ResolveToAuditLog() (*model.AuditLog, error) {
 	auditLog := &model.AuditLog{
-		ProjectID:    c.ProjectID,
-		OpTime:       c.OcurrAt,
-		Operation:    c.Operation,
-		Username:     c.Operator,
-		ResourceType: "robot",
-		Resource:     c.ResourceName,
+		ProjectID:            c.ProjectID,
+		OpTime:               c.OcurrAt,
+		Operation:            c.Operation,
+		Username:             c.Operator,
+		ResourceType:         c.ResourceType,
+		Resource:             c.ResourceName,
+		OperationDescription: c.OperationDescription,
+		OperationResult:      c.OperationResult,
+		Payload:              c.Payload,
 	}
 	return auditLog, nil
 }

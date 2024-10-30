@@ -51,12 +51,13 @@ func (c *CommonEventMetadata) Resolve(event *event.Event) error {
 		data.SourceIP = c.IPAddress
 		data.Payload = c.RequestPayload
 		data.OcurrAt = time.Now()
+		data.OperationDescription = "change configuration"
 		data.OperationResult = "success"
 		if c.ResponseCode != http.StatusOK {
 			data.OperationResult = "failed"
 		}
 	}
-	event.Topic = event2.TopicDeleteArtifact
+	event.Topic = event2.TopicCommonEvent
 	event.Data = data
 	return nil
 }
