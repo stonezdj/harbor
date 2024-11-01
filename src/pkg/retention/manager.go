@@ -24,6 +24,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/goharbor/harbor/src/common/utils"
+	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/retention/dao"
 	"github.com/goharbor/harbor/src/pkg/retention/dao/models"
@@ -94,16 +95,23 @@ func (d *DefaultManager) GetPolicy(ctx context.Context, id int64) (*policy.Metad
 	}
 	p := &policy.Metadata{}
 	if err = json.Unmarshal([]byte(p1.Data), p); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to unmarshal policy data")
 	}
 	p.ID = id
 	if p.Trigger.Kind == policy.TriggerKindSchedule {
-		cron, ok := p.Trigger.Settings[policy.TriggerSettingsCron]
-		if ok && len(cron.(string)) > 0 {
-			p.Trigger.Settings[policy.TriggerSettingNextScheduledTime] = strfmt.DateTime(utils.NextSchedule(cron.(string), time.Now()))
+		if cron, ok := ValidCronString(p.Trigger.Settings); ok {
+			p.Trigger.Settings[policy.TriggerSettingNextScheduledTime] = strfmt.DateTime(utils.NextSchedule(cron, time.Now()))
 		}
 	}
 	return p, nil
+}
+
+// ValidCronString check the current cron string is valid, if yes, return the cron string
+func ValidCronString(policySettings map[string]interface{}) (string, bool) {
+	if cron, ok := policySettings[policy.TriggerSettingsCron].(string); ok && len(cron) > 0 {
+		return cron, ok
+	}
+	return "", false
 }
 
 // ListPolicyIDs list policy id by query

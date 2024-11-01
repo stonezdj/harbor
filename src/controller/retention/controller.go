@@ -114,10 +114,9 @@ func (r *defaultController) CreateRetention(ctx context.Context, p *policy.Metad
 	}
 
 	if p.Trigger.Kind == policy.TriggerKindSchedule {
-		cron, ok := p.Trigger.Settings[policy.TriggerSettingsCron]
-		if ok && len(cron.(string)) > 0 {
+		if cron, ok := retention.ValidCronString(p.Trigger.Settings); ok {
 			extras := make(map[string]interface{})
-			if _, err = r.scheduler.Schedule(ctx, schedulerVendorType, id, "", cron.(string), SchedulerCallback, TriggerParam{
+			if _, err = r.scheduler.Schedule(ctx, schedulerVendorType, id, "", cron, SchedulerCallback, TriggerParam{
 				PolicyID: id,
 				Trigger:  retention.ExecutionTriggerSchedule,
 				// the operator of schedule job is harbor-jobservice
@@ -157,7 +156,7 @@ func (r *defaultController) UpdateRetention(ctx context.Context, p *policy.Metad
 		case policy.TriggerKindSchedule:
 			if p0.Trigger.Settings["cron"] != p.Trigger.Settings["cron"] {
 				// unschedule old
-				if len(p0.Trigger.Settings[policy.TriggerSettingsCron].(string)) > 0 {
+				if _, ok := retention.ValidCronString(p.Trigger.Settings); ok {
 					needUn = true
 				}
 				// schedule new
@@ -203,10 +202,12 @@ func (r *defaultController) DeleteRetention(ctx context.Context, id int64) error
 	if err != nil {
 		return err
 	}
-	if p.Trigger.Kind == policy.TriggerKindSchedule && len(p.Trigger.Settings[policy.TriggerSettingsCron].(string)) > 0 {
-		err = r.scheduler.UnScheduleByVendor(ctx, schedulerVendorType, id)
-		if err != nil {
-			return err
+	if p.Trigger.Kind == policy.TriggerKindSchedule {
+		if _, ok := retention.ValidCronString(p.Trigger.Settings); ok {
+			err = r.scheduler.UnScheduleByVendor(ctx, schedulerVendorType, id)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
