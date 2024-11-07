@@ -76,7 +76,7 @@ func Middleware() func(http.Handler) http.Handler {
 		}
 		rw := &ResponseWriter{
 			ResponseWriter: w,
-			//statusCode:     http.StatusOK,???
+			statusCode:     http.StatusOK,
 		}
 
 		next.ServeHTTP(rw, r)
