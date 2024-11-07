@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/goharbor/harbor/src/common/security"
+	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/controller/event/metadata"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -31,12 +32,18 @@ import (
 type ResponseWriter struct {
 	http.ResponseWriter
 	statusCode int
+	header     http.Header
 }
 
 // WriteHeader ...
 func (rw *ResponseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
+}
+
+func (rw *ResponseWriter) Header() http.Header {
+	rw.header = rw.ResponseWriter.Header()
+	return rw.ResponseWriter.Header()
 }
 
 // Middleware middleware which add logger to context
@@ -84,19 +91,23 @@ func Middleware() func(http.Handler) http.Handler {
 		if enableAudit {
 			ctx := r.Context()
 			event := &metadata.CommonEventMetadata{
-				Ctx:            ctx,
-				Username:       username,
-				RequestMethod:  r.Method,
-				RequestPayload: requestContent,
-				RequestURL:     urlStr,
-				ResponseCode:   rw.statusCode,
+				Ctx:              ctx,
+				Username:         username,
+				RequestMethod:    r.Method,
+				RequestPayload:   requestContent,
+				RequestURL:       urlStr,
+				ResponseCode:     rw.statusCode,
+				IPAddress:        utils.GetClientIP(r),
+				ResponseLocation: rw.header.Get("Location"),
 			}
-			notification.AddEvent(ctx, event)
+			notification.AddEvent(ctx, event, true)
 			log.Infof("the request user is %v", username)
 			log.Infof("the request Method is %v", r.Method)
 			log.Infof("the request URL is %v", urlStr)
 			log.Infof("the request body is %v", requestContent)
 			log.Infof("Response code is: %v", rw.statusCode)
+			log.Infof("Source IP is %v", utils.GetClientIP(r))
+			log.Infof("Response location is %+v", rw.header.Get("Location"))
 		}
 	})
 }

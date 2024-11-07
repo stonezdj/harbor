@@ -449,6 +449,7 @@ func (c *CommonEvent) ResolveToAuditLog() (*model.AuditLog, error) {
 		OperationDescription: c.OperationDescription,
 		OperationResult:      c.OperationResult,
 		Payload:              c.Payload,
+		SourceIP:             c.SourceIP,
 	}
 	return auditLog, nil
 }

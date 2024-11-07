@@ -20,7 +20,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -336,4 +338,25 @@ func MostMatchSorter(a, b string, matchWord string) bool {
 // IsLocalPath checks if path is local, includes the empty path
 func IsLocalPath(path string) bool {
 	return len(path) == 0 || (strings.HasPrefix(path, "/") && !strings.HasPrefix(path, "//"))
+}
+
+func GetClientIP(r *http.Request) string {
+	if r == nil {
+		return ""
+	}
+	ip := r.Header.Get(trueClientIPHeaderName())
+	if len(ip) > 0 {
+		return ip
+	}
+	return r.RemoteAddr
+}
+
+func trueClientIPHeaderName() string {
+	// because the true client IP header varies based on the foreground proxy/lb settings,
+	// make it configurable by env
+	name := os.Getenv("TRUE_CLIENT_IP_HEADER")
+	if len(name) == 0 {
+		name = "x-forwarded-for"
+	}
+	return name
 }

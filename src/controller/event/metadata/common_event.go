@@ -93,12 +93,20 @@ func ResolveUserEvent(ce *CommonEventMetadata, event *event.Event) error {
 	data := &event2.CommonEvent{}
 	data.Operation = "user"
 	data.Operator = ce.Username
-	data.ResourceName = "user"
+	data.ResourceType = "user"
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
 	if ce.RequestMethod == http.MethodPost {
 		data.OperationDescription = "create user"
+		// parse the user id from the response location
+		re := regexp.MustCompile(`^/api/v2\.0/users/(\d+)$`)
+		m := re.FindStringSubmatch(ce.ResponseLocation)
+		if len(m) != 2 {
+			return nil
+		}
+		userID := m[1]
+		data.ResourceName = fmt.Sprintf("%v", userID)
 	} else if ce.RequestMethod == http.MethodDelete {
 		re := regexp.MustCompile(`^/api/v2\.0/users/(\d+)$`)
 		m := re.FindStringSubmatch(ce.RequestURL)
@@ -107,8 +115,16 @@ func ResolveUserEvent(ce *CommonEventMetadata, event *event.Event) error {
 		}
 		userID := m[1]
 		data.OperationDescription = fmt.Sprintf("delete user with user id %v", userID)
+		data.ResourceName = fmt.Sprintf("%v", userID)
 	} else {
-
+		re := regexp.MustCompile(`^/api/v2\.0/users/(\d+)$`)
+		m := re.FindStringSubmatch(ce.RequestURL)
+		if len(m) != 2 {
+			return nil
+		}
+		userID := m[1]
+		data.OperationDescription = fmt.Sprintf("delete user with user id %v", userID)
+		data.ResourceName = fmt.Sprintf("%v", userID)
 		data.OperationDescription = "update user"
 	}
 	data.OperationResult = "success"
@@ -182,7 +198,7 @@ func ResolveProjectMemberEvent(ce *CommonEventMetadata, event *event.Event) erro
 	data := &event2.CommonEvent{}
 	data.Operation = "project member"
 	data.Operator = ce.Username
-	data.ResourceName = "project member"
+	data.ResourceType = "project member"
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
@@ -209,7 +225,7 @@ func ResolveTagRetentionEvent(ce *CommonEventMetadata, event *event.Event) error
 	data := &event2.CommonEvent{}
 	data.Operation = "tag retention"
 	data.Operator = ce.Username
-	data.ResourceName = "tag retention"
+	data.ResourceType = "tag retention policy"
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
@@ -264,7 +280,7 @@ func ResolveImmutableTagEvent(ce *CommonEventMetadata, event *event.Event) error
 	data := &event2.CommonEvent{}
 	data.Operation = "immutable tag"
 	data.Operator = ce.Username
-	data.ResourceName = "immutable tag"
+	data.ResourceName = "immutable tag policy"
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
@@ -320,12 +336,22 @@ func ResolveRobotAccountEvent(ce *CommonEventMetadata, event *event.Event) error
 	data := &event2.CommonEvent{}
 	data.Operation = "robot account"
 	data.Operator = ce.Username
-	data.ResourceName = "robot account"
+	data.ResourceType = "robot"
+
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
 	if ce.RequestMethod == http.MethodPost {
 		data.OperationDescription = "create robot account"
+		if ce.ResponseLocation != "" {
+			re := regexp.MustCompile(`^/api/v2\.0/robots/(\d+)$`)
+			m := re.FindStringSubmatch(ce.ResponseLocation)
+			if len(m) != 2 {
+				return nil
+			}
+			robotID := m[1]
+			data.ResourceName = fmt.Sprintf("%v", robotID)
+		}
 	}
 	if ce.RequestMethod == http.MethodDelete {
 		re := regexp.MustCompile(`^/api/v2\.0/robots/(\d+)$`)
@@ -335,6 +361,7 @@ func ResolveRobotAccountEvent(ce *CommonEventMetadata, event *event.Event) error
 		}
 		robotID := m[1]
 		data.OperationDescription = fmt.Sprintf("delete robot account with robot id %v", robotID)
+		data.ResourceName = fmt.Sprintf("%v", robotID)
 	}
 	if ce.RequestMethod == http.MethodPut {
 		re := regexp.MustCompile(`^/api/v2\.0/robots/(\d+)$`)
@@ -344,6 +371,7 @@ func ResolveRobotAccountEvent(ce *CommonEventMetadata, event *event.Event) error
 		}
 		robotID := m[1]
 		data.OperationDescription = fmt.Sprintf("update robot account with robot id %v", robotID)
+		data.ResourceName = fmt.Sprintf("%v", robotID)
 	}
 	data.OperationResult = "success"
 	if ce.ResponseCode != http.StatusCreated && ce.ResponseCode != http.StatusOK {
@@ -369,6 +397,8 @@ type CommonEventMetadata struct {
 	RequestURL string
 	// IPAddress IP address of the request
 	IPAddress string
+	// ResponseLocation response location
+	ResponseLocation string
 }
 
 // Resolve parse the audit information from CommonEventMetadata
