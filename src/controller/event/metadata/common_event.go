@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	event2 "github.com/goharbor/harbor/src/controller/event"
@@ -30,6 +31,7 @@ type funcResolve func(*CommonEventMetadata, *event.Event) error
 var url2Operation = map[string]funcResolve{
 	`/api\/v2\.0\/configurations$`:                   ResolveConfigureEvent,
 	`/c\/login$`:                                     ResolveLoginEvent,
+	`/c\/log_out$`:                                   ResolveLoginEvent,
 	`/api\/v2\.0\/users$`:                            ResolveUserEvent,
 	`^/api/v2\.0/users/\d+/password$`:                ResolveUserEvent,
 	`^/api/v2\.0/users/\d+/sysadmin$`:                ResolveUserEvent,
@@ -72,11 +74,16 @@ func ResolveLoginEvent(ce *CommonEventMetadata, event *event.Event) error {
 	data := &event2.CommonEvent{}
 	data.Operation = "login"
 	data.Operator = ce.Username
-	data.ResourceName = "user"
+	data.ResourceType = "user"
+	data.ResourceName = ce.Username
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
-	data.OperationDescription = "login"
+	if strings.HasSuffix(ce.RequestURL, "log_out") {
+		data.OperationDescription = "logout"
+	} else {
+		data.OperationDescription = "login"
+	}
 	data.OperationResult = "success"
 	if ce.ResponseCode != http.StatusOK {
 		data.OperationResult = "failed"

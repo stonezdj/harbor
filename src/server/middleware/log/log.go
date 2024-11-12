@@ -17,6 +17,7 @@ package log
 import (
 	"io"
 	"net/http"
+	"regexp"
 
 	"github.com/goharbor/harbor/src/common/security"
 	"github.com/goharbor/harbor/src/common/utils"
@@ -67,8 +68,9 @@ func Middleware() func(http.Handler) http.Handler {
 		enableAudit := false
 		urlStr := r.URL.String()
 		username := "unknown"
+		re := regexp.MustCompile("^/c/log_out$")
 		var requestContent string
-		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete {
+		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodDelete || (r.Method == http.MethodGet && re.MatchString(urlStr)) {
 			enableAudit = true
 			lib.NopCloseRequest(r)
 			body, err := io.ReadAll(r.Body)
