@@ -68,11 +68,15 @@ func ResolveConfigureEvent(ce *CommonEventMetadata, event *event.Event) error {
 }
 
 func ResolveLoginEvent(ce *CommonEventMetadata, event *event.Event) error {
-	if ce.RequestMethod != http.MethodPost {
-		return nil
-	}
+
 	data := &event2.CommonEvent{}
-	data.Operation = "login"
+	//method POST for login
+	//method GET for log_out
+	if ce.RequestMethod == http.MethodGet {
+		data.Operation = "logout"
+	} else {
+		data.Operation = "login"
+	}
 	data.Operator = ce.Username
 	data.ResourceType = "user"
 	data.ResourceName = ce.Username
