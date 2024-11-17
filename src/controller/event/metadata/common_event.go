@@ -134,17 +134,19 @@ func ResolveProjectMemberEvent(ce *CommonEventMetadata, event *event.Event) erro
 	}
 
 	data := &event2.CommonEvent{}
-	data.Operation = "project member"
 	data.Operator = ce.Username
 	data.ResourceType = "project member"
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
 	if ce.RequestMethod == http.MethodPost {
+		data.Operation = "create"
 		data.OperationDescription = fmt.Sprintf("add project member to project with project id %v", projectID)
 	} else if ce.RequestMethod == http.MethodDelete {
+		data.Operation = "delete"
 		data.OperationDescription = fmt.Sprintf("delete project member from project with project id %v, member id: %v", projectID, memberID)
 	} else {
+		data.Operation = "update"
 		data.OperationDescription = fmt.Sprintf("update project member to project %v with project id %v", projectID, memberID)
 	}
 	data.OperationResult = "success"
@@ -184,17 +186,20 @@ func ResolveImmutableTagEvent(ce *CommonEventMetadata, event *event.Event) error
 	}
 
 	data := &event2.CommonEvent{}
-	data.Operation = "immutable tag"
+
 	data.Operator = ce.Username
 	data.ResourceName = "immutable tag policy"
 	data.SourceIP = ce.IPAddress
 	data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
 	if ce.RequestMethod == http.MethodPost {
+		data.Operation = "create"
 		data.OperationDescription = fmt.Sprintf("add immutable tag to project with project id %v", projectID)
 	} else if ce.RequestMethod == http.MethodDelete {
+		data.Operation = "delete"
 		data.OperationDescription = fmt.Sprintf("delete immutable tag from project with project id %v, immutable tag id: %v", projectID, immutableTagID)
 	} else {
+		data.Operation = "update"
 		data.OperationDescription = fmt.Sprintf("update immutable tag to project %v with project id %v", projectID, immutableTagID)
 	}
 	data.OperationResult = "success"
@@ -211,7 +216,7 @@ func ResolvePurgeAuditEvent(ce *CommonEventMetadata, event *event.Event) error {
 		return nil
 	}
 	data := &event2.CommonEvent{}
-	data.Operation = "purge audit"
+	data.Operation = "create"
 	data.Operator = ce.Username
 	data.ResourceName = "purge audit"
 	data.SourceIP = ce.IPAddress
