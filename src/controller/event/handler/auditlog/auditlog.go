@@ -16,6 +16,7 @@ package auditlog
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/goharbor/harbor/src/controller/event"
 	"github.com/goharbor/harbor/src/lib/config"
@@ -62,7 +63,7 @@ func (h *Handler) Handle(ctx context.Context, value interface{}) error {
 			return err
 		}
 		auditLog = al
-		if auditLog != nil {
+		if auditLog != nil && config.AuditLogEnabled(ctx, fmt.Sprintf("%v_%v", auditLog.Operation, auditLog.ResourceType)) {
 			_, err := audit.Mgr.Create(ctx, auditLog)
 			if err != nil {
 				log.Debugf("add audit log err: %v", err)

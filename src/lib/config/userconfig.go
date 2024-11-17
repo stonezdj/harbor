@@ -261,3 +261,16 @@ func ScannerSkipUpdatePullTime(ctx context.Context) bool {
 func BannerMessage(ctx context.Context) string {
 	return DefaultMgr().Get(ctx, common.BannerMessage).GetString()
 }
+
+// AuditLogEnabled returns the audit log enabled setting
+func AuditLogEnabled(ctx context.Context, operation string) bool {
+	disableListStr := DefaultMgr().Get(ctx, common.AuditLogDisable).GetString()
+	disableList := strings.Split(disableListStr, ",")
+	for _, op := range disableList {
+		opName := strings.Trim(op, " ")
+		if strings.EqualFold(opName, operation) {
+			return false
+		}
+	}
+	return true
+}
