@@ -1,4 +1,4 @@
-package metadata
+package commonevent
 
 import (
 	"fmt"
@@ -10,13 +10,37 @@ import (
 	"github.com/goharbor/harbor/src/pkg/notifier/event"
 )
 
+var userResolver = &EventResolver{
+	BaseURLPattern: "/api/v2.0/users",
+	ResourceType:   "user",
+	SucceedCodes:   []int{http.StatusCreated, http.StatusOK},
+}
+
+var projectResolver = &EventResolver{
+	BaseURLPattern: "/api/v2.0/projects",
+	ResourceType:   "project",
+	SucceedCodes:   []int{http.StatusCreated, http.StatusOK},
+}
+
+var tagRetentionResolver = &EventResolver{
+	BaseURLPattern: "/api/v2.0/retentions",
+	ResourceType:   "tag retention policy",
+	SucceedCodes:   []int{http.StatusCreated, http.StatusOK},
+}
+
+var robotResolver = &EventResolver{
+	BaseURLPattern: "/api/v2.0/robots",
+	ResourceType:   "robot",
+	SucceedCodes:   []int{http.StatusCreated, http.StatusOK},
+}
+
 type EventResolver struct {
 	BaseURLPattern string
 	ResourceType   string
 	SucceedCodes   []int
 }
 
-func (e *EventResolver) Resolve(ce *CommonEventMetadata, event *event.Event) error {
+func (e *EventResolver) Resolve(ce *Metadata, event *event.Event) error {
 	if ce.RequestMethod != http.MethodPost && ce.RequestMethod != http.MethodDelete && ce.RequestMethod != http.MethodPut {
 		return nil
 	}

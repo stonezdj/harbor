@@ -21,7 +21,7 @@ import (
 
 	"github.com/goharbor/harbor/src/common/security"
 	"github.com/goharbor/harbor/src/common/utils"
-	"github.com/goharbor/harbor/src/controller/event/metadata"
+	"github.com/goharbor/harbor/src/controller/event/metadata/commonevent"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
@@ -92,7 +92,7 @@ func Middleware() func(http.Handler) http.Handler {
 
 		if enableAudit {
 			ctx := r.Context()
-			event := &metadata.CommonEventMetadata{
+			event := &commonevent.Metadata{
 				Ctx:              ctx,
 				Username:         username,
 				RequestMethod:    r.Method,
@@ -103,6 +103,7 @@ func Middleware() func(http.Handler) http.Handler {
 				ResponseLocation: rw.header.Get("Location"),
 			}
 			notification.AddEvent(ctx, event, true)
+			// TODO: remove it after the event system is ready
 			log.Infof("the request user is %v", username)
 			log.Infof("the request Method is %v", r.Method)
 			log.Infof("the request URL is %v", urlStr)
