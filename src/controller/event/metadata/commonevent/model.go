@@ -11,7 +11,7 @@ type Resolver interface {
 	Resolve(*Metadata, *event.Event) error
 }
 
-var url2Operation = map[string]Resolver{
+var urlResolvers = map[string]Resolver{
 	`/api\/v2\.0\/configurations$`:                   configureEventResolver,
 	`/c\/login$`:                                     loginEventResolver,
 	`/c\/log_out$`:                                   loginEventResolver,
@@ -52,7 +52,7 @@ type Metadata struct {
 
 // Resolve parse the audit information from CommonEventMetadata
 func (c *Metadata) Resolve(event *event.Event) error {
-	for url, r := range url2Operation {
+	for url, r := range urlResolvers {
 		p := regexp.MustCompile(url)
 		if p.MatchString(c.RequestURL) {
 			return r.Resolve(c, event)
