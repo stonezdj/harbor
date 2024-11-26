@@ -27,7 +27,8 @@ func (l *LoginEventResolver) Resolve(ce *Metadata, event *event.Event) error {
 	data.ResourceType = "user"
 	data.ResourceName = ce.Username
 	data.SourceIP = ce.IPAddress
-	data.Payload = ce.RequestPayload
+	// do not show payload for login event
+	// data.Payload = ce.RequestPayload
 	data.OcurrAt = time.Now()
 	if strings.HasSuffix(ce.RequestURL, "log_out") {
 		data.OperationDescription = "logout"

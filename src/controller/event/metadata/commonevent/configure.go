@@ -8,10 +8,13 @@ import (
 	"github.com/goharbor/harbor/src/pkg/notifier/event"
 )
 
-var configureEventResolver = &ConfigureEventResolver{}
+var configureEventResolver = &ConfigureEventResolver{
+	SensitiveAttributes: []string{"ldap_password"},
+}
 
 // ConfigureEventResolver used to resolve the configuration event
 type ConfigureEventResolver struct {
+	SensitiveAttributes []string
 }
 
 func (c *ConfigureEventResolver) Resolve(ce *Metadata, event *event.Event) error {
@@ -20,7 +23,7 @@ func (c *ConfigureEventResolver) Resolve(ce *Metadata, event *event.Event) error
 	data.Operator = ce.Username
 	data.ResourceName = "configuration"
 	data.SourceIP = ce.IPAddress
-	data.Payload = ce.RequestPayload
+	data.Payload = RedactPayload(ce.RequestPayload, c.SensitiveAttributes)
 	data.OcurrAt = time.Now()
 	data.OperationDescription = "change configuration"
 	data.OperationResult = "success"

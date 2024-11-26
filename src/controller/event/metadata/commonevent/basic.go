@@ -11,9 +11,10 @@ import (
 )
 
 var userResolver = &EventResolver{
-	BaseURLPattern: "/api/v2.0/users",
-	ResourceType:   "user",
-	SucceedCodes:   []int{http.StatusCreated, http.StatusOK},
+	BaseURLPattern:      "/api/v2.0/users",
+	ResourceType:        "user",
+	SucceedCodes:        []int{http.StatusCreated, http.StatusOK},
+	SensitiveAttributes: []string{"password"},
 }
 
 var projectResolver = &EventResolver{
@@ -35,9 +36,10 @@ var robotResolver = &EventResolver{
 }
 
 type EventResolver struct {
-	BaseURLPattern string
-	ResourceType   string
-	SucceedCodes   []int
+	BaseURLPattern      string
+	ResourceType        string
+	SucceedCodes        []int
+	SensitiveAttributes []string
 }
 
 func (e *EventResolver) Resolve(ce *Metadata, event *event.Event) error {
@@ -48,7 +50,7 @@ func (e *EventResolver) Resolve(ce *Metadata, event *event.Event) error {
 	data.Operator = ce.Username
 	data.ResourceType = e.ResourceType
 	data.SourceIP = ce.IPAddress
-	data.Payload = ce.RequestPayload
+	data.Payload = RedactPayload(ce.RequestPayload, e.SensitiveAttributes)
 	data.OcurrAt = time.Now()
 	if ce.RequestMethod == http.MethodPost {
 		data.Operation = "create"
