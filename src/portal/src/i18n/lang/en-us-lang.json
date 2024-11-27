@@ -249,6 +249,8 @@
         "PROXY_CACHE_BANDWIDTH":"Set the maximum network bandwidth to pull image from upstream for proxy-cache. For unlimited bandwidth, please enter -1. ",
         "BANDWIDTH": "Bandwidth",
         "SPEED_LIMIT_TIP": "Please enter -1 or an integer greater than 0. ",
+        "PROXY_CACHE_REPO_LIMIT": "Proxy Cache Repository Limit",
+        "PROXY_CACHE_REPO_LIMIT_TIP": "Please enter a regular expression to match the repository name. For example, ^library/.*$",
         "OF": "of",
         "COUNT_QUOTA": "Count quota",
         "STORAGE_QUOTA": "Project quota limits",

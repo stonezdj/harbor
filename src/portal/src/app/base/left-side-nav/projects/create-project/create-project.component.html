@@ -281,6 +281,45 @@
                     </clr-control-error>
                 </div>
             </div>
+            <div
+                class="clr-form-control mt-05"
+                [ngStyle]="{
+                    visibility:
+                        isSystemAdmin && enableProxyCache ? 'visible' : 'hidden'
+                }">
+                <label for="proxyRepoLimit" class="clr-control-label required">
+                    {{ 'PROJECT.PROXY_CACHE_REPO_LIMIT' | translate }}
+                    <clr-tooltip>
+                        <clr-icon
+                            clrTooltipTrigger
+                            shape="info-circle"
+                            size="24"></clr-icon>
+                        <clr-tooltip-content
+                            clrPosition="bottom-left"
+                            clrSize="lg"
+                            *clrIfOpen>
+                            <span>{{
+                                'PROJECT.PROXY_CACHE_REPO_LIMIT_TIP' | translate
+                            }}</span>
+                        </clr-tooltip-content>
+                    </clr-tooltip>
+                </label>
+                <div
+                    class="clr-control-container">
+                    <div class="clr-input-wrapper">
+                        <input
+                            type="text"
+                            id="proxy_repo_limit"
+                            [(ngModel)]="proxyRepoLimit"
+                            name="proxy_repo_limit"
+                            class="clr-input input-width"
+                            autocomplete="off" />
+                        <clr-icon
+                            class="clr-validate-icon"
+                            shape="exclamation-circle"></clr-icon>
+                    </div>
+                </div>
+            </div>
         </form>
     </div>
     <div class="modal-footer">

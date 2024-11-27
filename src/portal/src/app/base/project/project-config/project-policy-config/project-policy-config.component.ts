@@ -42,6 +42,7 @@ export class ProjectPolicy {
     ProxyCacheEnabled: boolean;
     RegistryId?: number | null;
     ProxySpeedKb?: number | null;
+    ProxyRepoLimit?: string | null;
 
     constructor() {
         this.Public = false;
@@ -72,6 +73,7 @@ export class ProjectPolicy {
         this.ProxySpeedKb = pro.metadata.proxy_speed_kb
             ? pro.metadata.proxy_speed_kb
             : -1;
+        this.ProxyRepoLimit = pro.metadata.proxy_repo_limit;
     }
 }
 const PAGE_SIZE: number = 100;

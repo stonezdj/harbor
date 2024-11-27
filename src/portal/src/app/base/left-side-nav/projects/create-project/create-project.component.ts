@@ -77,6 +77,8 @@ export class CreateProjectComponent
     speedLimit: number = -1;
     speedLimitUnit: string = BandwidthUnit.KB;
     selectedSpeedLimitUnit: string = BandwidthUnit.KB;
+    proxyRepoLimit: string;
+
     speedUnits = [
         {
             UNIT: BandwidthUnit.KB,
@@ -364,6 +366,7 @@ export class CreateProjectComponent
                         public: this.project.metadata.public ? 'true' : 'false',
                         proxy_speed_kb:
                             this.project.metadata.bandwidth.toString(),
+                        proxy_repo_limit: this.proxyRepoLimit,
                     },
                     storage_limit: +storageByte,
                     registry_id: registryId,

@@ -93,6 +93,24 @@
                 </div>
             </div>
         </div>
+        <div
+            *ngIf="isSystemAdmin && projectPolicy.ProxyCacheEnabled"
+            class="clr-form-control mt-0">
+            <label class="clr-control-label"></label>
+            <div class="clr-select-wrapper row-inline">
+                <label class="clr-control-label">
+                    {{ 'PROJECT.PROXY_CACHE_REPO_LIMIT' | translate }}
+                </label>
+                <input
+                    type="text"
+                    id="proxy_repo_limit"
+                    [(ngModel)]="projectPolicy.ProxyRepoLimit"
+                    name="proxy-cache-repo-limit"
+                    disabled="true"
+                    class="clr-input width-164 mr-10 clr-input-underline"
+                    autocomplete="off" />
+            </div>
+        </div>
 
         <clr-checkbox-container *ngIf="!isProxyCacheProject" clrInline>
             <label
