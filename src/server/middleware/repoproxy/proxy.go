@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -158,6 +159,13 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 	art, p, proxyCtl, err := preCheck(ctx, true)
 	if err != nil {
 		return err
+	}
+
+	if p.RegistryID > 0 && len(p.ProxyCacheRepoLimit()) > 0 {
+		repoName := strings.TrimPrefix(art.Repository, art.ProjectName+"/")
+		if regexp.MustCompile(p.ProxyCacheRepoLimit()).MatchString(repoName) {
+			return errors.NotFoundError(fmt.Errorf("the project %v is not allowed to proxy the repository %v", p.Name, art.Repository))
+		}
 	}
 
 	// Handle dockerhub request without library prefix
