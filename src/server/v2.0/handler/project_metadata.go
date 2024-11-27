@@ -161,6 +161,8 @@ func (p *projectMetadataAPI) validate(metas map[string]string) (map[string]strin
 			return nil, errors.New(nil).WithCode(errors.BadRequestCode).WithMessagef("invalid value: %s", value)
 		}
 		metas[proModels.ProMetaProxySpeed] = strconv.FormatInt(v, 10)
+	case proModels.ProMetaProxyRepoLimit:
+		metas[proModels.ProMetaProxyRepoLimit] = value
 	default:
 		return nil, errors.New(nil).WithCode(errors.BadRequestCode).WithMessagef("invalid key: %s", key)
 	}

@@ -162,6 +162,7 @@ func (a *projectAPI) CreateProject(ctx context.Context, params operation.CreateP
 	// ignore metadata.proxy_speed_kb for non-proxy-cache project
 	if req.RegistryID == nil {
 		req.Metadata.ProxySpeedKb = nil
+		req.Metadata.ProxyRepoLimit = nil
 	}
 
 	// ignore enable_content_trust metadata for proxy cache project
@@ -559,6 +560,7 @@ func (a *projectAPI) UpdateProject(ctx context.Context, params operation.UpdateP
 	// ignore metadata.proxy_speed_kb for non-proxy-cache project
 	if params.Project.Metadata != nil && !p.IsProxy() {
 		params.Project.Metadata.ProxySpeedKb = nil
+		params.Project.Metadata.ProxyRepoLimit = nil
 	}
 
 	// ignore enable_content_trust metadata for proxy cache project

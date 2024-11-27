@@ -169,6 +169,15 @@ func (p *Project) ProxyCacheSpeed() int32 {
 	return int32(speedInt)
 }
 
+// ProxyCacheRepoLimit ...
+func (p *Project) ProxyCacheRepoLimit() string {
+	limit, exist := p.GetMetadata(ProMetaProxyRepoLimit)
+	if !exist {
+		return ""
+	}
+	return limit
+}
+
 // FilterByPublic returns orm.QuerySeter with public filter
 func (p *Project) FilterByPublic(_ context.Context, qs orm.QuerySeter, _ string, value interface{}) orm.QuerySeter {
 	subQuery := `SELECT project_id FROM project_metadata WHERE name = 'public' AND value = '%s'`

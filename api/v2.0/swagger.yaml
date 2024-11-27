@@ -7347,6 +7347,10 @@ definitions:
         type: string
         description: 'The bandwidth limit of proxy cache, in Kbps (kilobits per second). It limits the communication between Harbor and the upstream registry, not the client and the Harbor.'
         x-nullable: true
+      proxy_repo_limit:
+        type: string
+        description: 'The regular expression to limit repositories can be pull from upstream registry, for example: ^library/nginx$'
+        x-nullable: true
   ProjectSummary:
     type: object
     properties:

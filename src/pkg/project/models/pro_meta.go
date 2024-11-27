@@ -25,4 +25,5 @@ const (
 	ProMetaReuseSysCVEAllowlist     = "reuse_sys_cve_allowlist"
 	ProMetaAutoSBOMGen              = "auto_sbom_generation"
 	ProMetaProxySpeed               = "proxy_speed_kb"
+	ProMetaProxyRepoLimit           = "proxy_repo_limit"
 )
