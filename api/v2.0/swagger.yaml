@@ -1433,8 +1433,7 @@ paths:
             Content-Type:
               description: The content type of the vulnerabilities addition
               type: string
-          schema:
-            type: string
+          schema: {}
         '400':
           $ref: '#/responses/400'
         '401':
