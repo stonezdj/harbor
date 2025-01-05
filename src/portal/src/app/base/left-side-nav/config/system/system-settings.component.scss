@@ -212,3 +212,10 @@ $message-type-width: 12rem;
 .date {
   width: 6rem;
 }
+
+.float-left {
+  float:left;
+  label {
+    min-width: 7rem;
+  }
+}
