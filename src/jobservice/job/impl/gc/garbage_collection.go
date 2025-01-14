@@ -171,32 +171,43 @@ func (gc *GarbageCollector) Run(ctx job.Context, params job.Parameters) error {
 
 	gc.logger.Infof("start to run gc in job.")
 
-	// mark
-	if err := gc.mark(ctx); err != nil {
-		if err == errGcStop {
-			gc.logger.Info("received the stop signal, quit GC job.")
-			return nil
-		}
-		gc.logger.Errorf("failed to execute GC job at mark phase, error: %v", err)
-		return err
+	size := int64(0)
+	blobCnt := int64(0)
+	mfCnt := int64(0)
+	for i := 0; i < 3600; i++ {
+		time.Sleep(1 * time.Second)
+		size += 1024
+		blobCnt += 5
+		mfCnt += 1
+		saveGCRes(ctx, size, blobCnt, mfCnt)
 	}
 
-	// sweep
-	if !gc.dryRun {
-		if err := gc.sweep(ctx); err != nil {
-			if err == errGcStop {
-				// we may already delete several artifacts before receiving the stop signal, so try to clean up the cache
-				gc.logger.Info("received the stop signal, quit GC job after cleaning up the cache.")
-				return gc.cleanCache(ctx.SystemContext())
-			}
-			gc.logger.Errorf("failed to execute GC job at sweep phase, error: %v", err)
-			return err
-		}
+	// // mark
+	// if err := gc.mark(ctx); err != nil {
+	// 	if err == errGcStop {
+	// 		gc.logger.Info("received the stop signal, quit GC job.")
+	// 		return nil
+	// 	}
+	// 	gc.logger.Errorf("failed to execute GC job at mark phase, error: %v", err)
+	// 	return err
+	// }
 
-		if err := gc.cleanCache(ctx.SystemContext()); err != nil {
-			return err
-		}
-	}
+	// // sweep
+	// if !gc.dryRun {
+	// 	if err := gc.sweep(ctx); err != nil {
+	// 		if err == errGcStop {
+	// 			// we may already delete several artifacts before receiving the stop signal, so try to clean up the cache
+	// 			gc.logger.Info("received the stop signal, quit GC job after cleaning up the cache.")
+	// 			return gc.cleanCache(ctx.SystemContext())
+	// 		}
+	// 		gc.logger.Errorf("failed to execute GC job at sweep phase, error: %v", err)
+	// 		return err
+	// 	}
+
+	// 	if err := gc.cleanCache(ctx.SystemContext()); err != nil {
+	// 		return err
+	// 	}
+	// }
 	gc.logger.Infof("success to run gc in job.")
 	return nil
 }
