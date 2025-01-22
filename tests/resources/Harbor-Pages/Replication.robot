@@ -231,7 +231,7 @@ Image Should Be Replicated To Project
         #In AWS-ECR, under repository a, there're only several images: httpd,alpine,hello-world.
         ${out}  Run Keyword And Ignore Error  Retry Wait Until Page Contains  ${project}/${image}
         Log To Console  Return value is ${out[0]}
-        Exit For Loop If  '${out[0]}'=='PASS'
+        Exit FOR Loop If  '${out[0]}'=='PASS'
         Sleep  5
     END
 

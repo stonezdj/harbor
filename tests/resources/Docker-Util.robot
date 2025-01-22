@@ -117,7 +117,7 @@ Start Docker Daemon Locally
     Process Should Be Running  ${handle}
     FOR  ${IDX}  IN RANGE  5
         ${pid}=  Run  pidof dockerd
-        Exit For Loop If  '${pid}' != '${EMPTY}'
+        Exit FOR Loop If  '${pid}' != '${EMPTY}'
         Sleep  2s
     END
     Sleep  2s
@@ -174,7 +174,7 @@ Docker Image Can Not Be Pulled
         ${out}=  Run Keyword And Ignore Error  Docker Login  ""  ${DOCKER_USER}  ${DOCKER_PWD}
         Log To Console  Return value is ${out}
         ${out}=  Run Keyword And Ignore Error  Command Should be Failed  docker pull ${image}
-        Exit For Loop If  '${out[0]}'=='PASS'
+        Exit FOR Loop If  '${out[0]}'=='PASS'
         Log To Console  Docker pull return value is ${out}
         Sleep  3
     END
@@ -190,7 +190,7 @@ Docker Image Can Be Pulled
         Log To Console  Return value is ${out}
         ${out}=  Run Keyword And Ignore Error  Docker Pull  ${image}
         Log To Console  Return value is ${out[0]}
-        Exit For Loop If  '${out[0]}'=='PASS'
+        Exit FOR Loop If  '${out[0]}'=='PASS'
         Sleep  5
     END
     Run Keyword If  '${out[0]}'=='FAIL'  Capture Page Screenshot

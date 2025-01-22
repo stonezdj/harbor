@@ -206,7 +206,7 @@ Wait Unitl Command Success
     FOR  ${n}  IN RANGE  1  ${times}
         Log  Trying ${cmd}: ${n} ...  console=True
         ${rc}  ${output}=  Run And Return Rc And Output  ${cmd}
-        Exit For Loop If  '${rc}'=='0'
+        Exit FOR Loop If  '${rc}'=='0'
     END
     Log  Command Result is ${output}
     Should Be Equal As Strings  '${rc}'  '0'
@@ -222,18 +222,18 @@ Click Element If Visible
     [Arguments]  ${elements}
     FOR  ${n}  IN RANGE  1  6
         ${out}  Run Keyword And Ignore Error  Wait Until Page Contains Element  ${elements}
-        Exit For Loop If  '${out[0]}'=='FAIL'
+        Exit FOR Loop If  '${out[0]}'=='FAIL'
         Retry Element Click  ${elements}
     END
     Should Be Equal As Strings  '${out[0]}'  'FAIL'
 
 Retry Keyword When Error
     [Arguments]  ${keyword}  @{elements}
-    For  ${n}  IN RANGE  1  3
+    FOR  ${n}  IN RANGE  1  3
         Log To Console  Trying ${keyword} elements @{elements} ${n} times ...
         ${out}  Run Keyword And Ignore Error  ${keyword}  @{elements}
         Log To Console  Return value is ${out[0]}
-        Exit For Loop If  '${out[0]}'=='PASS'
+        Exit FOR Loop If  '${out[0]}'=='PASS'
         Sleep  2
     END
     Run Keyword If  '${out[0]}'=='FAIL'  Capture Page Screenshot
@@ -242,12 +242,12 @@ Retry Keyword When Error
 
 Retry Keyword When Return Value Mismatch
     [Arguments]  ${keyword}  ${expected_value}  ${count}  @{elements}
-    For  ${n}  IN RANGE  1  ${count}
+    FOR  ${n}  IN RANGE  1  ${count}
         Log To Console  Trying ${keyword} ${n} times ...
         ${out}  Run Keyword And Ignore Error  ${keyword}  @{elements}
         Log To Console  Return value is ${out[1]}
         ${status}=  Set Variable If  '${out[1]}'=='${expected_value}'  'PASS'  'FAIL'
-        Exit For Loop If  '${out[1]}'=='${expected_value}'
+        Exit FOR Loop If  '${out[1]}'=='${expected_value}'
         Sleep  2
     END
     Run Keyword If  ${status}=='FAIL'  Capture Page Screenshot
@@ -255,7 +255,7 @@ Retry Keyword When Return Value Mismatch
 
 Retry Double Keywords When Error
     [Arguments]  ${keyword1}  ${element1}  ${keyword2}  ${element2}  ${DoAssert}=${true}
-    For  ${n}  IN RANGE  1  3
+    FOR  ${n}  IN RANGE  1  3
         Log To Console  Trying ${keyword1} and ${keyword2} ${n} times ...
         ${out1}  Run Keyword And Ignore Error  ${keyword1}  ${element1}
         Capture Page Screenshot
@@ -263,7 +263,7 @@ Retry Double Keywords When Error
         ${out2}  Run Keyword And Ignore Error  ${keyword2}  ${element2}
         Capture Page Screenshot
         Log To Console  Return value is ${out1[0]} ${out2[0]}
-        Exit For Loop If  '${out2[0]}'=='PASS'
+        Exit FOR Loop If  '${out2[0]}'=='PASS'
         Sleep  1
     END
     Return From Keyword If  ${DoAssert} == ${false}  '${out2[0]}'

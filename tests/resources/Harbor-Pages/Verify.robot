@@ -78,7 +78,7 @@ Verify Checkbox
 
 Loop Image Repo
     [Arguments]    @{repo}
-    For    ${repo}    In    @{repo}
+    FOR    ${repo}    In    @{repo}
         Page Should Contain  ${repo}
     END
 
@@ -87,7 +87,7 @@ Verify Member Exist
     @{project}=  Get Value From Json  ${json}  $.projects.[*].name
     Init Chrome Driver
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
-    For    ${project}    In    @{project}
+    FOR    ${project}    In    @{project}
        @{out_has_image}=  Get Value From Json  ${json}  $.projects[?(@.name=${project})].has_image
        ${has_image}  Set Variable If  @{out_has_image}[0] == ${true}  ${true}  ${false}
        Go Into Project  ${project}  has_image=${has_image}
@@ -100,7 +100,7 @@ Verify Member Exist
 
 Loop Member
     [Arguments]    @{members}
-    For    ${member}    In    @{members}
+    FOR    ${member}    In    @{members}
         Page Should Contain    ${member}
     END
 
@@ -122,7 +122,7 @@ Verify System Label
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
     Switch To Configure
     Switch To System Labels
-    For    ${label}    In    @{label}
+    FOR    ${label}    In    @{label}
        Page Should Contain    ${label}
     END
     Close Browser
@@ -132,13 +132,13 @@ Verify Project Label
    @{project}= Get Value From Json  ${json}  $.peoject.[*].name
    Init Chrome Driver
    Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
-    For    ${project}    In    @{project}
+    FOR    ${project}    In    @{project}
         @{out_has_image}=  Get Value From Json  ${json}  $.projects[?(@.name=${project})].has_image
         ${has_image}  Set Variable If  @{out_has_image}[0] == ${true}  ${true}  ${false}
         Go Into Project  ${project}  has_image=${has_image}
         Switch To Project Label
         @{projectlabel}=  Get Value From Json  ${json}  $.projects[?(@.name=${project})]..labels..name
-        For    ${label}    In    @{label}
+        FOR    ${label}    In    @{label}
             Page Should Contain    ${projectlabel}
         END
         Navigate To Projects
@@ -151,7 +151,7 @@ Verify Endpoint
     Init Chrome Driver
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
     Switch To Registries
-    For    ${endpoint}    In    @{endpoint}
+    FOR    ${endpoint}    In    @{endpoint}
         Page Should Contain    ${endpoint}
     END
     Close Browser

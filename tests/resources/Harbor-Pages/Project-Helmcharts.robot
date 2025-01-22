@@ -43,7 +43,7 @@ Go Into Chart Detail
 Multi-delete Chart Files
     [Arguments]    @{obj}
     Switch To Project Charts
-    For  ${obj}  in  @{obj}
+    FOR  ${obj}  in  @{obj}
         Retry Element Click  //clr-dg-row[contains(.,'${obj}')]//label
     END
     #Retry Element Click  xpath=${version_checkbox}

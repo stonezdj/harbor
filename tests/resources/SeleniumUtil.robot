@@ -41,7 +41,7 @@ Init Chrome Driver
         Log To Console  Trying Create Webdriver ${n} times ...
         ${out}  Run Keyword And Ignore Error  Create Webdriver    Chrome    Chrome_headless    chrome_options=${chrome options}    desired_capabilities=${capabilities}
         Log To Console  Return value is ${out[0]}
-        Exit For Loop If  '${out[0]}'=='PASS'
+        Exit FOR Loop If  '${out[0]}'=='PASS'
         Sleep  2
     END
     Run Keyword If  '${out[0]}'=='FAIL'  Capture Page Screenshot
