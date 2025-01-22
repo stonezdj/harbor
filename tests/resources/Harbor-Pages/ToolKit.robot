@@ -21,15 +21,17 @@ Resource  ../../resources/Util.robot
 *** Keywords ***
 Delete Success
     [Arguments]  @{obj}
-    :For  ${obj}  in  @{obj}
-    \    Retry Wait Until Page Contains Element  //*[@id='contentAll']//div[contains(.,'${obj}')]/../div/clr-icon[@shape='success-standard']
+    For  ${obj}  in  @{obj}
+        Retry Wait Until Page Contains Element  //*[@id='contentAll']//div[contains(.,'${obj}')]/../div/clr-icon[@shape='success-standard']
+    END
     Sleep  1
     Capture Page Screenshot
 
 Delete Fail
     [Arguments]  @{obj}
-    :For  ${obj}  in  @{obj}
-    \    Retry Wait Until Page Contains Element  //*[@id='contentAll']//div[contains(.,'${obj}')]/../div/clr-icon[@shape='error-standard']
+    For  ${obj}  in  @{obj}
+        Retry Wait Until Page Contains Element  //*[@id='contentAll']//div[contains(.,'${obj}')]/../div/clr-icon[@shape='error-standard']
+    END
     Sleep  1
     Capture Page Screenshot
 
@@ -58,9 +60,10 @@ Select Object
 # This func cannot support as the delete user flow changed.
 Multi-delete Object
     [Arguments]    ${delete_btn}  @{obj}
-    :For  ${obj}  in  @{obj}
-    \    ${element}=  Set Variable  xpath=//clr-dg-row[contains(.,'${obj}')]//label
-    \    Retry Element Click  ${element}
+    For  ${obj}  in  @{obj}
+        ${element}=  Set Variable  xpath=//clr-dg-row[contains(.,'${obj}')]//label
+        Retry Element Click  ${element}
+    END
     Sleep  1
     Capture Page Screenshot
     Retry Element Click  ${delete_btn}
@@ -73,9 +76,10 @@ Multi-delete Object
 
 Multi-delete User
     [Arguments]    @{obj}
-    :For  ${obj}  in  @{obj}
-    \    Sleep  1
-    \    Retry Element Click  //clr-dg-row[contains(.,'${obj}')]//label
+    For  ${obj}  in  @{obj}
+        Sleep  1
+        Retry Element Click  //clr-dg-row[contains(.,'${obj}')]//label
+    END
     Retry Element Click  ${member_action_xpath}
     Retry Element Click  //*[@id='deleteUser']
     Retry Double Keywords When Error  Retry Element Click  ${delete_btn}  Retry Wait Until Page Not Contains Element  ${delete_btn}
@@ -83,9 +87,10 @@ Multi-delete User
 
 Multi-delete Member
     [Arguments]    @{obj}
-    :For  ${obj}  in  @{obj}
-    \    Sleep  1
-    \    Retry Element Click  //clr-dg-row[contains(.,'${obj}')]//clr-checkbox-wrapper/label
+    For  ${obj}  in  @{obj}
+        Sleep  1
+        Retry Element Click  //clr-dg-row[contains(.,'${obj}')]//clr-checkbox-wrapper/label
+    END
     Retry Double Keywords When Error  Retry Element Click  ${member_action_xpath}  Retry Wait Until Page Contains Element  ${delete_action_xpath}
     Retry Double Keywords When Error  Retry Element Click  ${delete_action_xpath}  Retry Wait Until Page Contains Element  ${delete_btn}
     Retry Double Keywords When Error  Retry Element Click  ${delete_btn}  Retry Wait Until Page Not Contains Element  ${delete_btn}
@@ -93,8 +98,9 @@ Multi-delete Member
 
 Multi-delete Object Without Confirmation
     [Arguments]    @{obj}
-    :For  ${obj}  in  @{obj}
-    \    Retry Element Click  //clr-dg-row[contains(.,'${obj}')]//label
+    For  ${obj}  in  @{obj}
+        Retry Element Click  //clr-dg-row[contains(.,'${obj}')]//label
+    END
     Retry Double Keywords When Error  Retry Element Click  ${delete_btn_2}  Retry Wait Until Page Not Contains Element  ${delete_btn_2}
 
 

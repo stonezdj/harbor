@@ -86,11 +86,12 @@ Cannot Push image
 
 Wait Until Container Stops
     [Arguments]  ${container}
-    :FOR  ${idx}  IN RANGE  0  60
-    \   ${out}=  Run  docker %{VCH-PARAMS} inspect ${container} | grep Status
-    \   ${status}=  Run Keyword And Return Status  Should Contain  ${out}  exited
-    \   Return From Keyword If  ${status}
-    \   Sleep  1
+    FOR  ${idx}  IN RANGE  0  60
+        ${out}=  Run  docker %{VCH-PARAMS} inspect ${container} | grep Status
+        ${status}=  Run Keyword And Return Status  Should Contain  ${out}  exited
+        Return From Keyword If  ${status}
+        Sleep  1
+    END
     Fail  Container did not stop within 60 seconds
 
 Hit Nginx Endpoint
@@ -107,14 +108,18 @@ Get Container IP
 # If you are running this keyword in a container, make sure it is run with --privileged turned on
 Start Docker Daemon Locally
     ${pid}=  Run  pidof dockerd
+    #${rc}  ${output}=  Run And Return Rc And Output  ./tests/robot-cases/Group0-Util/docker_config.sh
+    #Log  ${output}
+    #Should Be Equal As Integers  ${rc}  0
     Return From Keyword If  '${pid}' != '${EMPTY}'
     OperatingSystem.File Should Exist  /usr/local/bin/dockerd-entrypoint.sh
     ${handle}=  Start Process  /usr/local/bin/dockerd-entrypoint.sh dockerd>./daemon-local.log 2>&1  shell=True
     Process Should Be Running  ${handle}
-    :FOR  ${IDX}  IN RANGE  5
-    \   ${pid}=  Run  pidof dockerd
-    \   Exit For Loop If  '${pid}' != '${EMPTY}'
-    \   Sleep  2s
+    FOR  ${IDX}  IN RANGE  5
+        ${pid}=  Run  pidof dockerd
+        Exit For Loop If  '${pid}' != '${EMPTY}'
+        Sleep  2s
+    END
     Sleep  2s
     [Return]  ${handle}
 
@@ -165,27 +170,28 @@ Docker Push Index
 
 Docker Image Can Not Be Pulled
     [Arguments]  ${image}
-    :FOR  ${idx}  IN RANGE  0  30
-    \    ${out}=  Run Keyword And Ignore Error  Docker Login  ""  ${DOCKER_USER}  ${DOCKER_PWD}
-    \    Log To Console  Return value is ${out}
-    \    ${out}=  Run Keyword And Ignore Error  Command Should be Failed  docker pull ${image}
-    \    Exit For Loop If  '${out[0]}'=='PASS'
-    \    Log To Console  Docker pull return value is ${out}
-    \    Sleep  3
+    FOR  ${idx}  IN RANGE  0  30
+        ${out}=  Run Keyword And Ignore Error  Docker Login  ""  ${DOCKER_USER}  ${DOCKER_PWD}
+        Log To Console  Return value is ${out}
+        ${out}=  Run Keyword And Ignore Error  Command Should be Failed  docker pull ${image}
+        Exit For Loop If  '${out[0]}'=='PASS'
+        Log To Console  Docker pull return value is ${out}
+        Sleep  3
+    END
 
     Log To Console  Cannot Pull Image From Docker - Pull Log: ${out[1]}
     Should Be Equal As Strings  '${out[0]}'  'PASS'
 
 Docker Image Can Be Pulled
     [Arguments]  ${image}  ${period}=60  ${times}=2
-    :FOR  ${n}  IN RANGE  1  ${times}
-    \    Sleep  ${period}
-    \    ${out}=  Run Keyword And Ignore Error  Docker Login  ""  ${DOCKER_USER}  ${DOCKER_PWD}
-    \    Log To Console  Return value is ${out}
-    \    ${out}=  Run Keyword And Ignore Error  Docker Pull  ${image}
-    \    Log To Console  Return value is ${out[0]}
-    \    Exit For Loop If  '${out[0]}'=='PASS'
-    \    Sleep  5
-
+    FOR  ${n}  IN RANGE  1  ${times}
+        Sleep  ${period}
+        ${out}=  Run Keyword And Ignore Error  Docker Login  ""  ${DOCKER_USER}  ${DOCKER_PWD}
+        Log To Console  Return value is ${out}
+        ${out}=  Run Keyword And Ignore Error  Docker Pull  ${image}
+        Log To Console  Return value is ${out[0]}
+        Exit For Loop If  '${out[0]}'=='PASS'
+        Sleep  5
+    END
     Run Keyword If  '${out[0]}'=='FAIL'  Capture Page Screenshot
     Should Be Equal As Strings  '${out[0]}'  'PASS'

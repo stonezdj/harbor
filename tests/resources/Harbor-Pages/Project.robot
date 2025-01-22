@@ -197,12 +197,13 @@ Go Into Repo
     Retry Wait Until Page Not Contains Element  ${repo_list_spinner}
     ${repo_name_element}=  Set Variable  xpath=//clr-dg-cell[contains(.,'${repoName}')]/a
     Retry Element Click  ${repo_search_icon}
-    :For  ${n}  IN RANGE  1  10
-    \    Retry Clear Element Text  ${repo_search_input}
-    \    Retry Text Input  ${repo_search_input}  ${repoName}
-    \    ${out}  Run Keyword And Ignore Error  Retry Wait Until Page Contains Element  ${repo_name_element}
-    \    Exit For Loop If  '${out[0]}'=='PASS'
-    \    Sleep  2
+    For  ${n}  IN RANGE  1  10
+        Retry Clear Element Text  ${repo_search_input}
+        Retry Text Input  ${repo_search_input}  ${repoName}
+        ${out}  Run Keyword And Ignore Error  Retry Wait Until Page Contains Element  ${repo_name_element}
+        Exit For Loop If  '${out[0]}'=='PASS'
+        Sleep  2
+    END
     Capture Page Screenshot
     Retry Double Keywords When Error  Retry Element Click  ${repo_name_element}  Retry Wait Until Page Not Contains Element  ${repo_name_element}
     Capture Page Screenshot
