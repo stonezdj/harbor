@@ -13,6 +13,9 @@ src/jobservice/jobservice
 src/common/dao/dao.test
 *.pyc
 jobservice/test
+src/server/v2.0
+tests/*.c*
+tests/*.key
 
 src/portal/coverage/
 src/portal/lib/coverage/
@@ -20,6 +23,10 @@ src/portal/dist/
 src/portal/html-report/
 src/portal/node_modules/
 src/portal/typings/
+src/portal/.angular/
+src/portal/.vscode/
+src/portal/*.mjs
+src/portal/ng-swagger-gen/
 **/*npm-debug.log.*
 **/*yarn-error.log.*
 .idea/
