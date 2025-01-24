@@ -20,8 +20,13 @@ Resource  Util.robot
 ${SSH_USER}  root
 
 *** Keywords ***
+Prepare Test Tools
+    Wait Unitl Command Success  tar zxvf /usr/local/bin/tools.tar.gz -C /usr/local/bin/
+
+*** Keywords ***
 Nightly Test Setup
     [Arguments]  ${ip}  ${HARBOR_PASSWORD}  ${ip1}==${EMPTY}
+    Run Prepare Test Tools
     Run Keyword If  '${ip1}' != '${EMPTY}'  CA setup  ${ip1}  ${HARBOR_PASSWORD}  /ca/ca1.crt
     Run Keyword If  '${ip1}' != '${EMPTY}'  Run  rm -rf ./harbor_ca.crt
     Run Keyword  CA setup  ${ip}  ${HARBOR_PASSWORD}
