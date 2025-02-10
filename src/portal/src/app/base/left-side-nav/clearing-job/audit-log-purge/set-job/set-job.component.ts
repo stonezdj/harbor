@@ -165,9 +165,9 @@ export class SetJobComponent implements OnInit, OnDestroy {
             };
             if (purgeHistory && purgeHistory.job_parameters) {
                 const obj = JSON.parse(purgeHistory.job_parameters);
-                if (obj?.include_resource_types) {
+                if (obj?.include_event_types) {
                     this.selectedResourceTypes =
-                        obj?.include_resource_types?.split(',');
+                        obj?.include_event_types?.split(',');
                 } else {
                     this.selectedResourceTypes = [];
                 }
@@ -208,7 +208,7 @@ export class SetJobComponent implements OnInit, OnDestroy {
                 schedule: {
                     parameters: {
                         audit_retention_hour: +retentionTime,
-                        include_resource_types:
+                        include_event_types:
                             this.selectedResourceTypes.join(','),
                         dry_run: false,
                     },
@@ -239,7 +239,7 @@ export class SetJobComponent implements OnInit, OnDestroy {
                 schedule: {
                     parameters: {
                         audit_retention_hour: +retentionTime,
-                        include_resource_types:
+                        include_event_types:
                             this.selectedResourceTypes.join(','),
                         dry_run: true,
                     },
@@ -276,7 +276,7 @@ export class SetJobComponent implements OnInit, OnDestroy {
                     schedule: {
                         parameters: {
                             audit_retention_hour: +retentionTime,
-                            include_resource_types:
+                            include_event_types:
                                 this.selectedResourceTypes.join(','),
                             dry_run: false,
                         },
@@ -304,7 +304,7 @@ export class SetJobComponent implements OnInit, OnDestroy {
                     schedule: {
                         parameters: {
                             audit_retention_hour: +retentionTime,
-                            include_resource_types:
+                            include_event_types:
                                 this.selectedResourceTypes.join(','),
                             dry_run: false,
                         },
