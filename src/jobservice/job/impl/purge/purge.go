@@ -73,7 +73,7 @@ func (j *Job) parseParams(params job.Parameters) {
 	}
 
 	j.includeOperations = []string{}
-	operations, exist := params[common.PurgeAuditIncludeOperations]
+	operations, exist := params[common.PurgeAuditIncludeEventTypes]
 	if exist {
 		if includeOps, ok := operations.(string); ok {
 			if len(includeOps) > 0 {
