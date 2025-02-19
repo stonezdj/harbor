@@ -20,7 +20,7 @@ import (
 	beego_orm "github.com/beego/beego/v2/client/orm"
 )
 
-const OtherEvents = "other_events"
+const OtherEvents = "other"
 
 func init() {
 	beego_orm.RegisterModel(&AuditLogExt{})
