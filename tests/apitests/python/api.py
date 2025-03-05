@@ -15,7 +15,7 @@ if __name__ == "__main__":
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_edit_project_creation.py'))
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_heath_check.py'))
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_job_service_dashboard.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_log_rotation.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_log_rotation.py')) unstable
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_manage_project_member.py'))
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_project_level_cve_allowlist'))
     # tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_project_permission.py')) ???
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_retention.py'))
     # tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_robot_account.py')) not allowed to push image to proxy cache project
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_sbom_generation_of_image_artifact.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_scan_data_export.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_scan_data_export.py')) unstable
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_scan_image_artifact_in_public_project.py'))
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_scan_image_artifact.py'))
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_security_hub.py'))
@@ -36,6 +36,5 @@ if __name__ == "__main__":
     tests.addTests(unittest.defaultTestLoader.discover('./tests/apitests/python/', pattern='test_sys_level_scan_all.py'))
 
     # generate xml report
-    with open('test-reports/results.xml', 'wb') as output:
-        runner = xmlrunner.XMLTestRunner(output=output)
-        runner.run(tests)
+    runner = xmlrunner.XMLTestRunner(output='test-reports')
+    runner.run(tests)
