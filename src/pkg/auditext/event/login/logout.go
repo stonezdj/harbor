@@ -41,7 +41,7 @@ func (l *logoutResolver) Resolve(ce *commonevent.Metadata, event *event.Event) e
 		OperationDescription: opLogout,
 		IsSuccessful:         true,
 	}
-	if ce.ResponseCode != http.StatusOK {
+	if ce.ResponseCode >= http.StatusBadRequest {
 		e.IsSuccessful = false
 	}
 	event.Topic = ctlevent.TopicCommonEvent
