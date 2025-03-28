@@ -1,0 +1,15 @@
+name: Simple Action Example
+
+on:
+  push:
+    branches:
+      - main  # 当推送到 main 分支时触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # 选择运行环境，这里是 Ubuntu
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v3  # GitHub Action 用来检出代码
+
