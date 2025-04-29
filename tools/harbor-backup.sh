@@ -14,36 +14,36 @@
 # limitations under the License.
 #
 
-create_dir(){
+set -e
+
+# Crear directorios necesarios para backup
+delete_and_create_dir(){
     rm -rf harbor
-    mkdir -p harbor/db
-    mkdir -p harbor/secret
-    chmod 777 harbor
-    chmod 777 harbor/db
-    chmod 777 harbor/secret
+    mkdir -p harbor/db harbor/secret
+    chmod 777 harbor/db harbor/secret
 }
 
+# Lanzar contenedor temporal para respaldar la base de datos
 launch_db() {
     if [ -n "$($DOCKER_CMD ps -q)" ]; then
         echo "There is running container, please stop and remove it before backup"
         exit 1
     fi
-    $DOCKER_CMD run -d --name harbor-db -v ${PWD}/harbor:/backup/harbor -v ${harbor_db_path}:/var/lib/postgresql/data ${harbor_db_image} "postgres"
+    $DOCKER_CMD run -d --name harbor-db-backup -v ${PWD}:/backup -v ${harbor_db_path}:/var/lib/postgresql/data ${harbor_db_image} "postgres"
 }
 
+# Limpiar contenedor temporal
 clean_db() {
-    $DOCKER_CMD stop harbor-db
-    $DOCKER_CMD rm harbor-db
+    $DOCKER_CMD stop harbor-db-backup
+    $DOCKER_CMD rm harbor-db-backup
 }
 
+# Esperar que la base de datos esté lista para aceptar conexiones
 wait_for_db_ready() {
     set +e
     TIMEOUT=12
     while [ $TIMEOUT -gt 0 ]; do
-        $DOCKER_CMD exec harbor-db pg_isready | grep "accepting connections"
-        if [ $? -eq 0 ]; then
-                break
-        fi
+        $DOCKER_CMD exec harbor-db-backup pg_isready | grep "accepting connections" && break
         TIMEOUT=$((TIMEOUT - 1))
         sleep 5
     done
@@ -55,96 +55,140 @@ wait_for_db_ready() {
     set -e
 }
 
-dump_database() {
-    $DOCKER_CMD exec harbor-db sh -c 'pg_dump -U postgres registry > /backup/harbor/db/registry.back'
-    $DOCKER_CMD exec harbor-db sh -c 'pg_dump -U postgres postgres > /backup/harbor/db/postgres.back'
-    $DOCKER_CMD exec harbor-db sh -c 'pg_dump -U postgres notarysigner > /backup/harbor/db/notarysigner.back'
-    $DOCKER_CMD exec harbor-db sh -c 'pg_dump -U postgres notaryserver > /backup/harbor/db/notaryserver.back'
+# Realizar el volcado de las bases de datos
+backup_database() {
+    $DOCKER_CMD exec harbor-db-backup sh -c 'pg_dump -U postgres registry > /backup/harbor/db/registry.back'
+    $DOCKER_CMD exec harbor-db-backup sh -c 'pg_dump -U postgres postgres > /backup/harbor/db/postgres.back'
+    $DOCKER_CMD exec harbor-db-backup sh -c 'pg_dump -U postgres notarysigner > /backup/harbor/db/notarysigner.back'
+    $DOCKER_CMD exec harbor-db-backup sh -c 'pg_dump -U postgres notaryserver > /backup/harbor/db/notaryserver.back'
 }
 
+# Respaldar archivos de imágenes (registry)
 backup_registry() {
-    cp -rf /data/registry  harbor/
+    [ -d /data/registry ] && cp -rf /data/registry harbor/ &
+    registry_pid=$!
 }
 
+# Respaldar archivos de chartmuseum
 backup_chart_museum() {
-    if [ -d /data/chart_storage ]; then
-        cp -rf /data/chart_storage harbor/
-    fi
+    [ -d /data/chart_storage ] && cp -rf /data/chart_storage harbor/ &
+    chartmuseum_pid=$!
 }
 
+# Respaldar archivos de Redis
 backup_redis() {
-    if [ -d /data/redis ]; then
-        cp -rf /data/redis harbor/
-    fi
+    [ -d /data/redis ] && cp -rf /data/redis harbor/
 }
 
+# Respaldar llaves y secretos
 backup_secret() {
-    # backup all files in secret
-    if [ -d /data/secret/ ]; then
-        cp -r /data/secret/* harbor/secret/
-    fi
-    # exclude the server.crt and server.key because they should be signed with new ca
-    if [ -d harbor/secret/cert/  ]; then
-        rm -rf harbor/secret/cert/
-    fi
+    [ -f /data/secretkey ] && cp /data/secretkey harbor/secret/
+    [ -f /data/defaultalias ] && cp /data/defaultalias harbor/secret/
+    [ -d /data/secret/keys/ ] && cp -r /data/secret/keys/ harbor/secret/
 }
 
+# Crear el archivo comprimido del respaldo
 create_tarball() {
     timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
     backup_filename=harbor-$timestamp.tgz
-    tar zcvf $backup_filename harbor
-    rm -rf harbor
+
+    # Verificar espacio disponible
+    ESPACIO_DISPONIBLE=$(df --output=avail . | tail -1)
+    TAMANO_DIR=$(du -sk harbor | awk '{print $1}')
+
+    if [[ $ESPACIO_DISPONIBLE -lt $TAMANO_DIR ]]; then
+        echo "Error: No hay suficiente espacio en disco." | tee /tmp/backup_error.log
+        echo -e "Subject: Error en Backup de Harbor\n\n$(cat /tmp/backup_error.log)" | sendmail sistemas@imm.gub.uy
+        return 1
+    fi
+
+    # Crear backup usando compresión paralela
+    if tar cvf - harbor | pigz > "$backup_filename"; then
+        rm -rf harbor
+    else
+        echo "Error: La compresión falló." | tee /tmp/backup_error.log
+        echo -e "Subject: Error en Backup de Harbor\n\n$(cat /tmp/backup_error.log)" | sendmail sistemas@imm.gub.uy
+        return 1
+    fi
+
+    # Validar integridad del archivo generado
+    if ! tar -tzf "$backup_filename" &>/dev/null; then
+        echo "Advertencia: El archivo de backup podría estar corrupto." | tee /tmp/backup_error.log
+        echo -e "Subject: Advertencia en Backup de Harbor\n\n$(cat /tmp/backup_error.log)" | sendmail sistemas@imm.gub.uy
+        return 1
+    fi
 }
 
-note() { printf "\nNote:%s\n" "$@"
-}
+# Opciones del script
+usage=$'Uso:
+  harbor-backup.sh [opciones]
+Opciones:
+  --istile   Respaldar en entorno tile
+  --dbonly   Respaldar solo bases de datos'
 
-usage=$'harbor-backup.sh -- Backup Harbor script
-./harbor-backup.sh      [options]   Backup Harbor with database and registry data      
-Options
-    --istile    Backup in Harbor tile env
-    --dbonly    Backup Harbor with database data only
-'
 dbonly=false
 istile=false
+
 while [ $# -gt 0 ]; do
-        case $1 in
-            --help)
-            note "$usage"
+    case $1 in
+        --help)
+            echo "$usage"
             exit 0;;
-            --dbonly)
+        --dbonly)
             dbonly=true;;
-            --istile)
-            istile=true;;            
-            *)
-            note "$usage"
+        --istile)
+            istile=true;;
+        *)
+            echo "$usage"
             exit 1;;
-        esac
-        shift || true
+    esac
+    shift || true
 done
 
-set -ex
-
+# Definir comando Docker según entorno
 if [ $istile = true ]; then
     DOCKER_CMD="/var/vcap/packages/docker/bin/docker -H unix:///var/vcap/sys/run/docker/dockerd.sock"
-else 
+else
     DOCKER_CMD=docker
 fi
-harbor_db_image=$($DOCKER_CMD images goharbor/harbor-db --format "{{.Repository}}:{{.Tag}}" |head -1)
+
+harbor_db_image=$($DOCKER_CMD images goharbor/harbor-db --format "{{.Repository}}:{{.Tag}}" | head -1)
 harbor_db_path="/data/database"
 
+# Detener servicios de Harbor
+cd /data/harbor-installer/harbor
+/usr/local/bin/docker-compose stop
 
-create_dir
+cd /backup
+
+delete_and_create_dir
 launch_db
 wait_for_db_ready
-dump_database
+backup_database
 backup_redis
-if [ $dbonly = false ];  then
+
+# Reiniciar servicios de Harbor lo antes posible
+cd /data/harbor-installer/harbor
+/usr/local/bin/docker-compose start
+
+# Respaldar otros datos luego de levantar servicios
+cd /backup
+if [ $dbonly = false ]; then
     backup_registry
     backup_chart_museum
+    wait $registry_pid
+    wait $chartmuseum_pid
 fi
 backup_secret
+
 create_tarball
+TAR_EXIT_CODE=$?
+
 clean_db
 
-echo "All Harbor data are backed up, backup file is $backup_filename."
+# Mensaje final
+if [[ $TAR_EXIT_CODE -ne 0 ]]; then
+    echo "Advertencia: La compresión del backup falló, pero Harbor fue restaurado correctamente."
+else
+    echo "Se respaldaron todos los datos de Harbor. El archivo de backup es $backup_filename."
+fi
