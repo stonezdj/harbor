@@ -75,7 +75,7 @@ func RegisterRoutes() {
 		Method(http.MethodPut).
 		Path("/*/manifests/:reference").
 		Middleware(metric.InjectOpIDMiddleware(metric.ManifestOperationID)).
-		Middleware(repoproxy.DisableBlobAndManifestUploadMiddleware()).
+		// Middleware(repoproxy.DisableBlobAndManifestUploadMiddleware()). remove proxy cache push middlewre for testing
 		Middleware(immutable.Middleware()).
 		Middleware(quota.PutManifestMiddleware()).
 		Middleware(cosign.SignatureMiddleware()).
