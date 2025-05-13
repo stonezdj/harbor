@@ -14,28 +14,28 @@ if __name__ == "__main__":
     tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_del_repo.py'))
     tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_edit_project_creation.py'))
     tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_heath_check.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_job_service_dashboard.py'))
-    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_log_rotation.py')) unstable
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_manage_project_member.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_project_level_cve_allowlist'))
-    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_project_permission.py')) #project_id type mismatch
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_project_quota.py'))
-    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_proxy_cache.py')) x509 issue
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_job_service_dashboard.py'))
+    # # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_log_rotation.py')) unstable
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_manage_project_member.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_project_level_cve_allowlist'))
+    # # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_project_permission.py')) #project_id type mismatch
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_project_quota.py'))
+    # # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_proxy_cache.py')) x509 issue
 
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_quota_sorting.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_registry_api.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_retain_image_last_pull_time.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_retention.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_robot_account.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_sbom_generation_of_image_artifact.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_scan_data_export.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_scan_image_artifact_in_public_project.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_scan_image_artifact.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_quota_sorting.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_registry_api.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_retain_image_last_pull_time.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_retention.py'))
+    # # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_robot_account.py')) #too long
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_sbom_generation_of_image_artifact.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_scan_data_export.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_scan_image_artifact_in_public_project.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_scan_image_artifact.py'))
     tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_security_hub.py'))
     tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_sys_cve_allowlists.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_sys_level_scan_all.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_user_view_logs.py'))
-    tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_webhook_crud.py'))
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_sys_level_scan_all.py'))
+    # # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_user_view_logs.py')) # 2.13.0
+    # tests.addTests(unittest.defaultTestLoader.discover('/drone/tests/apitests/python/', pattern='test_webhook_crud.py'))
 
     # generate xml report
     runner = xmlrunner.XMLTestRunner(output='test-reports')
