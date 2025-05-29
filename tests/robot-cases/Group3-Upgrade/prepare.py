@@ -585,7 +585,7 @@ class HarborAPI:
             raise Exception(r"Error: Feature {} has no branch {}.".format(sys._getframe().f_code.co_name, kwargs["branch"]))
 
     @get_feature_branch
-    def get_ca(self, target='/harbor/ca/ca.crt', **kwargs):
+    def get_ca(self, target='/tmp/harbor/ca/ca.crt', **kwargs):
         if kwargs["branch"] == 1:
             url = "https://" + args.endpoint + "/api/systeminfo/getcert"
         elif kwargs["branch"] == 2:
@@ -595,7 +595,7 @@ class HarborAPI:
             ca_content = json.loads(resp.text)
         except ValueError:
             ca_content = resp.text
-        ca_path = '/harbor/ca'
+        ca_path = '/tmp/harbor/ca'
         if not os.path.exists(ca_path):
             try:
                 os.makedirs(ca_path)
