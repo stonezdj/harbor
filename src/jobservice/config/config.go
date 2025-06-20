@@ -58,6 +58,12 @@ const (
 	redisSchema = "redis://"
 )
 
+func init() {
+	// Set environment for gocraft/work, it will be used to expire the job service redis key
+	duration := MaxUpdateDuration()
+	os.Setenv("MAX_JOB_DURATION_SECONDS", fmt.Sprintf("%v", duration))
+}
+
 // DefaultConfig is the default configuration reference
 var DefaultConfig = &Configuration{}
 
