@@ -171,6 +171,11 @@ func (gc *GarbageCollector) Run(ctx job.Context, params job.Parameters) error {
 
 	gc.logger.Infof("start to run gc in job.")
 
+	for i := range 20000 {
+		time.Sleep(1 * time.Minute)
+		gc.logger.Infof("sleep 1 minute, count is %v", i)
+	}
+
 	// mark
 	if err := gc.mark(ctx); err != nil {
 		if err == errGcStop {
