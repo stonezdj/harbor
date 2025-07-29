@@ -196,37 +196,32 @@ func setFilters(ctx context.Context, qs orm.QuerySeter, query *q.Query, meta *me
 			qs = mk.FilterFunc(ctx, qs, key, value)
 			continue
 		}
-		// fuzzy match
-		if f, ok := value.(*q.FuzzyMatchValue); ok {
-			qs = qs.Filter(key+"__icontains", Escape(f.Value))
-			continue
-		}
-		// range
-		if r, ok := value.(*q.Range); ok {
-			if r.Min != nil {
-				qs = qs.Filter(key+"__gte", r.Min)
+		switch v := value.(type) {
+		case *q.FuzzyMatchValue:
+			// Fuzzy match
+			qs = qs.Filter(key+"__icontains", Escape(v.Value))
+		case *q.Range:
+			// Range
+			if v.Min != nil {
+				qs = qs.Filter(key+"__gte", v.Min)
 			}
-			if r.Max != nil {
-				qs = qs.Filter(key+"__lte", r.Max)
+			if v.Max != nil {
+				qs = qs.Filter(key+"__lte", v.Max)
 			}
-			continue
-		}
-		// or list
-		if ol, ok := value.(*q.OrList); ok {
-			if ol == nil || len(ol.Values) == 0 {
+		case *q.OrList:
+			// Or list
+			if v == nil || len(v.Values) == 0 {
 				qs = qs.Filter(key+"__in", nil)
 			} else {
-				qs = qs.Filter(key+"__in", ol.Values...)
+				qs = qs.Filter(key+"__in", v.Values...)
 			}
-			continue
+		case *q.AndList:
+			// And list (do nothing as it needs to be handled by the logic of DAO)
+			// No operation
+		default:
+			// Exact match and other types such as __gt, __lt, pass these parameters through to the underlying ORM framework for processing.
+			qs = qs.Filter(key, value)
 		}
-		// and list
-		if _, ok := value.(*q.AndList); ok {
-			// do nothing as and list needs to be handled by the logic of DAO
-			continue
-		}
-		// exact match
-		qs = qs.Filter(key, value)
 	}
 	return qs
 }
