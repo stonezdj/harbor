@@ -33,7 +33,9 @@ import (
 	httpLib "github.com/goharbor/harbor/src/lib/http"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/orm"
+	"github.com/goharbor/harbor/src/lib/redis"
 	proModels "github.com/goharbor/harbor/src/pkg/project/models"
+	"github.com/goharbor/harbor/src/pkg/proxy/connection"
 	"github.com/goharbor/harbor/src/pkg/reg/model"
 	"github.com/goharbor/harbor/src/server/middleware"
 )
@@ -99,6 +101,21 @@ func handleBlob(w http.ResponseWriter, r *http.Request, next http.Handler) error
 		next.ServeHTTP(w, r)
 		return nil
 	}
+
+	if p.MaxUpstreamConnection() > 0 {
+		client, err := redis.GetHarborClient()
+		if err != nil {
+			return errors.NewErrs(err)
+		}
+		key := fmt.Sprintf("{upstream_registry_connection}:%s", p.Name)
+		if !connection.Limiter.Acquire(ctx, client, key, p.MaxUpstreamConnection()) {
+			log.Infof("current connection exceed max connections to upstream registry")
+			// send http code 429 to client
+			return tooManyRequestsError
+		}
+		defer connection.Limiter.Release(context.Background(), client, key) // use background context in defer to avoid been canceled
+	}
+
 	size, reader, err := proxyCtl.ProxyBlob(ctx, p, art)
 	if err != nil {
 		return err
@@ -218,6 +235,19 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 		}
 		next.ServeHTTP(w, r)
 		return nil
+	}
+	if p.MaxUpstreamConnection() > 0 {
+		client, err := redis.GetHarborClient()
+		if err != nil {
+			return errors.NewErrs(err)
+		}
+		key := fmt.Sprintf("{upstream_registry_connection}:%s", p.Name)
+		if !connection.Limiter.Acquire(ctx, client, key, p.MaxUpstreamConnection()) {
+			log.Infof("current connection exceed max connections to upstream registry")
+			// send http code 429 to client
+			return tooManyRequestsError
+		}
+		defer connection.Limiter.Release(context.Background(), client, key) // use background context in defer to avoid been canceled
 	}
 
 	log.Debugf("the tag is %v, digest is %v", art.Tag, art.Digest)
