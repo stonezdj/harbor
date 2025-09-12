@@ -58,6 +58,7 @@ export class ProjectPolicy {
     ProxyCacheEnabled: boolean;
     RegistryId?: number | null;
     ProxySpeedKb?: number | null;
+    MaxUpstreamConn?: number | null;
 
     constructor() {
         this.Public = false;
@@ -70,6 +71,7 @@ export class ProjectPolicy {
         this.ProxyCacheEnabled = false;
         this.RegistryId = null;
         this.ProxySpeedKb = -1;
+        this.MaxUpstreamConn = -1;
     }
 
     initByProject(pro: Project) {
@@ -88,6 +90,8 @@ export class ProjectPolicy {
         this.ProxySpeedKb = pro.metadata.proxy_speed_kb
             ? pro.metadata.proxy_speed_kb
             : -1;
+        this.MaxUpstreamConn = pro.metadata.max_upstream_conn ? pro.metadata.max_upstream_conn : -1;
+        console.log("init by project", this.MaxUpstreamConn);
     }
 }
 const PAGE_SIZE: number = 100;
@@ -149,6 +153,7 @@ export class ProjectPolicyConfigComponent implements OnInit {
     ];
     // **Added property for bandwidth error message**
     bandwidthError: string | null = null;
+    maxUpstreamConnError: string | null = null;
     registries: Registry[] = [];
     supportedRegistryTypeQueryString: string =
         'type={docker-hub harbor azure-acr aws-ecr google-gcr quay docker-registry github-ghcr jfrog-artifactory}';

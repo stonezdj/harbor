@@ -36,6 +36,7 @@ export class Project {
         auto_sbom_generation: string | boolean;
         retention_id: number;
         bandwidth: number;
+        max_upstream_conn: number;
     };
     constructor() {
         this.metadata = <any>{};
