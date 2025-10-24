@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	common_http "github.com/goharbor/harbor/src/common/http"
@@ -40,6 +41,11 @@ func init() {
 		return
 	}
 	log.Infof("the factory of jfrog artifactory adapter was registered")
+
+	types := os.Getenv("JFROG_SUPPORTED_REPOSITORY_TYPES")
+	if types != "" {
+		supportedTypes = strings.Split(types, ",")
+	}
 }
 
 type factory struct {
@@ -56,8 +62,9 @@ func (f *factory) AdapterPattern() *model.AdapterPattern {
 }
 
 var (
-	_ adp.Adapter          = (*adapter)(nil)
-	_ adp.ArtifactRegistry = (*adapter)(nil)
+	_              adp.Adapter          = (*adapter)(nil)
+	_              adp.ArtifactRegistry = (*adapter)(nil)
+	supportedTypes                      = []string{"docker", "oci", "helm", "helm-oci"}
 )
 
 // Adapter is for images replications between harbor and jfrog artifactory image repository
@@ -124,10 +131,14 @@ func (a *adapter) PrepareForPush(resources []*model.Resource) error {
 		}
 	}
 
-	repositories, err := a.client.getDockerRepositories()
-	if err != nil {
-		log.Errorf("Get local repositories error: %v", err)
-		return err
+	var repositories []*repository
+	for _, t := range supportedTypes {
+		repos, err := a.client.getRepositories(t)
+		if err != nil {
+			log.Errorf("Get oci repositories error: %v", err)
+			return err
+		}
+		repositories = append(repositories, repos...)
 	}
 
 	existedRepositories := make(map[string]struct{})
@@ -139,7 +150,7 @@ func (a *adapter) PrepareForPush(resources []*model.Resource) error {
 		if _, ok := existedRepositories[namespace]; ok {
 			log.Debugf("Namespace %s already existed in remote, skip create it", namespace)
 		} else {
-			err = a.client.createDockerRepository(namespace)
+			err := a.client.createDockerRepository(namespace)
 			if err != nil {
 				log.Errorf("Create Namespace %s error: %v", namespace, err)
 				return err
@@ -210,20 +221,25 @@ func (a *adapter) listRepositories(filters []*model.Filter) ([]*model.Repository
 			break
 		}
 	}
-	var repositories []string
+	var totalRepos []string
 	// if the pattern of repository name filter is a specific repository name, just returns
 	// the parsed repositories and will check the existence later when filtering the tags
 	if paths, ok := util.IsSpecificPath(pattern); ok {
-		repositories = paths
+		totalRepos = paths
 	} else {
+
 		// search repositories from catalog API
-		dockerRepos, err := a.client.getDockerRepositories()
-		if err != nil {
-			return nil, err
+		var repositories []*repository
+		for _, t := range supportedTypes {
+			repos, err := a.client.getRepositories(t)
+			if err != nil {
+				return nil, err
+			}
+			repositories = append(repositories, repos...)
 		}
 
-		for _, docker := range dockerRepos {
-			url := fmt.Sprintf("%s/artifactory/api/docker/%s", a.client.url, docker.Key)
+		for _, r := range repositories {
+			url := fmt.Sprintf("%s/artifactory/api/%s/%s", a.client.url, strings.ToLower(r.PackageType), r.Key)
 			regClient := registry.NewClientWithAuthorizer(url, basic.NewAuthorizer(a.client.username, a.client.password), a.client.insecure)
 			repos, err := regClient.Catalog()
 			if err != nil {
@@ -231,13 +247,13 @@ func (a *adapter) listRepositories(filters []*model.Filter) ([]*model.Repository
 			}
 
 			for _, repo := range repos {
-				repositories = append(repositories, fmt.Sprintf("%s/%s", docker.Key, repo))
+				totalRepos = append(totalRepos, fmt.Sprintf("%s/%s", r.Key, repo))
 			}
 		}
 	}
 
 	var result []*model.Repository
-	for _, repository := range repositories {
+	for _, repository := range totalRepos {
 		result = append(result, &model.Repository{
 			Name: repository,
 		})
@@ -254,11 +270,19 @@ func (a *adapter) listArtifacts(repository string, filters []*model.Filter) ([]*
 		key = s[0]
 		repoName = strings.Join(s[1:], "/")
 	}
-	url := fmt.Sprintf("%s/artifactory/api/docker/%s", a.client.url, key)
-	regClient := registry.NewClientWithAuthorizer(url, basic.NewAuthorizer(a.client.username, a.client.password), a.client.insecure)
-	tags, err := regClient.ListTags(repoName)
-	if err != nil {
-		return nil, err
+
+	// because repository can be other types like oci, helm, try to list tags with all supported types
+	var tags []string
+	for _, t := range supportedTypes {
+		url := fmt.Sprintf("%s/artifactory/api/%s/%s", a.client.url, t, key) // supposed to be docker
+		regClient := registry.NewClientWithAuthorizer(url, basic.NewAuthorizer(a.client.username, a.client.password), a.client.insecure)
+		var err error
+		tags, err = regClient.ListTags(repoName)
+		if err != nil {
+			log.Debugf("List tags for repository %s with type %s error: %v", repository, t, err)
+			continue
+		}
+		break
 	}
 
 	var artifacts []*model.Artifact
