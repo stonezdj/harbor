@@ -1,0 +1,14 @@
+  - name: Auto Cherry Pick
+  # You may pin to the exact commit or the version.
+  # uses: mintsweet/auto-cherry-pick@cd42e5f3fc9102fbd42d0807a88d0e1414e077c7
+  uses: mintsweet/auto-cherry-pick@v1.0.0
+  with:
+    # The trigger label prefic
+    trigger_label_prefix: (cherry-pick)
+    # The author email address
+    author_email: # optional, default is ${{ github.actor }}@users.noreply.github.com
+    # The author name
+    author_name: # optional, default is ${{ github.actor }}
+    # A comma or newline separated list of assignees (GitHub usernames).
+    assignees: # optional, default is ${{ github.actor }}
+          
