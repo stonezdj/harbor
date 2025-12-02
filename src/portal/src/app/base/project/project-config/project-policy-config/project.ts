@@ -37,6 +37,7 @@ export class Project {
         reuse_sys_cve_allowlist?: string;
         proxy_speed_kb?: number | null;
         max_upstream_conn?: number | null;
+        online_upstream_registry?: string | boolean;
     };
     cve_allowlist?: object;
     constructor() {
@@ -47,5 +48,6 @@ export class Project {
         this.metadata.auto_scan = false;
         this.metadata.auto_sbom_generation = false;
         this.metadata.proxy_speed_kb = -1;
+        this.metadata.online_upstream_registry = true;
     }
 }

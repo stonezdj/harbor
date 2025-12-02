@@ -59,6 +59,7 @@ export class ProjectPolicy {
     RegistryId?: number | null;
     ProxySpeedKb?: number | null;
     MaxUpstreamConn?: number | null;
+    OnlineUpstreamRegistry: boolean;
 
     constructor() {
         this.Public = false;
@@ -69,6 +70,7 @@ export class ProjectPolicy {
         this.ScanImgOnPush = false;
         this.GenerateSbomOnPush = false;
         this.ProxyCacheEnabled = false;
+        this.OnlineUpstreamRegistry = true;
         this.RegistryId = null;
         this.ProxySpeedKb = -1;
         this.MaxUpstreamConn = -1;
@@ -93,6 +95,9 @@ export class ProjectPolicy {
         this.MaxUpstreamConn = pro.metadata.max_upstream_conn
             ? pro.metadata.max_upstream_conn
             : -1;
+        this.OnlineUpstreamRegistry = pro.metadata.online_upstream_registry === undefined 
+            ? true
+            : pro.metadata.online_upstream_registry  === 'true';
     }
 }
 const PAGE_SIZE: number = 100;
@@ -574,4 +579,9 @@ export class ProjectPolicyConfigComponent implements OnInit {
     goToDetail(cveId) {
         window.open(CVE_DETAIL_PRE_URL + `${cveId}`, TARGET_BLANK);
     }
+
+    onToggleOnlineUpstreamRegistry(state : boolean) {
+        this.projectPolicy.OnlineUpstreamRegistry = state;
+    }
+
 }

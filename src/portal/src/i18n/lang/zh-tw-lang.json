@@ -274,7 +274,9 @@
         "NO_PROJECT": "找不到任何專案",
         "CONNECTION_LIMIT": "上游 Registry 最大連線數",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "此代理快取專案可與上游 Registry 建立的連線數上限。輸入 -1 代表無限制。",
-        "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "請輸入 -1 或大於 0 的整數。"
+        "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "請輸入 -1 或大於 0 的整數。",
+        "ONLINE_UPSTREAM_REGISTRY": "Online Upstream Registry",
+        "ONLINE_UPSTREAM_REGISTRY_TOOLTIP": "Check the upstream registry for each request. If it is offline, serve only from the local registry."
     },
     "PROJECT_DETAIL": {
         "SUMMARY": "摘要",

@@ -177,6 +177,9 @@ export class ProjectDefaultService extends ProjectService {
                             : 'false',
                         reuse_sys_cve_allowlist: reuseSysCVEVAllowlist,
                         proxy_speed_kb: projectPolicy.ProxySpeedKb.toString(),
+                        online_upstream_registry: projectPolicy.OnlineUpstreamRegistry
+                            ? 'true'
+                            : 'false',
                     },
                     cve_allowlist: projectAllowlist,
                 },

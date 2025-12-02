@@ -274,7 +274,9 @@
         "NO_PROJECT": "프로젝트를 찾을 수 없습니다",
         "CONNECTION_LIMIT": "Max connection to upstream registry",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "The max connection to the upstream registry for this proxy cache project, if -1, then there is no limit",
-        "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "Please enter -1 or an integer greater than 0. "
+        "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "Please enter -1 or an integer greater than 0. ",
+        "ONLINE_UPSTREAM_REGISTRY": "Online Upstream Registry",
+        "ONLINE_UPSTREAM_REGISTRY_TOOLTIP": "Check the upstream registry for each request. If it is offline, serve only from the local registry."
     },
     "PROJECT_DETAIL": {
         "SUMMARY": "요약",

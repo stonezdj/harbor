@@ -273,7 +273,9 @@
         "NO_PROJECT": "未发现任何项目",
         "CONNECTION_LIMIT": "Max connection to upstream registry",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "The max connection to the upstream registry for this proxy cache project, if less than 0, then there is no limit",
-        "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "请输入-1或者大于0的整数"
+        "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "请输入-1或者大于0的整数",
+        "ONLINE_UPSTREAM_REGISTRY": "Online Upstream Registry",
+        "ONLINE_UPSTREAM_REGISTRY_TOOLTIP": "Check the upstream registry for each request. If it is offline, serve only from the local registry."
     },
     "PROJECT_DETAIL": {
         "SUMMARY": "概要",

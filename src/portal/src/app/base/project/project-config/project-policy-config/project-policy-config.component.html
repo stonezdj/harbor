@@ -122,7 +122,31 @@
                 </div>
             </div>
         </div>
-
+        <div class="raw-inline mt-2"
+        *ngIf="isSystemAdmin && projectPolicy.ProxyCacheEnabled"
+        clrInline>
+            <clr-checkbox-container clrInline>
+            <label class="clr-control-label" for="online-upstream-registry-toggle">
+                {{
+                    'PROJECT.ONLINE_UPSTREAM_REGISTRY' 
+                        | translate
+                }}
+            </label>
+            <clr-toggle-wrapper>
+                <input
+                    type="checkbox"
+                    clrToggle
+                    id="online-upstream-registry-toggle"
+                    name="online-upstream-registry"
+                    (ngModelChange)="onToggleOnlineUpstreamRegistry($event)"
+                    [(ngModel)]="projectPolicy.OnlineUpstreamRegistry"
+                />
+            </clr-toggle-wrapper>
+            <clr-control-helper class="config-subtext">
+                {{ 'PROJECT.ONLINE_UPSTREAM_REGISTRY_TOOLTIP' | translate }}
+            </clr-control-helper>
+            </clr-checkbox-container>
+        </div>
         <clr-checkbox-container *ngIf="!isProxyCacheProject" clrInline>
             <label
                 ><span>{{ 'PROJECT_CONFIG.SECURITY' | translate }}</span></label
