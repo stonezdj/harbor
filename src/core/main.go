@@ -133,6 +133,8 @@ func main() {
 	runMode := flag.String("mode", "normal", "The harbor-core container run mode, it could be normal, migrate or skip-migrate, default is normal")
 	flag.Parse()
 
+	log.Info("initializing session ...")
+
 	web.BConfig.WebConfig.Session.SessionOn = true
 	web.BConfig.WebConfig.Session.SessionName = config.SessionCookieName
 	// the core db used for beego session
