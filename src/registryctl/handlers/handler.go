@@ -24,6 +24,7 @@ import (
 	tracelib "github.com/goharbor/harbor/src/lib/trace"
 	"github.com/goharbor/harbor/src/registryctl/auth"
 	"github.com/goharbor/harbor/src/registryctl/config"
+	connMiddleware "github.com/goharbor/harbor/src/server/middleware/connection"
 )
 
 // NewHandlerChain returns a gorilla router which is wrapped by  authenticate handler
@@ -41,6 +42,8 @@ func NewHandlerChain(conf config.Configuration) http.Handler {
 	if tracelib.Enabled() {
 		h = tracelib.NewHandler(h, "serve-http")
 	}
+	// Add connection counting middleware
+	h = connMiddleware.Middleware()(h)
 	return h
 }
 

@@ -28,6 +28,7 @@ import (
 	"github.com/goharbor/harbor/src/lib/config/models"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/pkg/connection"
 	"github.com/goharbor/harbor/src/pkg/systeminfo"
 	"github.com/goharbor/harbor/src/pkg/systeminfo/imagestorage"
 	"github.com/goharbor/harbor/src/pkg/version"
@@ -50,6 +51,7 @@ type Data struct {
 	AuthProxySettings *models.HTTPAuthProxy
 	Protected         *protectedData
 	OIDCProviderName  string
+	ConnectionCount   int64
 }
 
 type protectedData struct {
@@ -104,6 +106,7 @@ func (c *controller) GetInfo(ctx context.Context, opt Options) (*Data, error) {
 		SelfRegistration: utils.SafeCastBool(cfg[common.SelfRegistration]),
 		BannerMessage:    utils.SafeCastString(mgr.Get(ctx, common.BannerMessage).GetString()),
 		OIDCProviderName: OIDCProviderName(cfg),
+		ConnectionCount:  connection.GlobalCounter.Count(),
 	}
 	if res.AuthMode == common.HTTPAuth {
 		if s, err := config.HTTPAuthProxySetting(ctx); err == nil {

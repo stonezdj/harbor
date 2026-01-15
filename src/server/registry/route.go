@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/goharbor/harbor/src/server/middleware/blob"
+	"github.com/goharbor/harbor/src/server/middleware/connection"
 	"github.com/goharbor/harbor/src/server/middleware/contenttrust"
 	"github.com/goharbor/harbor/src/server/middleware/cosign"
 	"github.com/goharbor/harbor/src/server/middleware/immutable"
@@ -34,7 +35,8 @@ import (
 func RegisterRoutes() {
 	root := router.NewRoute().
 		Path("/v2").
-		Middleware(v2auth.Middleware())
+		Middleware(v2auth.Middleware()).
+		Middleware(connection.Middleware())
 	// catalog
 	root.NewRoute().
 		Method(http.MethodGet).
