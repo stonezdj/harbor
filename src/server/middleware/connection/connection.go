@@ -35,31 +35,3 @@ func Middleware() func(http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}	})		next.ServeHTTP(w, r)		// Process the request		defer connection.GlobalCounter.Dec()		// Defer decrement to ensure counter is always decremented when response is sent		connection.GlobalCounter.Inc()		// Increment counter on incoming request	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {func Middleware() func(http.Handler) http.Handler {// and decrements it on response// Middleware returns a middleware that increments the connection counter on request)	"github.com/goharbor/harbor/src/server/middleware"	"github.com/goharbor/harbor/src/pkg/connection"	"net/http"import (package connection// limitations under the License.// See the License for the specific language governing permissions and// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.// distributed under the License is distributed on an "AS IS" BASIS,// Unless required by applicable law or agreed to in writing, software////    http://www.apache.org/licenses/LICENSE-2.0//
