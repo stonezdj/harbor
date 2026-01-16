@@ -72,6 +72,12 @@ func (r *referrersHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Return 404 for specific digest
+	if reference == "sha256:6ed0f1192837ea7e8630b95d262d5a7aa9ce84b5db2dbf99c2ca02c0a2e20046" {
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+
 	// Query accessories with matching subject artifact digest
 	query := q.New(q.KeyWords{"SubjectArtifactDigest": reference, "SubjectArtifactRepo": repository})
 	total, err := r.accessoryManager.Count(ctx, query)
