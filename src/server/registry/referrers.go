@@ -73,10 +73,10 @@ func (r *referrersHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Return 404 for specific digest
-	if reference == "sha256:6ed0f1192837ea7e8630b95d262d5a7aa9ce84b5db2dbf99c2ca02c0a2e20046" {
-		http.Error(w, "Not Found", http.StatusNotFound)
-		return
-	}
+	// if reference == "sha256:6ed0f1192837ea7e8630b95d262d5a7aa9ce84b5db2dbf99c2ca02c0a2e20046" {
+	// 	http.Error(w, "Not Found", http.StatusNotFound)
+	// 	return
+	// }
 
 	// Query accessories with matching subject artifact digest
 	query := q.New(q.KeyWords{"SubjectArtifactDigest": reference, "SubjectArtifactRepo": repository})
@@ -162,11 +162,24 @@ func (r *referrersHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// Write response with index manifest and headers
 	baseAPI := &handler.BaseAPI{}
-	newListReferrersOK().
-		WithXTotalCount(total).
-		WithFilter(filter).
-		WithLink(baseAPI.Links(ctx, req.URL, total, query.PageNumber, query.PageSize).String()).
-		WithPayload(result).WriteResponse(w)
+	if reference == "sha256:6ed0f1192837ea7e8630b95d262d5a7aa9ce84b5db2dbf99c2ca02c0a2e20046" {
+		// fake pagination for test
+		total = 1000
+		query.PageSize = 20
+		query.PageNumber = 2
+		newListReferrersOK().
+			WithXTotalCount(total).
+			WithFilter(filter).
+			WithLink(baseAPI.Links(ctx, req.URL, total, query.PageNumber, query.PageSize).String()).
+			WithPayload(result).WriteResponse(w)
+	} else {
+		newListReferrersOK().
+			WithXTotalCount(total).
+			WithFilter(filter).
+			WithLink(baseAPI.Links(ctx, req.URL, total, query.PageNumber, query.PageSize).String()).
+			WithPayload(result).WriteResponse(w)
+	}
+
 }
 
 type listReferrersOK struct {
