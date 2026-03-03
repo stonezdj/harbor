@@ -246,6 +246,9 @@
         "CONNECTION_LIMIT": "Üst kayıt defterine maksimum bağlantı",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "Bu proxy önbellek projesi için üst kayıt defterine maksimum bağlantı, -1 ise sınır yoktur",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "Lütfen -1 veya 0'dan büyük bir tam sayı girin.",
+        "REPOSITORY_FILTER": "Depo filtresi",
+        "REPOSITORY_FILTER_TOOLTIP": "Yukarı akış kayıt defterinden hangi depoların önbelleğe alınacağını sınırlamak için isteğe bağlı filtre. Değer bir düzenli ifadedir. Yalnızca proxy önbellek projeleri için geçerlidir.",
+        "REPOSITORY_FILTER_PLACEHOLDER": "örn. library/.*",
         "NO_PROJECT": "Herhangi bir proje bulunamadı"
     },
     "PROJECT_DETAIL": {

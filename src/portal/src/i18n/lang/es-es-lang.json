@@ -246,6 +246,9 @@
         "CONNECTION_LIMIT": "Conexión máxima al registro de origen",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "La conexión máxima al registro de origen para este proyecto de caché de proxy, si es -1, entonces no hay límite",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "Por favor, ingrese -1 o un número entero mayor que 0.",
+        "REPOSITORY_FILTER": "Filtro de repositorio",
+        "REPOSITORY_FILTER_TOOLTIP": "Filtro opcional para limitar qué repositorios se almacenan en caché del registro de origen. El valor es una expresión regular. Solo se aplica a proyectos de caché proxy.",
+        "REPOSITORY_FILTER_PLACEHOLDER": "ej. library/.*",
         "NO_PROJECT": "No pudimos encontrar ningún proyecto"
     },
     "PROJECT_DETAIL": {

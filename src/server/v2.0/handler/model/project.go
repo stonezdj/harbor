@@ -52,6 +52,11 @@ func (p *Project) ToSwagger() *models.Project {
 			m.Severity = &severity
 		}
 
+		// repository_filter is only for proxy cache project
+		if !p.IsProxy() {
+			m.RepositoryFilter = nil
+		}
+
 		md = &m
 	}
 

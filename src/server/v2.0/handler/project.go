@@ -163,10 +163,11 @@ func (a *projectAPI) CreateProject(ctx context.Context, params operation.CreateP
 		}
 	}
 
-	// ignore metadata.proxy_speed_kb and metadata.max_upstream_conn for non-proxy-cache project
+	// ignore metadata.proxy_speed_kb, metadata.max_upstream_conn and metadata.repository_filter for non-proxy-cache project
 	if req.RegistryID == nil {
 		req.Metadata.ProxySpeedKb = nil
 		req.Metadata.MaxUpstreamConn = nil
+		req.Metadata.RepositoryFilter = nil
 	}
 
 	// ignore enable_content_trust metadata for proxy cache project
@@ -567,10 +568,11 @@ func (a *projectAPI) UpdateProject(ctx context.Context, params operation.UpdateP
 		}
 	}
 
-	// ignore metadata.proxy_speed_kb and metadata.max_upstream_conn for non-proxy-cache project
+	// ignore metadata.proxy_speed_kb, metadata.max_upstream_conn and metadata.repository_filter for non-proxy-cache project
 	if params.Project.Metadata != nil && !p.IsProxy() {
 		params.Project.Metadata.ProxySpeedKb = nil
 		params.Project.Metadata.MaxUpstreamConn = nil
+		params.Project.Metadata.RepositoryFilter = nil
 	}
 
 	// ignore enable_content_trust metadata for proxy cache project

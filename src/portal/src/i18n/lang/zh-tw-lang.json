@@ -245,6 +245,9 @@
         "CONNECTION_LIMIT": "上游 Registry 最大連線數",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "此代理快取專案到上游 Registry 的最大連線數，若為 -1 則不限制",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "請輸入 -1 或大於 0 的整數。",
+        "REPOSITORY_FILTER": "倉庫篩選",
+        "REPOSITORY_FILTER_TOOLTIP": "可選篩選條件，用於限制從上游倉庫快取哪些倉庫。值為正則表達式。僅適用於代理快取專案。",
+        "REPOSITORY_FILTER_PLACEHOLDER": "例如 library/.*",
         "NO_PROJECT": "找不到任何專案"
     },
     "PROJECT_DETAIL": {

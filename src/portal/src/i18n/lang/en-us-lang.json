@@ -245,6 +245,9 @@
         "CONNECTION_LIMIT": "Max connection to upstream registry",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "The max connection to the upstream registry for this proxy cache project, if -1, then there is no limit",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "Please enter -1 or an integer greater than 0. ",
+        "REPOSITORY_FILTER": "Repository filter",
+        "REPOSITORY_FILTER_TOOLTIP": "Optional filter to limit which repositories are cached from the upstream registry. The value is a regular expression. Only applies to proxy cache projects.",
+        "REPOSITORY_FILTER_PLACEHOLDER": "e.g. library/.*",
         "NO_PROJECT": "We couldn't find any projects"
     },
     "PROJECT_DETAIL": {

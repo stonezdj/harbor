@@ -37,6 +37,7 @@ export class Project {
         retention_id: number;
         bandwidth: number;
         max_upstream_conn: number;
+        repository_filter?: string;
     };
     constructor() {
         this.metadata = <any>{};

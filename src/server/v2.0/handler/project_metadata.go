@@ -167,6 +167,9 @@ func (p *projectMetadataAPI) validate(metas map[string]string) (map[string]strin
 			return nil, errors.New(nil).WithCode(errors.BadRequestCode).WithMessagef("invalid value: %s", value)
 		}
 		metas[proModels.ProMetaMaxUpstreamConn] = strconv.FormatInt(v, 10)
+	case proModels.ProMetaRepositoryFilter:
+		// string value, only used for proxy cache project
+		metas[proModels.ProMetaRepositoryFilter] = value
 	default:
 		return nil, errors.New(nil).WithCode(errors.BadRequestCode).WithMessagef("invalid key: %s", key)
 	}

@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -193,6 +194,21 @@ func defaultBlobURL(projectName string, name string, digest string) string {
 	return fmt.Sprintf("/v2/%s/library/%s/blobs/%s", projectName, name, digest)
 }
 
+// matchRepositoryFilter returns true if repository matches the filter regular expression.
+// If filter is empty, it matches all. Invalid regex is treated as no match.
+func matchRepositoryFilter(repository, filter string) bool {
+	filter = strings.TrimSpace(filter)
+	if filter == "" {
+		return true
+	}
+	re, err := regexp.Compile(filter)
+	if err != nil {
+		log.Warningf("invalid repository_filter regex %q: %v", filter, err)
+		return false
+	}
+	return re.MatchString(repository)
+}
+
 // upstreamRegistryConnectionKey get upstream registry connection key
 func upstreamRegistryConnectionKey(art lib.ArtifactInfo) string {
 	limitOnProject := os.Getenv(upstreamRegistryLimitOnProject)
@@ -217,6 +233,13 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 	if defaultProj {
 		http.Redirect(w, r, defaultManifestURL(p.Name, name, art), http.StatusMovedPermanently)
 		return nil
+	}
+
+	// Apply repository filter: if set, the artifact repository must match the regular expression
+	if filter, ok := p.GetMetadata(proModels.ProMetaRepositoryFilter); ok && filter != "" {
+		if !matchRepositoryFilter(art.Repository, filter) {
+			return errors.NotFoundError(fmt.Errorf("repository %q does not match project repository filter", art.Repository))
+		}
 	}
 
 	if !canProxy(r.Context(), p) {
