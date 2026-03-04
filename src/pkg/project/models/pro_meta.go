@@ -26,4 +26,5 @@ const (
 	ProMetaAutoSBOMGen              = "auto_sbom_generation"
 	ProMetaProxySpeed               = "proxy_speed_kb"
 	ProMetaMaxUpstreamConn          = "max_upstream_conn"
+	ProMetaCustomRequestHeader      = "custom_request_header"
 )
