@@ -245,6 +245,7 @@
         "CONNECTION_LIMIT": "Max. Verbindungen zur Upstream-Registry",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "Die maximale Anzahl der Verbindungen zur Upstream-Registry für dieses Proxy-Cache-Projekt. -1 bedeutet keine Begrenzung",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "Bitte geben Sie -1 oder eine Ganzzahl größer als 0 ein.",
+        "CUSTOM_HEADER": "Benutzerdefinierter Header",
         "NO_PROJECT": "Es konnte kein Projekt gefunden werden"
     },
     "PROJECT_DETAIL": {

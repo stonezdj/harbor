@@ -33,6 +33,13 @@ import (
 
 // NewAuthorizer creates an authorizer that can handle different auth schemes
 func NewAuthorizer(username, password string, insecure bool, caCert ...string) lib.Authorizer {
+	return NewAuthorizerWithCustomHeaders(username, password, insecure, caCert, nil)
+}
+
+// NewAuthorizerWithCustomHeaders creates an authorizer that adds customHeaders to every request
+// made by the authorizer (e.g. auth discovery GET /v2/, bearer token fetch). Use this for proxy
+// cache so upstream auth requests include the project's custom_request_header.
+func NewAuthorizerWithCustomHeaders(username, password string, insecure bool, caCert []string, customHeaders map[string]string) lib.Authorizer {
 	var transport http.RoundTripper
 	if len(caCert) > 0 && caCert[0] != "" {
 		transport = commonhttp.GetHTTPTransport(
@@ -42,6 +49,7 @@ func NewAuthorizer(username, password string, insecure bool, caCert ...string) l
 	} else {
 		transport = commonhttp.GetHTTPTransport(commonhttp.WithInsecure(insecure))
 	}
+	transport = NewHeaderTransport(transport, customHeaders)
 
 	return &authorizer{
 		username: username,

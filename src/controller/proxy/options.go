@@ -14,11 +14,18 @@
 
 package proxy
 
+import (
+	proModels "github.com/goharbor/harbor/src/pkg/project/models"
+	"github.com/goharbor/harbor/src/pkg/registry/interceptor/customheader"
+)
+
 type Option func(*Options)
 
 type Options struct {
 	// Speed is the data transfer speed for proxy cache from Harbor to upstream registry, no limit by default.
 	Speed int32
+	// CustomHeaders are HTTP headers to add to requests sent to the upstream registry (parsed from project metadata custom_request_header).
+	CustomHeaders map[string]string
 }
 
 func NewOptions(opts ...Option) *Options {
@@ -34,4 +41,23 @@ func WithSpeed(speed int32) Option {
 	return func(o *Options) {
 		o.Speed = speed
 	}
+}
+
+// WithCustomHeaders sets optional HTTP headers (key:value map) to add to upstream requests.
+func WithCustomHeaders(headers map[string]string) Option {
+	return func(o *Options) {
+		o.CustomHeaders = headers
+	}
+}
+
+// OptionsFromProject returns proxy options (speed and custom headers) from project metadata.
+func OptionsFromProject(p *proModels.Project) []Option {
+	if p == nil {
+		return nil
+	}
+	opts := []Option{WithSpeed(p.ProxyCacheSpeed())}
+	if v, ok := p.GetMetadata(proModels.ProMetaCustomRequestHeader); ok && v != "" {
+		opts = append(opts, WithCustomHeaders(customheader.ParseCustomRequestHeader(v)))
+	}
+	return opts
 }

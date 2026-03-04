@@ -245,6 +245,7 @@
         "CONNECTION_LIMIT": "上游 Registry 最大連線數",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "此代理快取專案到上游 Registry 的最大連線數，若為 -1 則不限制",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "請輸入 -1 或大於 0 的整數。",
+        "CUSTOM_HEADER": "自訂請求標頭",
         "NO_PROJECT": "找不到任何專案"
     },
     "PROJECT_DETAIL": {

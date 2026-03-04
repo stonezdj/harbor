@@ -74,11 +74,17 @@ func (r *remoteHelper) init(ctx context.Context) error {
 	if reg.Status != model.Healthy {
 		return fmt.Errorf("current registry is unhealthy, regID:%v, Name:%v, Status: %v", reg.ID, reg.Name, reg.Status)
 	}
-	factory, err := adapter.GetFactory(reg.Type)
+	regToUse := reg
+	if len(r.opts.CustomHeaders) > 0 {
+		regCopy := *reg
+		regCopy.CustomRequestHeaders = r.opts.CustomHeaders
+		regToUse = &regCopy
+	}
+	factory, err := adapter.GetFactory(regToUse.Type)
 	if err != nil {
 		return err
 	}
-	adp, err := factory.Create(reg)
+	adp, err := factory.Create(regToUse)
 	if err != nil {
 		return err
 	}

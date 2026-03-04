@@ -137,7 +137,17 @@ func NewClient(url, username, password string, insecure bool, interceptors ...in
 
 // NewClientWithCACert creates a registry client with custom CA certificate
 func NewClientWithCACert(url, username, password string, insecure bool, caCert string, interceptors ...interceptor.Interceptor) Client {
-	authorizer := auth.NewAuthorizer(username, password, insecure, caCert)
+	return NewClientWithCACertAndHeaders(url, username, password, insecure, caCert, nil, interceptors...)
+}
+
+// NewClientWithCACertAndHeaders creates a registry client with custom CA certificate and custom headers.
+// customHeaders are added to every request, including those made by the authorizer (auth discovery, token fetch).
+func NewClientWithCACertAndHeaders(url, username, password string, insecure bool, caCert string, customHeaders map[string]string, interceptors ...interceptor.Interceptor) Client {
+	caCertSlice := []string{}
+	if caCert != "" {
+		caCertSlice = []string{caCert}
+	}
+	authorizer := auth.NewAuthorizerWithCustomHeaders(username, password, insecure, caCertSlice, customHeaders)
 	return NewClientWithAuthorizer(url, authorizer, insecure, caCert, interceptors...)
 }
 

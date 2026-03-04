@@ -395,6 +395,14 @@ export class CreateProjectComponent
                             this.project.metadata.bandwidth.toString(),
                         max_upstream_conn:
                             this.project.metadata.max_upstream_conn.toString(),
+                        ...(this.enableProxyCache &&
+                        this.project.metadata.custom_request_header != null &&
+                        this.project.metadata.custom_request_header !== ''
+                            ? {
+                                  custom_request_header:
+                                      this.project.metadata.custom_request_header,
+                              }
+                            : {}),
                     },
                     storage_limit: +storageByte,
                     registry_id: registryId,

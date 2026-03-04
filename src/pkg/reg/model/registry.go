@@ -104,6 +104,8 @@ type Registry struct {
 	Status          string      `json:"status"`
 	CreationTime    time.Time   `json:"creation_time"`
 	UpdateTime      time.Time   `json:"update_time"`
+	// CustomRequestHeaders are optional HTTP headers to add when sending requests to this registry (e.g. for proxy cache project). Not persisted.
+	CustomRequestHeaders map[string]string `json:"-"`
 }
 
 // FilterStyle ...

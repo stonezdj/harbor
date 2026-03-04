@@ -246,6 +246,7 @@
         "CONNECTION_LIMIT": "Üst kayıt defterine maksimum bağlantı",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_TIP": "Bu proxy önbellek projesi için üst kayıt defterine maksimum bağlantı, -1 ise sınır yoktur",
         "PROXY_CACHE_MAX_UPSTREAM_CONN_INPUT_TIP": "Lütfen -1 veya 0'dan büyük bir tam sayı girin.",
+        "CUSTOM_HEADER": "Özel Başlık",
         "NO_PROJECT": "Herhangi bir proje bulunamadı"
     },
     "PROJECT_DETAIL": {

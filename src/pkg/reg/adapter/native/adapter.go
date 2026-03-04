@@ -26,6 +26,8 @@ import (
 	"github.com/goharbor/harbor/src/pkg/reg/model"
 	"github.com/goharbor/harbor/src/pkg/reg/util"
 	"github.com/goharbor/harbor/src/pkg/registry"
+	"github.com/goharbor/harbor/src/pkg/registry/interceptor"
+	"github.com/goharbor/harbor/src/pkg/registry/interceptor/customheader"
 )
 
 func init() {
@@ -73,15 +75,23 @@ func NewAdapter(reg *model.Registry) *Adapter {
 		password = reg.Credential.AccessSecret
 	}
 
-	adapter.Client = registry.NewClientWithCACert(reg.URL, username, password, reg.Insecure, reg.CACertificate)
+	var interceptors []interceptor.Interceptor
+	if len(reg.CustomRequestHeaders) > 0 {
+		interceptors = append(interceptors, customheader.NewInterceptor(reg.CustomRequestHeaders))
+	}
+	adapter.Client = registry.NewClientWithCACertAndHeaders(reg.URL, username, password, reg.Insecure, reg.CACertificate, reg.CustomRequestHeaders, interceptors...)
 	return adapter
 }
 
 // NewAdapterWithAuthorizer returns an instance of the Adapter with provided authorizer
 func NewAdapterWithAuthorizer(reg *model.Registry, authorizer lib.Authorizer) *Adapter {
+	var interceptors []interceptor.Interceptor
+	if len(reg.CustomRequestHeaders) > 0 {
+		interceptors = append(interceptors, customheader.NewInterceptor(reg.CustomRequestHeaders))
+	}
 	return &Adapter{
 		registry: reg,
-		Client:   registry.NewClientWithAuthorizer(reg.URL, authorizer, reg.Insecure, reg.CACertificate),
+		Client:   registry.NewClientWithAuthorizer(reg.URL, authorizer, reg.Insecure, reg.CACertificate, interceptors...),
 	}
 }
 

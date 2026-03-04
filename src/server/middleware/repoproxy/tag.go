@@ -69,7 +69,7 @@ func TagsListMiddleware() func(http.Handler) http.Handler {
 			util.SendListTagsResponse(w, r, tags)
 		}()
 
-		remote, err := proxy.NewRemoteHelper(ctx, p.RegistryID, proxy.WithSpeed(p.ProxyCacheSpeed()))
+		remote, err := proxy.NewRemoteHelper(ctx, p.RegistryID, proxy.OptionsFromProject(p)...)
 		if err != nil {
 			logger.Warningf("failed to get remote interface, error: %v, fallback to local tags", err)
 			return

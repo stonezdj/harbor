@@ -330,6 +330,25 @@
                     </clr-control-error>
                 </div>
             </div>
+            <div
+                class="clr-form-control mt-05"
+                [style.visibility]="
+                    isSystemAdmin && enableProxyCache ? 'visible' : 'hidden'
+                ">
+                <label for="customRequestHeader" class="clr-control-label">
+                    {{ 'PROJECT.CUSTOM_HEADER' | translate }}
+                </label>
+                <div class="clr-control-container">
+                    <input
+                        type="text"
+                        id="customRequestHeader"
+                        [(ngModel)]="project.metadata.custom_request_header"
+                        name="customRequestHeader"
+                        class="clr-input width-164"
+                        placeholder="X-Custom-Header: value"
+                        autocomplete="off" />
+                </div>
+            </div>
         </form>
     </div>
     <div class="modal-footer">

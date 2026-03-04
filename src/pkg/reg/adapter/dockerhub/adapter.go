@@ -50,9 +50,10 @@ func newAdapter(registry *model.Registry) (adp.Adapter, error) {
 		client:   client,
 		registry: registry,
 		Adapter: native.NewAdapter(&model.Registry{
-			URL:        registryURL,
-			Credential: registry.Credential,
-			Insecure:   registry.Insecure,
+			URL:                  registryURL,
+			Credential:           registry.Credential,
+			Insecure:             registry.Insecure,
+			CustomRequestHeaders: registry.CustomRequestHeaders,
 		}),
 	}, nil
 }
