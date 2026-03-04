@@ -175,6 +175,9 @@ func Middleware() func(http.Handler) http.Handler {
 	})
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			for k, v := range req.Header {
+				log.G(req.Context()).Infof("Header: %s=%v", k, v)
+			}
 			if challenge, err := checker.check(req); err != nil {
 				// the header is needed for "docker manifest" commands: https://github.com/docker/cli/issues/989
 				rw.Header().Set("Docker-Distribution-Api-Version", "registry/2.0")
