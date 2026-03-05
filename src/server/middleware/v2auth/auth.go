@@ -175,6 +175,7 @@ func Middleware() func(http.Handler) http.Handler {
 	})
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			log.G(req.Context()).Infof("Request: %s %s", req.Method, req.URL.Path)
 			for k, v := range req.Header {
 				log.G(req.Context()).Infof("Header: %s=%v", k, v)
 			}
