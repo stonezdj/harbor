@@ -252,14 +252,7 @@ func (c *controller) ProxyManifest(ctx context.Context, art lib.ArtifactInfo, re
 		return man, err
 	}
 
-	if ct == schema1.MediaTypeSignedManifest {
-		jsig, err := libtrust.ParsePrettySignature(payload, "signatures")
-		if err == nil {
-			if bytes, err := jsig.Payload(); err == nil {
-				dig = digest.FromBytes(bytes).String()
-			}
-		}
-	}
+	dig = getCanonicalDigest(dig, ct, payload)
 
 	// Push manifest in background
 	go func(operator string) {
@@ -354,4 +347,18 @@ func getReference(art lib.ArtifactInfo) string {
 		return art.Digest
 	}
 	return art.Tag
+}
+
+// getCanonicalDigest returns the canonical digest for the manifest.
+// For signed v1 manifest, it strips the signature and calculates the digest over the JWS payload.
+func getCanonicalDigest(dig string, mediaType string, payload []byte) string {
+	if mediaType == schema1.MediaTypeSignedManifest {
+		jsig, err := libtrust.ParsePrettySignature(payload, "signatures")
+		if err == nil {
+			if bytes, err := jsig.Payload(); err == nil {
+				return digest.FromBytes(bytes).String()
+			}
+		}
+	}
+	return dig
 }
