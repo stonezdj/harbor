@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/docker/distribution"
+	"github.com/docker/distribution/manifest/schema1"
+	"github.com/docker/libtrust"
 	"github.com/opencontainers/go-digest"
 
 	"github.com/goharbor/harbor/src/controller/artifact"
@@ -245,9 +247,18 @@ func (c *controller) ProxyManifest(ctx context.Context, art lib.ArtifactInfo, re
 	if err != nil {
 		return man, err
 	}
-	ct, _, err := man.Payload()
+	ct, payload, err := man.Payload()
 	if err != nil {
 		return man, err
+	}
+
+	if ct == schema1.MediaTypeSignedManifest {
+		jsig, err := libtrust.ParsePrettySignature(payload, "signatures")
+		if err == nil {
+			if bytes, err := jsig.Payload(); err == nil {
+				dig = digest.FromBytes(bytes).String()
+			}
+		}
 	}
 
 	// Push manifest in background
