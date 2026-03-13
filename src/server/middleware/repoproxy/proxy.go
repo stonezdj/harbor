@@ -469,6 +469,24 @@ func referrerCacheKey(requestURI string) string {
 
 const sourceLocal = "local"
 
+// hasNextLink checks whether the Link header in headerMap contains a rel="next" entry,
+// indicating that there are more pages of results from the upstream.
+func hasNextLink(headerMap map[string][]string) bool {
+	linkValues, ok := headerMap[link]
+	if !ok || len(linkValues) == 0 {
+		return false
+	}
+	for _, lv := range linkValues {
+		links := lib.ParseLinks(lv)
+		for _, l := range links {
+			if l.Rel == "next" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // getLocalReferrers queries the local accessory table for accessories with source "local"
 // and builds OCI descriptors from the corresponding artifacts.
 func getLocalReferrers(ctx context.Context, art lib.ArtifactInfo, artifactType string) []ocispec.Descriptor {
@@ -559,14 +577,18 @@ func proxyReferrerGet(r *http.Request, w http.ResponseWriter, art lib.ArtifactIn
 		return err
 	}
 
-	// append local referrers (source=local) to the end of the remote referrer list
-	artifactTypeFilter := r.URL.Query().Get("artifactType")
-	localDescs := getLocalReferrers(orm.Context(), art, artifactTypeFilter)
-	if len(localDescs) > 0 {
-		log.Debugf("appending %d local referrer(s) to remote referrer index for %s@%s", len(localDescs), art.Repository, art.Reference)
-		index.Manifests = append(index.Manifests, localDescs...)
-		headerMap[xTotalCount] = []string{fmt.Sprintf("%d", len(index.Manifests))}
+	// append local referrers (source=local) only on the last page of remote results
+	isLastPage := !hasNextLink(headerMap)
+	if isLastPage {
+		artifactTypeFilter := r.URL.Query().Get("artifactType")
+		localDescs := getLocalReferrers(orm.Context(), art, artifactTypeFilter)
+		if len(localDescs) > 0 {
+			log.Debugf("appending %d local referrer(s) to remote referrer index for %s@%s", len(localDescs), art.Repository, art.Reference)
+			index.Manifests = append(index.Manifests, localDescs...)
+		}
 	}
+	// always update X-Total-Count to reflect the actual number of manifests in the response
+	headerMap[xTotalCount] = []string{fmt.Sprintf("%d", len(index.Manifests))}
 
 	log.Debugf("current headers from upstream registry: %v", headerMap)
 	WriteProxyHeaders(w, headerMap)
