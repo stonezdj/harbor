@@ -565,6 +565,7 @@ func proxyReferrerGet(r *http.Request, w http.ResponseWriter, art lib.ArtifactIn
 	if len(localDescs) > 0 {
 		log.Debugf("appending %d local referrer(s) to remote referrer index for %s@%s", len(localDescs), art.Repository, art.Reference)
 		index.Manifests = append(index.Manifests, localDescs...)
+		headerMap[xTotalCount] = []string{fmt.Sprintf("%d", len(index.Manifests))}
 	}
 
 	log.Debugf("current headers from upstream registry: %v", headerMap)
