@@ -26,6 +26,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opencontainers/go-digest"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+
 	"github.com/goharbor/harbor/src/common/security"
 	"github.com/goharbor/harbor/src/common/security/proxycachesecret"
 	"github.com/goharbor/harbor/src/controller/project"
@@ -38,7 +41,10 @@ import (
 	httpLib "github.com/goharbor/harbor/src/lib/http"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/orm"
+	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/lib/redis"
+	"github.com/goharbor/harbor/src/pkg/accessory"
+	"github.com/goharbor/harbor/src/pkg/artifact"
 	proModels "github.com/goharbor/harbor/src/pkg/project/models"
 	"github.com/goharbor/harbor/src/pkg/proxy/connection"
 	"github.com/goharbor/harbor/src/pkg/reg/model"
@@ -461,6 +467,51 @@ func referrerCacheKey(requestURI string) string {
 	return fmt.Sprintf("{referrer_cache}:%s", requestURI)
 }
 
+const sourceLocal = "local"
+
+// getLocalReferrers queries the local accessory table for accessories with source "local"
+// and builds OCI descriptors from the corresponding artifacts.
+func getLocalReferrers(ctx context.Context, art lib.ArtifactInfo, artifactType string) []ocispec.Descriptor {
+	accMgr := accessory.Mgr
+	artMgr := artifact.NewManager()
+
+	query := q.New(q.KeyWords{
+		"SubjectArtifactDigest": art.Reference,
+		"SubjectArtifactRepo":  art.Repository,
+		"Source":               sourceLocal,
+	})
+	accs, err := accMgr.List(ctx, query)
+	if err != nil {
+		log.Warningf("failed to list local accessories for %s@%s: %v", art.Repository, art.Reference, err)
+		return nil
+	}
+	if len(accs) == 0 {
+		return nil
+	}
+
+	var descs []ocispec.Descriptor
+	for _, acc := range accs {
+		accData := acc.GetData()
+		accArt, err := artMgr.GetByDigest(ctx, art.Repository, accData.Digest)
+		if err != nil {
+			log.Warningf("failed to get artifact for local accessory %s: %v", accData.Digest, err)
+			continue
+		}
+		desc := ocispec.Descriptor{
+			MediaType:    accArt.ManifestMediaType,
+			Size:         accArt.Size,
+			Digest:       digest.Digest(accArt.Digest),
+			Annotations:  accArt.Annotations,
+			ArtifactType: accArt.ArtifactType,
+		}
+		if artifactType != "" && accArt.ArtifactType != artifactType {
+			continue
+		}
+		descs = append(descs, desc)
+	}
+	return descs
+}
+
 func proxyReferrerGet(r *http.Request, w http.ResponseWriter, art lib.ArtifactInfo, remote proxy.RemoteInterface, registryID int64) error {
 	key := referrerCacheKey(r.RequestURI)
 	c := libCache.Default()
@@ -507,6 +558,15 @@ func proxyReferrerGet(r *http.Request, w http.ResponseWriter, art lib.ArtifactIn
 	if err != nil {
 		return err
 	}
+
+	// append local referrers (source=local) to the end of the remote referrer list
+	artifactTypeFilter := r.URL.Query().Get("artifactType")
+	localDescs := getLocalReferrers(orm.Context(), art, artifactTypeFilter)
+	if len(localDescs) > 0 {
+		log.Debugf("appending %d local referrer(s) to remote referrer index for %s@%s", len(localDescs), art.Repository, art.Reference)
+		index.Manifests = append(index.Manifests, localDescs...)
+	}
+
 	log.Debugf("current headers from upstream registry: %v", headerMap)
 	WriteProxyHeaders(w, headerMap)
 	w.WriteHeader(http.StatusOK)
