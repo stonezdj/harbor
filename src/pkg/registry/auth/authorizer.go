@@ -16,6 +16,7 @@ package auth
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -101,6 +102,12 @@ func (a *authorizer) initialize(u *url.URL) error {
 	}
 	req.Header.Set("User-Agent", userAgent)
 	resp, err := a.client.Do(req)
+	log.Printf("[DEBUG] HTTP request headers for %s %s:", req.Method, req.URL.String())
+	for name, values := range req.Header {
+		for _, v := range values {
+			log.Printf("[DEBUG]   %s: %s", name, v)
+		}
+	}
 	if err != nil {
 		return err
 	}

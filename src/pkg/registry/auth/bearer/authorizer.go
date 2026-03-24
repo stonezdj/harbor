@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -118,6 +119,12 @@ func (a *authorizer) fetchToken(scopes []*scope) (*token, error) {
 	}
 
 	resp, err := a.client.Do(req)
+	log.Printf("[DEBUG] HTTP request headers for %s %s:", req.Method, req.URL.String())
+	for name, values := range req.Header {
+		for _, v := range values {
+			log.Printf("[DEBUG]   %s: %s", name, v)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
