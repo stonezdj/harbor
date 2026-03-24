@@ -23,6 +23,7 @@ import (
 
 	"github.com/docker/distribution/registry/client/auth/challenge"
 
+	"github.com/goharbor/harbor/src/common"
 	commonhttp "github.com/goharbor/harbor/src/common/http"
 	"github.com/goharbor/harbor/src/common/http/modifier"
 	"github.com/goharbor/harbor/src/lib"
@@ -93,7 +94,13 @@ func (a *authorizer) initialize(u *url.URL) error {
 		return err
 	}
 	a.url = url
-	resp, err := a.client.Get(a.url.String())
+	req, err := http.NewRequest(http.MethodGet, a.url.String(), nil)
+	if err != nil {
+		return err
+	}
+	// set user agent to avoid some registry (e.g. dockerhub) return 403 when user agent is empty
+	req.Header.Set("User-Agent", common.UserAgent)
+	resp, err := a.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -119,7 +126,7 @@ func (a *authorizer) initialize(u *url.URL) error {
 		a.authorizer = basic.NewAuthorizer(a.username, a.password)
 		return nil
 	}
-	return fmt.Errorf("unspported auth scheme: %v", challenges)
+	return fmt.Errorf("unsupported auth scheme: %v", challenges)
 }
 
 // Check whether the request targets to the registry.

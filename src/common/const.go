@@ -255,4 +255,7 @@ const (
 
 	// The replication adapter whitelist
 	ReplicationAdapterWhiteList = "REPLICATION_ADAPTER_WHITELIST"
+
+	// UserAgent is the default user-agent header for registry client requests
+	UserAgent = "harbor-registry-client"
 )
