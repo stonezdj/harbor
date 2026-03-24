@@ -27,6 +27,7 @@ import (
 
 const (
 	cacheCapacity = 100
+	userAgent     = "harbor-registry-client"
 )
 
 // NewAuthorizer return a bearer token authorizer
@@ -109,6 +110,7 @@ func (a *authorizer) fetchToken(scopes []*scope) (*token, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("User-Agent", userAgent)
 	if a.authorizer != nil {
 		if err = a.authorizer.Modify(req); err != nil {
 			return nil, err

@@ -31,6 +31,8 @@ import (
 	"github.com/goharbor/harbor/src/pkg/registry/auth/null"
 )
 
+const userAgent = "harbor-registry-client"
+
 // NewAuthorizer creates an authorizer that can handle different auth schemes
 func NewAuthorizer(username, password string, insecure bool, caCert ...string) lib.Authorizer {
 	var transport http.RoundTripper
@@ -93,7 +95,12 @@ func (a *authorizer) initialize(u *url.URL) error {
 		return err
 	}
 	a.url = url
-	resp, err := a.client.Get(a.url.String())
+	req, err := http.NewRequest(http.MethodGet, a.url.String(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := a.client.Do(req)
 	if err != nil {
 		return err
 	}
