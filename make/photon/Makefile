@@ -18,7 +18,8 @@ TIMESTAMP=$(shell date +"%Y%m%d")
 
 # docker parameters
 DOCKERCMD=$(shell which docker)
-DOCKERBUILD=$(DOCKERCMD) build --no-cache --network=$(DOCKERNETWORK)
+BUILDGOARCH ?= $(shell go env GOARCH)
+DOCKERBUILD=$(DOCKERCMD) build --no-cache --network=$(DOCKERNETWORK) --platform linux/$(BUILDGOARCH)
 DOCKERBUILD_WITH_PULL_PARA=$(DOCKERBUILD) --pull=$(PULL_BASE_FROM_DOCKERHUB)
 DOCKERRMIMAGE=$(DOCKERCMD) rmi
 DOCKERIMAGES=$(DOCKERCMD) images
