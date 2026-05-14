@@ -20,7 +20,7 @@ import {
 } from '@angular/platform-browser/animations';
 import { ClarityModule } from '@clr/angular';
 import { FormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ConfirmationDialogService } from './confirmation-dialog.service';
@@ -51,10 +51,10 @@ describe('ConfirmationDialogComponent', () => {
                 ClarityModule,
                 TranslateModule.forRoot(),
                 FormsModule,
-                RouterTestingModule,
                 NoopAnimationsModule,
             ],
             providers: [
+                provideRouter([]),
                 TranslateService,
                 {
                     provide: ConfirmationDialogService,

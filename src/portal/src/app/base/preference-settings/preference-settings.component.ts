@@ -21,7 +21,7 @@ import {
 import { registerLocaleData } from '@angular/common';
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ClrCommonStrings } from '@clr/angular/utils/i18n/common-strings.interface';
+import { ClrCommonStrings } from '@clr/angular/utils';
 import { ClrCommonStringsService } from '@clr/angular';
 import {
     CUSTOM_RUNTIME_LOCALSTORAGE_KEY,

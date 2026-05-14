@@ -186,6 +186,13 @@ describe('PolicyComponent', () => {
         fixture.autoDetectChanges(true);
     });
 
+    afterEach(() => {
+        fixture.destroy();
+        document
+            .querySelectorAll('.cdk-overlay-container')
+            .forEach(el => el.remove());
+    });
+
     it('should create', async () => {
         expect(component).toBeTruthy();
     });
@@ -214,8 +221,7 @@ describe('PolicyComponent', () => {
             fixture.nativeElement.querySelector('#action-policy');
         action.click();
         await fixture.whenStable();
-        const edit: HTMLSpanElement =
-            fixture.nativeElement.querySelector('#edit-policy');
+        const edit = document.querySelector<HTMLSpanElement>('#edit-policy');
         edit.click();
         await fixture.whenStable();
         const modalBody: HTMLDivElement =

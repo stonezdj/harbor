@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { ModeGuard } from './mode-guard-activate.service';
 import { AppConfigService } from '../../services/app-config.service';
 
@@ -20,8 +20,8 @@ describe('ModeGuardActivateServiceGuard', () => {
     const fakeAppConfigService = null;
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
             providers: [
+                provideRouter([]),
                 ModeGuard,
                 { provide: AppConfigService, useValue: fakeAppConfigService },
             ],

@@ -2,8 +2,9 @@
 <clr-datagrid
     [clrDgLoading]="loadingPools"
     (clrDgRefresh)="clrLoadPool($event)"
-    (clrDgSelectedChange)="refreshWorkers()"
-    [(clrDgSingleSelected)]="selectedPool">
+    [clrDgSelectionType]="'single'"
+    [clrDgSelected]="selectedPool ? [selectedPool] : []"
+    (clrDgSelectedChange)="selectedPool = $event?.[0]; refreshWorkers()">
     <clr-dg-action-bar class="action-bar mt-0">
         <span class="refresh-btn" (click)="getPools()">
             <clr-icon shape="refresh"></clr-icon>

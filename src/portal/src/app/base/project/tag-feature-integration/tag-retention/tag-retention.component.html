@@ -234,7 +234,9 @@
         <clr-datagrid
             (clrDgRefresh)="clrLoad($event)"
             [clrDgLoading]="loadingExecutions"
-            [(clrDgSingleSelected)]="selectedItem">
+            [clrDgSelectionType]="'single'"
+            [clrDgSelected]="selectedItem ? [selectedItem] : []"
+            (clrDgSelectedChange)="selectedItem = $event?.[0]">
             <clr-dg-column>
                 {{ 'TAG_RETENTION.SERIAL' | translate }}
             </clr-dg-column>

@@ -25,7 +25,6 @@ import { Endpoint } from '../../../../shared/services';
 import { CronTooltipComponent } from '../../../../shared/components/cron-schedule';
 import { ErrorHandler } from '../../../../shared/units/error-handler';
 import { OperationService } from '../../../../shared/components/operation/operation.service';
-import { RouterTestingModule } from '@angular/router/testing';
 import { of, Subscription } from 'rxjs';
 import { HttpHeaders, HttpResponse } from '@angular/common/http';
 import { delay } from 'rxjs/operators';
@@ -161,11 +160,7 @@ describe('Replication Component (inline template)', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
-            imports: [
-                SharedTestingModule,
-                NoopAnimationsModule,
-                RouterTestingModule,
-            ],
+            imports: [SharedTestingModule, NoopAnimationsModule],
             declarations: [
                 ReplicationComponent,
                 CronTooltipComponent,

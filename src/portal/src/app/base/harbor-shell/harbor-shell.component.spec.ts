@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SessionService } from '../../shared/services/session.service';
 import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
@@ -104,7 +104,6 @@ describe('HarborShellComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [
-                RouterTestingModule,
                 TranslateModule.forRoot(), // Ensure TranslateModule is imported
                 ClarityModule,
                 BrowserAnimationsModule,
@@ -119,6 +118,7 @@ describe('HarborShellComponent', () => {
                 InlineAlertComponent,
             ],
             providers: [
+                provideRouter([]),
                 TranslateService,
                 { provide: SessionService, useValue: fakeSessionService },
                 {

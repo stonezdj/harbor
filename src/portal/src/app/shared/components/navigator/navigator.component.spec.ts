@@ -15,6 +15,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SessionService } from '../../services/session.service';
 import { Component, NO_ERRORS_SCHEMA } from '@angular/core';
 import { PlatformLocation } from '@angular/common';
+import { MockPlatformLocation } from '@angular/common/testing';
 import { NavigatorComponent } from './navigator.component';
 import { CookieService } from 'ngx-cookie';
 import { AppConfigService } from '../../../services/app-config.service';
@@ -34,7 +35,7 @@ describe('NavigatorComponent', () => {
             };
         },
     };
-    let fakePlatformLocation = null;
+    let fakePlatformLocation: MockPlatformLocation;
     let fakeCookieService = null;
     let fakeAppConfigService = {
         isIntegrationMode: function () {
@@ -63,12 +64,13 @@ describe('NavigatorComponent', () => {
         },
     };
     beforeEach(async () => {
+        fakePlatformLocation = new MockPlatformLocation();
         await TestBed.configureTestingModule({
             imports: [SharedTestingModule],
             declarations: [NavigatorComponent, TestComponentWrapperComponent],
             providers: [
                 { provide: SessionService, useValue: fakeSessionService },
-                { provide: PlatformLocation, useValue: fakePlatformLocation },
+                { provide: PlatformLocation, useClass: MockPlatformLocation },
                 { provide: CookieService, useValue: fakeCookieService },
                 { provide: AppConfigService, useValue: fakeAppConfigService },
                 {

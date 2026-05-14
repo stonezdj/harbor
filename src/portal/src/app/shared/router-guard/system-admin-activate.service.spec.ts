@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { SystemAdminGuard } from './system-admin-activate.service';
 import { AppConfigService } from '../../services/app-config.service';
 import { SessionService } from '../services/session.service';
@@ -22,8 +22,8 @@ describe('SystemAdminGuard', () => {
     const fakeSessionService = null;
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
             providers: [
+                provideRouter([]),
                 SystemAdminGuard,
                 { provide: AppConfigService, useValue: fakeAppConfigService },
                 { provide: SessionService, useValue: fakeSessionService },

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { ProjectService } from '../../shared/services';
 import { ArtifactService } from '../../../../ng-swagger-gen/services/artifact.service';
 import { ArtifactDetailRoutingResolverService } from './artifact-detail-routing-resolver.service';
@@ -20,8 +20,8 @@ import { ArtifactDetailRoutingResolverService } from './artifact-detail-routing-
 describe('ArtifactDetailRoutingResolverService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
             providers: [
+                provideRouter([]),
                 { provide: ProjectService, useValue: null },
                 { provide: ArtifactService, useValue: null },
             ],

@@ -16,7 +16,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CopyArtifactComponent } from './copy-artifact.component';
 import { SharedTestingModule } from '../../../../../../../../shared/shared.module';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { RouterTestingModule } from '@angular/router/testing';
 import { ArtifactService } from 'ng-swagger-gen/services/artifact.service';
 import { of } from 'rxjs';
 
@@ -28,7 +27,7 @@ describe('CopyArtifactComponent', () => {
         await TestBed.configureTestingModule({
             schemas: [NO_ERRORS_SCHEMA],
             declarations: [CopyArtifactComponent],
-            imports: [SharedTestingModule, RouterTestingModule],
+            imports: [SharedTestingModule],
         }).compileComponents();
 
         fixture = TestBed.createComponent(CopyArtifactComponent);

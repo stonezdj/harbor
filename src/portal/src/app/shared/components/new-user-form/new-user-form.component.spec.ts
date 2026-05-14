@@ -21,7 +21,7 @@ import {
 } from '@angular/platform-browser/animations';
 import { ClarityModule } from '@clr/angular';
 import { FormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { SessionService } from '../../services/session.service';
 import {
@@ -44,10 +44,10 @@ describe('NewUserFormComponent', () => {
                 ClarityModule,
                 TranslateModule.forRoot(),
                 FormsModule,
-                RouterTestingModule,
                 NoopAnimationsModule,
             ],
             providers: [
+                provideRouter([]),
                 { provide: SessionService, useValue: mockSessionService },
                 TranslateService,
                 provideHttpClient(withInterceptorsFromDi()),

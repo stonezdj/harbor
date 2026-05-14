@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { SessionService } from '../services/session.service';
 import { AppConfigService } from '../../services/app-config.service';
 import { MessageHandlerService } from '../services/message-handler.service';
@@ -27,8 +27,8 @@ describe('AuthCheckGuard', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
             providers: [
+                provideRouter([]),
                 AuthCheckGuard,
                 { provide: SessionService, useValue: fakeSessionService },
                 { provide: AppConfigService, useValue: fakeAppConfigService },

@@ -70,7 +70,7 @@ import {
 import { ImageNameInputComponent } from './components/image-name-input/image-name-input.component';
 import { MessageHandlerService } from './services/message-handler.service';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HarborDatetimePipe } from './pipes/harbor-datetime.pipe';
 import { RemainingTimeComponent } from './components/remaining-time/remaining-time.component';
@@ -260,9 +260,10 @@ export class SharedModule {}
 
 // this module is only for testing, you should only import this module in *.spec.ts files
 @NgModule({
-    exports: [BrowserAnimationsModule, SharedModule, RouterTestingModule],
-    imports: [BrowserAnimationsModule, SharedModule, RouterTestingModule],
+    exports: [BrowserAnimationsModule, SharedModule],
+    imports: [BrowserAnimationsModule, SharedModule],
     providers: [
+        provideRouter([]),
         TranslateStore,
         { provide: ProjectService, useClass: ProjectDefaultService },
         { provide: ErrorHandler, useClass: MessageHandlerService },

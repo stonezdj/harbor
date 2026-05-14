@@ -1,4 +1,5 @@
 #!/bin/bash
+env
 IP=$1
 HARBOR_VERSION=$2
 DOCKER_USER=$3

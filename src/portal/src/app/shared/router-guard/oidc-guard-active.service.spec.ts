@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { OidcGuard } from './oidc-guard-active.service';
 import { AppConfigService } from '../../services/app-config.service';
 import { of } from 'rxjs';
@@ -27,8 +27,8 @@ describe('OidcGuard', () => {
     };
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
             providers: [
+                provideRouter([]),
                 OidcGuard,
                 { provide: AppConfigService, useValue: fakeAppConfigService },
                 {

@@ -3,8 +3,9 @@
         #datagrid
         (clrDgRefresh)="clrLoad($event)"
         [clrDgLoading]="loading"
-        [(clrDgSingleSelected)]="selectedRow"
-        (clrDgSingleSelectedChange)="selectRule($event)">
+        [clrDgSelectionType]="'single'"
+        [clrDgSelected]="selectedRow ? [selectedRow] : []"
+        (clrDgSelectedChange)="selectedRow = $event?.[0]; selectRule($event?.[0])">
         <clr-dg-action-bar>
             <button
                 type="button"

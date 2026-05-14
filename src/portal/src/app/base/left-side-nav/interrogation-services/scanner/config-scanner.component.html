@@ -6,7 +6,9 @@
         <clr-datagrid
             (clrDgRefresh)="getScanners($event)"
             [clrDgLoading]="onGoing"
-            [(clrDgSingleSelected)]="selectedRow">
+            [clrDgSelectionType]="'single'"
+            [clrDgSelected]="selectedRow ? [selectedRow] : []"
+            (clrDgSelectedChange)="selectedRow = $event?.[0]">
             <clr-dg-action-bar>
                 <div class="clr-row">
                     <div class="clr-col-7">

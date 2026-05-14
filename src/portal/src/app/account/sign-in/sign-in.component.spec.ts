@@ -22,7 +22,7 @@ import { of } from 'rxjs';
 import { throwError as observableThrowError } from 'rxjs/internal/observable/throwError';
 import { HttpErrorResponse } from '@angular/common/http';
 import { UserPermissionService } from '../../shared/services';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { ClarityModule } from '@clr/angular';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -43,14 +43,10 @@ describe('SignInComponent', () => {
     };
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                TranslateModule.forRoot(),
-                RouterTestingModule,
-                ClarityModule,
-                FormsModule,
-            ],
+            imports: [TranslateModule.forRoot(), ClarityModule, FormsModule],
             declarations: [SignInComponent],
             providers: [
+                provideRouter([]),
                 TranslateService,
                 {
                     provide: UserPermissionService,

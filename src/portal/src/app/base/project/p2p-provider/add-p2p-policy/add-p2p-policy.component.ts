@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {
+    ChangeDetectorRef,
     Component,
     EventEmitter,
     Input,
@@ -134,7 +135,8 @@ export class AddP2pPolicyComponent implements OnInit, OnDestroy {
         private session: SessionService,
         private route: ActivatedRoute,
         private appConfigService: AppConfigService,
-        private projectService: ProjectService
+        private projectService: ProjectService,
+        private cdr: ChangeDetectorRef
     ) {}
 
     ngOnInit() {
@@ -222,7 +224,7 @@ export class AddP2pPolicyComponent implements OnInit, OnDestroy {
                 }
             });
         }
-        this.currentForm.reset({
+        this.currentForm.resetForm({
             triggerType: 'manual',
             scope: DRAGONFLY_SCOPE.SINGLE_SEED_PEER,
             severity: PROJECT_SEVERITY_LEVEL_MAP[this.projectSeverity],

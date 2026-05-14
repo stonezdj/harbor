@@ -24,7 +24,7 @@
                             [class.clr-error]="
                                 provider.errors &&
                                 provider.errors.required &&
-                                (provider.dirty || provider.touched)
+                                provider.dirty
                             "
                             #provider="ngModel"
                             clrSelect
@@ -91,8 +91,7 @@
                         <div
                             class="clr-control-container"
                             [class.clr-error]="
-                                ((name.dirty || name.touched) &&
-                                    name.invalid) ||
+                                (name.dirty && name.invalid) ||
                                 isNameExisting
                             ">
                             <div class="clr-input-wrapper">
@@ -176,7 +175,7 @@
                             [class.clr-error]="
                                 repo.errors &&
                                 repo.errors.required &&
-                                (repo.dirty || repo.touched)
+                                repo.dirty
                             ">
                             <div class="clr-input-wrapper">
                                 <label class="sub-label required">{{
@@ -223,7 +222,7 @@
                             [class.clr-error]="
                                 tag.errors &&
                                 tag.errors.required &&
-                                (tag.dirty || tag.touched)
+                                tag.dirty
                             ">
                             <div class="clr-input-wrapper">
                                 <label class="sub-label required">{{

@@ -16,6 +16,7 @@ import {
     NgModule,
     APP_INITIALIZER,
     CUSTOM_ELEMENTS_SCHEMA,
+    provideZoneChangeDetection,
 } from '@angular/core';
 import { AppComponent } from './app.component';
 import { InterceptHttpService } from './services/intercept-http.service';
@@ -103,6 +104,7 @@ class MyMissingTranslationHandler implements MissingTranslationHandler {
             useClass: UserPermissionDefaultService,
         },
         provideHttpClient(withInterceptorsFromDi()),
+        provideZoneChangeDetection({ eventCoalescing: true }),
     ],
 })
 export class AppModule {}

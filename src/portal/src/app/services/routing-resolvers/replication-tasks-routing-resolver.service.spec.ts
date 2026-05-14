@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { ReplicationTasksRoutingResolverService } from './replication-tasks-routing-resolver.service';
 import { ReplicationService } from '../../../../ng-swagger-gen/services';
 
 describe('ReplicationTasksRoutingResolverService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
-            providers: [{ provide: ReplicationService, useValue: null }],
+            providers: [
+                provideRouter([]),
+                { provide: ReplicationService, useValue: null },
+            ],
         });
     });
 

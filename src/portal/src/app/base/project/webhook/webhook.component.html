@@ -3,8 +3,9 @@
     <clr-datagrid
         (clrDgRefresh)="getWebhooks($event)"
         [clrDgLoading]="loadingWebhookList"
-        [(clrDgSingleSelected)]="selectedRow"
-        (clrDgSingleSelectedChange)="refreshExecutions($event)">
+        [clrDgSelectionType]="'single'"
+        [clrDgSelected]="selectedRow ? [selectedRow] : []"
+        (clrDgSelectedChange)="selectedRow = $event?.[0]; refreshExecutions($event?.[0])">
         <clr-dg-action-bar>
             <div class="clr-row">
                 <div class="clr-col-7">

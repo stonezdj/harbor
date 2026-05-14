@@ -21,10 +21,9 @@ import {
 } from '@angular/platform-browser/animations';
 import { ClarityModule } from '@clr/angular';
 import { FormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute, provideRouter, RouterModule } from '@angular/router';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
 import { SessionService } from '../../../shared/services/session.service';
 import { AppConfigService } from '../../../services/app-config.service';
 import {
@@ -91,10 +90,11 @@ describe('ProjectDetailComponent', () => {
                 ClarityModule,
                 TranslateModule.forRoot(),
                 FormsModule,
-                RouterTestingModule,
                 NoopAnimationsModule,
+                RouterModule,
             ],
             providers: [
+                provideRouter([]),
                 TranslateService,
                 { provide: SessionService, useValue: mockSessionService },
                 { provide: AppConfigService, useValue: mockAppConfigService },

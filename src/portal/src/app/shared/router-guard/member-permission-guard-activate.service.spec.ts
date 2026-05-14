@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { MemberPermissionGuard } from './member-permission-guard-activate.service';
 import { of } from 'rxjs';
 import { ErrorHandler } from '../units/error-handler';
@@ -26,8 +26,8 @@ describe('MemberPermissionGuardActivateServiceGuard', () => {
     };
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
             providers: [
+                provideRouter([]),
                 ErrorHandler,
                 MemberPermissionGuard,
                 {

@@ -20,7 +20,7 @@ import {
 } from '@angular/platform-browser/animations';
 import { ClarityModule } from '@clr/angular';
 import { FormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AddP2pPolicyComponent } from './add-p2p-policy.component';
 import { P2pProviderService } from '../p2p-provider.service';
@@ -105,10 +105,10 @@ describe('AddP2pPolicyComponent', () => {
                 ClarityModule,
                 TranslateModule.forRoot(),
                 FormsModule,
-                RouterTestingModule,
                 NoopAnimationsModule,
             ],
             providers: [
+                provideRouter([]),
                 P2pProviderService,
                 ErrorHandler,
                 { provide: PreheatService, useValue: mockPreheatService },

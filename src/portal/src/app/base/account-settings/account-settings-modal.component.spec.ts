@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { AccountSettingsModalComponent } from './account-settings-modal.component';
 import { SessionService } from '../../shared/services/session.service';
 import { MessageHandlerService } from '../../shared/services/message-handler.service';
@@ -102,13 +102,13 @@ describe('AccountSettingsModalComponent', () => {
                 ConfirmationDialogComponent,
             ],
             imports: [
-                RouterTestingModule,
                 ClarityModule,
                 TranslateModule.forRoot(),
                 FormsModule,
                 BrowserAnimationsModule,
             ],
             providers: [
+                provideRouter([]),
                 ChangeDetectorRef,
                 TranslateService,
                 ErrorHandler,

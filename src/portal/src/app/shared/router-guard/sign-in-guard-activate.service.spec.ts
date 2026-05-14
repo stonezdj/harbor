@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { TestBed, inject } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { SignInGuard } from './sign-in-guard-activate.service';
 import { SessionService } from '../services/session.service';
 import { of } from 'rxjs';
@@ -28,8 +28,8 @@ describe('SignInGuard', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [RouterTestingModule],
             providers: [
+                provideRouter([]),
                 SignInGuard,
                 {
                     provide: UserPermissionService,

@@ -21,7 +21,7 @@ import {
 } from '@angular/platform-browser/animations';
 import { ClarityModule } from '@clr/angular';
 import { FormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TagRetentionService } from '../tag-retention.service';
 import { ErrorHandler } from '../../../../../shared/units/error-handler';
@@ -44,10 +44,10 @@ describe('AddRuleComponent', () => {
                 ClarityModule,
                 TranslateModule.forRoot(),
                 FormsModule,
-                RouterTestingModule,
                 NoopAnimationsModule,
             ],
             providers: [
+                provideRouter([]),
                 TranslateService,
                 ErrorHandler,
                 {

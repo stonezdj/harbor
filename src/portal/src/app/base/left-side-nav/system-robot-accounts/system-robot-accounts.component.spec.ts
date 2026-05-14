@@ -34,7 +34,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { ClarityModule } from '@clr/angular';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HarborDatetimePipe } from '../../../shared/pipes/harbor-datetime.pipe';
 
@@ -150,10 +150,10 @@ describe('SystemRobotAccountsComponent', () => {
                 TranslateModule.forRoot(),
                 CommonModule,
                 ClarityModule,
-                RouterTestingModule,
                 BrowserAnimationsModule,
             ],
             providers: [
+                provideRouter([]),
                 TranslateService,
                 {
                     provide: MessageHandlerService,
