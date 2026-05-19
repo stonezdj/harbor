@@ -30,7 +30,6 @@
                         "styles": [
                             "node_modules/@clr/ui/clr-ui.min.css",
                             "node_modules/@cds/core/global.min.css",
-                            "node_modules/@clr/icons/clr-icons.min.css",
                             "node_modules/prismjs/themes/prism-solarizedlight.css",
                             "src/global.scss",
                             {
@@ -45,7 +44,6 @@
                             }
                         ],
                         "scripts": [
-                            "node_modules/@clr/icons/clr-icons.min.js",
                             "node_modules/prismjs/prism.js",
                             "node_modules/prismjs/components/prism-yaml.min.js"
                         ],
@@ -105,11 +103,10 @@
                         "tsConfig": "tsconfig.spec.json",
                         "polyfills": ["zone.js", "zone.js/testing"],
                         "karmaConfig": "karma.conf.js",
-                        "scripts": ["node_modules/@clr/icons/clr-icons.min.js"],
+                        "scripts": [],
                         "styles": [
                             "node_modules/@cds/core/global.min.css",
                             "node_modules/@cds/core/styles/theme.dark.min.css",
-                            "node_modules/@clr/icons/clr-icons.min.css",
                             "node_modules/@clr/ui/clr-ui.min.css",
                             "node_modules/prismjs/themes/prism-solarizedlight.css"
                         ],

@@ -19,7 +19,59 @@ import { DateValidatorDirective } from './directives/date-validator.directive';
 import { PortValidatorDirective } from './directives/port.directive';
 import { MaxLengthExtValidatorDirective } from './directives/max-length-ext.directive';
 import { ErrorHandler } from './units/error-handler';
-import { ClarityIconsApi } from '@clr/icons/clr-icons-api';
+import {
+    ClarityIcons,
+    administratorIcon,
+    angleIcon,
+    banIcon,
+    blockIcon,
+    bundleIcon,
+    calendarIcon,
+    cloudTrafficIcon,
+    cogIcon,
+    checkCircleIcon,
+    checkIcon,
+    copyIcon,
+    dashboardIcon,
+    detailsIcon,
+    downloadIcon,
+    ellipsisHorizontalIcon,
+    errorStandardIcon,
+    exclamationCircleIcon,
+    exclamationTriangleIcon,
+    exportIcon,
+    eyeHideIcon,
+    eyeIcon,
+    historyIcon,
+    infoCircleIcon,
+    listIcon,
+    minusCircleIcon,
+    organizationIcon,
+    pencilIcon,
+    playIcon,
+    plusCircleIcon,
+    plusIcon,
+    refreshIcon,
+    searchIcon,
+    resourcePoolIcon,
+    shareIcon,
+    shieldIcon,
+    stopIcon,
+    trashIcon,
+    tagIcon,
+    successStandardIcon,
+    timesCircleIcon,
+    timesIcon,
+    unlinkIcon,
+    userIcon,
+    usersIcon,
+    viewCardsIcon,
+    viewListIcon,
+    warningStandardIcon,
+    windowCloseIcon,
+    worldIcon,
+    wrenchIcon,
+} from '@clr/angular/icon';
 import { ClarityModule } from '@clr/angular';
 import { MarkdownModule } from 'ngx-markdown';
 import { CommonModule } from '@angular/common';
@@ -112,14 +164,60 @@ echarts.use([
     LegendComponent,
 ]);
 
-// ClarityIcons is publicly accessible from the browser's window object.
-declare const ClarityIcons: ClarityIconsApi;
-
-// Add custom icons to ClarityIcons
-// Add robot head icon
-ClarityIcons.add({
-    'robot-head': `
-<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+ClarityIcons.addIcons(
+    worldIcon,
+    calendarIcon,
+    angleIcon,
+    exclamationCircleIcon,
+    plusIcon,
+    successStandardIcon,
+    banIcon,
+    pencilIcon,
+    timesIcon,
+    refreshIcon,
+    checkCircleIcon,
+    exclamationTriangleIcon,
+    playIcon,
+    stopIcon,
+    infoCircleIcon,
+    errorStandardIcon,
+    unlinkIcon,
+    userIcon,
+    usersIcon,
+    downloadIcon,
+    eyeIcon,
+    eyeHideIcon,
+    windowCloseIcon,
+    exportIcon,
+    ellipsisHorizontalIcon,
+    searchIcon,
+    resourcePoolIcon,
+    shareIcon,
+    shieldIcon,
+    tagIcon,
+    trashIcon,
+    copyIcon,
+    dashboardIcon,
+    organizationIcon,
+    administratorIcon,
+    detailsIcon,
+    listIcon,
+    viewCardsIcon,
+    viewListIcon,
+    timesCircleIcon,
+    plusCircleIcon,
+    minusCircleIcon,
+    checkIcon,
+    historyIcon,
+    warningStandardIcon,
+    blockIcon,
+    cloudTrafficIcon,
+    cogIcon,
+    wrenchIcon,
+    bundleIcon,
+    [
+        'robot-head',
+        `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
 <defs><style>.cls-1{fill:none;}</style></defs><g id="Layer_2" data-name="Layer 2">
 <circle cx="12.62" cy="18.6" r="1.5"/><circle cx="23.5" cy="18.5" r="1.5"/>
 <path d="M22,28H14a1,1,0,0,1,0-2h8a1,1,0,0,1,0,2Z"/>
@@ -132,8 +230,10 @@ ClarityIcons.add({
 21.18,0,0,0,4,21.42,21,21,0,0,0,7.71,33.58a1,1,0,0,0,.81.42h19a1,1,0,0,0,
 .81-.42A21,21,0,0,0,32,21.42,21.18,21.18,0,0,0,29.1,10.49Z"/>
 <rect class="cls-1" width="36" height="36"/></g></svg>`,
-    sbom: `
-<?xml version='1.0' encoding='utf-8'?>
+    ] as [string, string],
+    [
+        'sbom',
+        `<?xml version='1.0' encoding='utf-8'?>
 <!-- Generator: imaengine 6.0   -->
 <svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="0,0,512,512" style="enable-background:new 0 0 512 512;" version="1.1">
 <defs/>
@@ -149,7 +249,16 @@ ClarityIcons.add({
 </text>
 </g>
 </svg>`,
-});
+    ] as [string, string]
+);
+
+ClarityIcons.addAliases(
+    ['angle', ['caret', 'caret down', 'angle left']],
+    ['calendar', ['date']],
+    ['pencil', ['edit']],
+    ['times', ['close']],
+    ['warning-standard', ['warning']]
+);
 
 @NgModule({
     imports: [
