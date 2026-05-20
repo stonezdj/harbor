@@ -43,7 +43,10 @@ describe('ValuesComponent', () => {
             imports: [
                 SharedTestingModule,
                 MarkdownModule.forRoot({
-                    sanitize: { provide: SANITIZE, useValue: SecurityContext.HTML },
+                    sanitize: {
+                        provide: SANITIZE,
+                        useValue: SecurityContext.HTML,
+                    },
                 }),
             ],
             declarations: [ValuesComponent],

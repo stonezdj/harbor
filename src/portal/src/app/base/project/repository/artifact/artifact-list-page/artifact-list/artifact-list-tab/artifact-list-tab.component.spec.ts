@@ -353,7 +353,9 @@ describe('ArtifactListTabComponent', () => {
         await fixture.whenStable();
         comp.selectedRow = [mockArtifacts[0]];
         await stepOpenAction(fixture, comp);
-        document.querySelector<HTMLElement>('#artifact-list-copy-digest').click();
+        document
+            .querySelector<HTMLElement>('#artifact-list-copy-digest')
+            .click();
         fixture.detectChanges();
         await fixture.whenStable();
         expect(fixture.nativeElement.querySelector('textarea')).toBeTruthy();
@@ -363,12 +365,12 @@ describe('ArtifactListTabComponent', () => {
         await fixture.whenStable();
         comp.selectedRow = [mockArtifacts[1]];
         await stepOpenAction(fixture, comp);
-        document.querySelector<HTMLElement>('#artifact-list-add-labels').click();
+        document
+            .querySelector<HTMLElement>('#artifact-list-add-labels')
+            .click();
         fixture.detectChanges();
         await fixture.whenStable();
-        expect(
-            document.querySelector('app-label-selector')
-        ).toBeTruthy();
+        expect(document.querySelector('app-label-selector')).toBeTruthy();
     });
 
     it('should open copy artifact modal', async () => {
@@ -408,7 +410,8 @@ describe('ArtifactListTabComponent', () => {
         await fixture.whenStable();
         comp.selectedRow = [mockArtifacts[1]];
         await stepOpenAction(fixture, comp);
-        const stopButton = document.querySelector<HTMLButtonElement>('#stop-sbom-btn');
+        const stopButton =
+            document.querySelector<HTMLButtonElement>('#stop-sbom-btn');
         fixture.detectChanges();
         await fixture.whenStable().then(() => {
             expect(stopButton.disabled).toBeTruthy();

@@ -91,8 +91,7 @@
                         <div
                             class="clr-control-container"
                             [class.clr-error]="
-                                (name.dirty && name.invalid) ||
-                                isNameExisting
+                                (name.dirty && name.invalid) || isNameExisting
                             ">
                             <div class="clr-input-wrapper">
                                 <input
@@ -220,9 +219,7 @@
                         <div
                             class="clr-control-container"
                             [class.clr-error]="
-                                tag.errors &&
-                                tag.errors.required &&
-                                tag.dirty
+                                tag.errors && tag.errors.required && tag.dirty
                             ">
                             <div class="clr-input-wrapper">
                                 <label class="sub-label required">{{

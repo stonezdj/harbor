@@ -24,7 +24,9 @@
                     clrVerticalNavLink
                     routerLinkActive="active"
                     routerLink="/harbor/projects">
-                    <clr-icon shape="organization" clrVerticalNavIcon></clr-icon>
+                    <clr-icon
+                        shape="organization"
+                        clrVerticalNavIcon></clr-icon>
                     {{ 'SIDE_NAV.PROJECTS' | translate }}
                 </a>
                 <a
@@ -37,7 +39,9 @@
                 <clr-vertical-nav-group
                     *ngIf="isSystemAdmin"
                     routerLinkActive="active">
-                    <clr-icon shape="administrator" clrVerticalNavIcon></clr-icon>
+                    <clr-icon
+                        shape="administrator"
+                        clrVerticalNavIcon></clr-icon>
                     {{ 'SIDE_NAV.SYSTEM_MGMT.NAME' | translate }}
                     <a routerLink="#" hidden aria-hidden="true"></a>
                     <clr-vertical-nav-group-children *clrIfExpanded="true">
@@ -45,14 +49,19 @@
                             clrVerticalNavLink
                             routerLink="/harbor/users"
                             routerLinkActive="active">
-                            <clr-icon shape="users" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="users"
+                                clrVerticalNavIcon></clr-icon>
                             {{ 'SIDE_NAV.SYSTEM_MGMT.USER' | translate }}
                         </a>
                         <a
                             clrVerticalNavLink
                             routerLink="/harbor/robot-accounts"
                             routerLinkActive="active">
-                            <clr-icon shape="assign-user" size="16" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="assign-user"
+                                size="16"
+                                clrVerticalNavIcon></clr-icon>
                             {{ 'SYSTEM_ROBOT.ROBOT_ACCOUNT_NAV' | translate }}
                         </a>
                         <a
@@ -66,21 +75,27 @@
                             clrVerticalNavLink
                             routerLink="/harbor/registries"
                             routerLinkActive="active">
-                            <clr-icon shape="block" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="block"
+                                clrVerticalNavIcon></clr-icon>
                             {{ 'SIDE_NAV.SYSTEM_MGMT.REGISTRY' | translate }}
                         </a>
                         <a
                             clrVerticalNavLink
                             routerLink="/harbor/replications"
                             routerLinkActive="active">
-                            <clr-icon shape="cloud-traffic" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="cloud-traffic"
+                                clrVerticalNavIcon></clr-icon>
                             {{ 'SIDE_NAV.SYSTEM_MGMT.REPLICATION' | translate }}
                         </a>
                         <a
                             clrVerticalNavLink
                             routerLink="/harbor/distribution/instances"
                             routerLinkActive="active">
-                            <clr-icon shape="share" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="share"
+                                clrVerticalNavIcon></clr-icon>
                             {{ 'SIDE_NAV.DISTRIBUTIONS.NAME' | translate }}
                         </a>
                         <a
@@ -94,14 +109,18 @@
                             clrVerticalNavLink
                             routerLink="/harbor/project-quotas"
                             routerLinkActive="active">
-                            <clr-icon shape="resource-pool" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="resource-pool"
+                                clrVerticalNavIcon></clr-icon>
                             {{ 'CONFIG.PROJECT_QUOTAS' | translate }}
                         </a>
                         <a
                             clrVerticalNavLink
                             routerLink="/harbor/interrogation-services"
                             routerLinkActive="active">
-                            <clr-icon shape="shield" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="shield"
+                                clrVerticalNavIcon></clr-icon>
                             {{
                                 'SIDE_NAV.SYSTEM_MGMT.INTERROGATION_SERVICES'
                                     | translate
@@ -112,7 +131,9 @@
                             *ngIf="hasAdminRole"
                             routerLink="/harbor/clearing-job"
                             routerLinkActive="active">
-                            <clr-icon shape="trash" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="trash"
+                                clrVerticalNavIcon></clr-icon>
                             {{ 'CLEARANCES.CLEARANCES' | translate }}
                         </a>
                         <a
@@ -120,7 +141,9 @@
                             *ngIf="hasAdminRole"
                             routerLink="/harbor/job-service-dashboard"
                             routerLinkActive="active">
-                            <clr-icon shape="dashboard" clrVerticalNavIcon></clr-icon>
+                            <clr-icon
+                                shape="dashboard"
+                                clrVerticalNavIcon></clr-icon>
                             {{
                                 'JOB_SERVICE_DASHBOARD.JOB_SERVICE_DASHBOARD'
                                     | translate
