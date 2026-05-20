@@ -320,6 +320,7 @@ ClarityIcons.addAliases(
         CommonModule,
         ClipboardModule,
         MarkdownModule,
+        RouterModule,
         MaxLengthExtValidatorDirective,
         PortValidatorDirective,
         DateValidatorDirective,

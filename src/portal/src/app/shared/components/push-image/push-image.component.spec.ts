@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PushImageButtonComponent } from './push-image.component';
-import { CopyInputComponent } from './copy-input.component';
-import { InlineAlertComponent } from '../inline-alert/inline-alert.component';
 import { ErrorHandler } from '../../units/error-handler';
 import { SharedTestingModule } from '../../shared.module';
 import { Component } from '@angular/core';
@@ -26,12 +23,7 @@ describe('PushImageButtonComponent (inline template)', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [SharedTestingModule],
-            declarations: [
-                InlineAlertComponent,
-                CopyInputComponent,
-                PushImageButtonComponent,
-                TestHostComponent,
-            ],
+            declarations: [TestHostComponent],
             providers: [ErrorHandler],
         }).compileComponents();
     });
@@ -54,8 +46,8 @@ describe('PushImageButtonComponent (inline template)', () => {
         el.click();
         fixture.detectChanges();
         await fixture.whenStable();
-        let copyInputs: HTMLInputElement[] =
-            fixture.nativeElement.querySelectorAll('.command-input');
+        let copyInputs =
+            document.querySelectorAll<HTMLInputElement>('.command-input');
         expect(copyInputs.length).toEqual(6);
         expect(copyInputs[0].value.trim()).toEqual(
             `docker tag SOURCE_IMAGE[:TAG] https://testing.harbor.com/testing/REPOSITORY[:TAG]`
