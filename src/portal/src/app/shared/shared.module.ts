@@ -72,6 +72,7 @@ import {
     worldIcon,
     wrenchIcon,
 } from '@clr/angular/icon';
+import { assignUserIcon } from '@cds/core/icon';
 import { ClarityModule } from '@clr/angular';
 import { MarkdownModule } from 'ngx-markdown';
 import { CommonModule } from '@angular/common';
@@ -215,6 +216,7 @@ ClarityIcons.addIcons(
     cogIcon,
     wrenchIcon,
     bundleIcon,
+    assignUserIcon,
     [
         'robot-head',
         `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
