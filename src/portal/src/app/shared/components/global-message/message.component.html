@@ -1,4 +1,5 @@
-<div *ngIf="globalMessageOpened">
+@if (globalMessageOpened) {
+<div>
     <clr-alert
         [clrAlertType]="globalMessage.type"
         [clrAlertAppLevel]="false"
@@ -9,3 +10,4 @@
         </clr-alert-item>
     </clr-alert>
 </div>
+}

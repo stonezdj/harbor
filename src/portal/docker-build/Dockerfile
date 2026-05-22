@@ -1,4 +1,4 @@
-FROM node:20.20.2 as builder
+FROM node:22.22.3 as builder
 
 WORKDIR /build_dir
 

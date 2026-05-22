@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import {
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
@@ -64,6 +65,7 @@ const TRUE: string = 'true';
     templateUrl: './add-p2p-policy.component.html',
     styleUrls: ['./add-p2p-policy.component.scss'],
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddP2pPolicyComponent implements OnInit, OnDestroy {
     severityOptions = [

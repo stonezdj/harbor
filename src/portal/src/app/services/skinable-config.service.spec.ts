@@ -51,8 +51,8 @@ describe('SkinableConfig', () => {
             ],
         });
         injector = getTestBed();
-        service = injector.get(SkinableConfig);
-        httpMock = injector.get(HttpTestingController);
+        service = injector.inject(SkinableConfig);
+        httpMock = injector.inject(HttpTestingController);
     });
 
     it('should be created', inject(

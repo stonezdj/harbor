@@ -29,8 +29,6 @@
                         ],
                         "styles": [
                             "node_modules/@clr/ui/clr-ui.min.css",
-                            "node_modules/@cds/core/global.min.css",
-                            "node_modules/@clr/icons/clr-icons.min.css",
                             "node_modules/prismjs/themes/prism-solarizedlight.css",
                             "src/global.scss",
                             {
@@ -45,8 +43,6 @@
                             }
                         ],
                         "scripts": [
-                            "node_modules/@clr/icons/clr-icons.min.js",
-                            "node_modules/marked/marked.min.js",
                             "node_modules/prismjs/prism.js",
                             "node_modules/prismjs/components/prism-yaml.min.js"
                         ],
@@ -106,11 +102,8 @@
                         "tsConfig": "tsconfig.spec.json",
                         "polyfills": ["zone.js", "zone.js/testing"],
                         "karmaConfig": "karma.conf.js",
-                        "scripts": ["node_modules/@clr/icons/clr-icons.min.js"],
+                        "scripts": [],
                         "styles": [
-                            "node_modules/@cds/core/global.min.css",
-                            "node_modules/@cds/core/styles/theme.dark.min.css",
-                            "node_modules/@clr/icons/clr-icons.min.css",
                             "node_modules/@clr/ui/clr-ui.min.css",
                             "node_modules/prismjs/themes/prism-solarizedlight.css"
                         ],
@@ -151,10 +144,30 @@
     },
     "schematics": {
         "@schematics/angular:component": {
-            "prefix": "app"
+            "prefix": "app",
+            "type": "component"
         },
         "@schematics/angular:directive": {
-            "prefix": "app"
+            "prefix": "app",
+            "type": "directive"
+        },
+        "@schematics/angular:service": {
+          "type": "service"
+        },
+        "@schematics/angular:guard": {
+          "typeSeparator": "."
+        },
+        "@schematics/angular:interceptor": {
+          "typeSeparator": "."
+        },
+        "@schematics/angular:module": {
+          "typeSeparator": "."
+        },
+        "@schematics/angular:pipe": {
+          "typeSeparator": "."
+        },
+        "@schematics/angular:resolver": {
+          "typeSeparator": "."
         }
     },
     "cli": {

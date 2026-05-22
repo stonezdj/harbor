@@ -40,8 +40,8 @@ describe('GlobalSearchService', () => {
             ],
         });
         injector = getTestBed();
-        service = injector.get(GlobalSearchService);
-        httpMock = injector.get(HttpTestingController);
+        service = injector.inject(GlobalSearchService);
+        httpMock = injector.inject(HttpTestingController);
     });
 
     it('should be created', inject(

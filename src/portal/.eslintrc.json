@@ -25,7 +25,8 @@
       "rules": {
         "no-console": ["error", { "allow": ["warn", "error"] }],
         "@angular-eslint/prefer-standalone": "off",
-        "@angular-eslint/no-output-native": "off"
+        "@angular-eslint/no-output-native": "off",
+        "@angular-eslint/prefer-inject": "off"
       }
     },
     {
@@ -35,7 +36,10 @@
       "extends": [
         "plugin:@angular-eslint/template/recommended"
       ],
-      "rules": {}
+      "rules": {
+        "@angular-eslint/template/prefer-control-flow": "off",
+        "@angular-eslint/template/prefer-self-closing-tags": "off"
+      }
     },
     {
       "files": ["*.html"],
