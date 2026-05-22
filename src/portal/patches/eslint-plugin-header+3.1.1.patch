@@ -1,0 +1,18 @@
+diff --git a/node_modules/eslint-plugin-header/lib/rules/header.js b/node_modules/eslint-plugin-header/lib/rules/header.js
+index 3504b6f..eb2e513 100644
+--- a/node_modules/eslint-plugin-header/lib/rules/header.js
++++ b/node_modules/eslint-plugin-header/lib/rules/header.js
+@@ -121,7 +121,12 @@ function matchesLineEndings(src, num) {
+ module.exports = {
+     meta: {
+         type: "layout",
+-        fixable: "whitespace"
++        fixable: "whitespace",
++        schema: {
++            type: "array",
++            items: {},
++            minItems: 0
++        }
+     },
+     create: function(context) {
+         var options = context.options;

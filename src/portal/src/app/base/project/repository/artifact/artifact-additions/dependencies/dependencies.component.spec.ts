@@ -13,7 +13,7 @@
 // limitations under the License.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
-    TranslateFakeLoader,
+    TranslateNoOpLoader,
     TranslateLoader,
     TranslateModule,
     TranslateService,
@@ -58,7 +58,7 @@ describe('DependenciesComponent', () => {
                 TranslateModule.forRoot({
                     loader: {
                         provide: TranslateLoader,
-                        useClass: TranslateFakeLoader,
+                        useClass: TranslateNoOpLoader,
                     },
                 }),
                 ClarityModule,

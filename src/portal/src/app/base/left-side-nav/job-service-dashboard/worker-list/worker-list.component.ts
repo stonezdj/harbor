@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ClrDatagridStateInterface } from '@clr/angular/data/datagrid/interfaces/state.interface';
+import { ClrDatagridStateInterface } from '@clr/angular';
 import { Worker } from 'ng-swagger-gen/models';
 import { WorkerPool } from 'ng-swagger-gen/models/worker-pool';
 import { JobserviceService } from 'ng-swagger-gen/services';

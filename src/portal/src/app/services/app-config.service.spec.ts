@@ -46,8 +46,8 @@ describe('AppConfigService', () => {
             ],
         });
         injector = getTestBed();
-        service = injector.get(AppConfigService);
-        httpMock = injector.get(HttpTestingController);
+        service = injector.inject(AppConfigService);
+        httpMock = injector.inject(HttpTestingController);
     });
     let systeminfo = new AppConfig();
     it('should be created', inject(

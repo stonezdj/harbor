@@ -13,7 +13,13 @@
 // limitations under the License.
 import { debounceTime, finalize, switchMap } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnDestroy,
+    OnInit,
+    ViewChild,
+} from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { MessageHandlerService } from '../../../../shared/services/message-handler.service';
 import { Project } from '../../project';
@@ -73,6 +79,7 @@ const URL_TO_DISPLAY: RegExp =
     templateUrl: './policy.component.html',
     styleUrls: ['./policy.component.scss'],
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PolicyComponent implements OnInit, OnDestroy {
     clrPageSizeOptions: number[] = PAGE_SIZE_OPTIONS;
