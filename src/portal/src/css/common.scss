@@ -23,8 +23,8 @@ $color-fdf6e3: null !default;
 $header-color: null !default;
 $color-yaml: null !default;
 $filter-divider-bg-color: null !default;
-$selectBox-option-hover-bg-color-start: null !default;
-$selectBox-option-hover-bg-color-end: null !default;
+$select-box-option-hover-bg-color-start: null !default;
+$select-box-option-hover-bg-color-end: null !default;
 $hbr-result-tip-histogram-inner-bg-color: null !default;
 $harbor-icon-translate-x: null !default;
 $harbor-icon-drop-shadow-x: null !default;
@@ -202,7 +202,7 @@ hbr-tag {
 }
 
 .selectBox ul li:hover{
-  background-image: linear-gradient(180deg,$selectBox-option-hover-bg-color-start 0,$selectBox-option-hover-bg-color-end) !important;
+  background-image: linear-gradient(180deg,$select-box-option-hover-bg-color-start 0,$select-box-option-hover-bg-color-end) !important;
 }
 
 hbr-result-tip-histogram {
