@@ -1,4 +1,50 @@
 // styles for dark and light theme should be defined here.
+$mode-background-color: null !default;
+$mode-background-color1: null !default;
+$mode-background-color2: null !default;
+$mode-background-color3: null !default;
+$mode-font-color1: null !default;
+$mode-font-color2: null !default;
+$mode-font-color3: null !default;
+$mode-font-color4: null !default;
+$mode-font-color5: null !default;
+$mode-link-color1: null !default;
+$mode-link-color2: null !default;
+$select-option-color: null !default;
+$select-back-color: null !default;
+$label-form-color: null !default;
+$fill-color1: null !default;
+$right-status-fill-color: null !default;
+$light-color-green: null !default;
+$color-ddd: null !default;
+$color-f2: null !default;
+$color-657b83: null !default;
+$color-fdf6e3: null !default;
+$header-color: null !default;
+$color-yaml: null !default;
+$filter-divider-bg-color: null !default;
+$selectBox-option-hover-bg-color-start: null !default;
+$selectBox-option-hover-bg-color-end: null !default;
+$hbr-result-tip-histogram-inner-bg-color: null !default;
+$harbor-icon-translate-x: null !default;
+$harbor-icon-drop-shadow-x: null !default;
+$command-input-color: null !default;
+$command-input-bg-color: null !default;
+$label-hover-bg-color: null !default;
+$nav-divider-bg-color: null !default;
+$label-color-input: null !default;
+$central-block-loading-bg-color: null !default;
+$back-link-color: null !default;
+$radio-button-checked: null !default;
+$input-autofill-bg-color: null !default;
+$input-autofill-color: null !default;
+$pull-command-icon-color: null !default;
+$pull-command-icon-hover-color: null !default;
+$select-all-for-dropdown-color: null !default;
+$normal-border-color: null !default;
+$text-color-job-service-dashboard: null !default;
+$datagrid-numeric-filter-input-bg-color: null !default;
+
 .in-overflow {
     .tabs-overflow {
       > .nav-item {
@@ -368,4 +414,3 @@ job-service-dashboard {
 .my-action-item:hover {
   background-color: $label-hover-bg-color !important;
 }
-
