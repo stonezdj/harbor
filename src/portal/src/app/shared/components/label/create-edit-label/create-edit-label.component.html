@@ -36,17 +36,19 @@
         <div class="clr-col-auto clr-form-control form-field">
             <label for="color">
                 <span>{{ 'LABEL.COLOR' | translate }}</span>
-                <clr-dropdown
-                    class="dropdown-color"
-                    [clrCloseMenuOnItemClick]="false"
-                    clrDropdownTrigger>
-                    <clr-icon
-                        shape="caret"
-                        direction="down"
-                        class="btn btn-outline btnColor"></clr-icon>
-                    <clr-dropdown-menu *clrIfOpen>
+                <clr-dropdown class="dropdown-color" [clrCloseMenuOnItemClick]="false">
+                    <button
+                        clrDropdownTrigger
+                        class="btn btn-outline btnColor"
+                        type="button"
+                        aria-label="Color dropdown">
+                        <clr-icon shape="caret" direction="down"></clr-icon>
+                    </button>
+                    <clr-dropdown-menu class="color-dropdown-menu" *clrIfOpen>
                         @for (i of labelColor; track i) {
-                        <label
+                        <button
+                            clrDropdownItem
+                            type="button"
                             class="dropdown-item"
                             (click)="labelModel.color = i.color"
                             [class.borderSty]="i.color === '#FFFFFF'"
@@ -54,7 +56,7 @@
                                 'background-color': i.color,
                                 color: i.textColor
                             }"
-                            >Aa</label
+                            >Aa</button
                         >
                         }
                     </clr-dropdown-menu>
