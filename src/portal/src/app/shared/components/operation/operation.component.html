@@ -56,16 +56,25 @@
                                         class="eventName"
                                         (click)="toggleTitle(spanErrorInfo)">
                                         <span class="flex">
-                                            <span class="job-name">{{
-                                                item.name | translate
-                                            }}</span>
+                                            <span
+                                                class="job-name"
+                                                cds-layout="m-r:xs"
+                                                >{{
+                                                    item.name | translate
+                                                }}</span
+                                            >
                                             @if ( item.state === 'success' &&
                                             item?.data?.hasFile ) {
-                                            <clr-icon
-                                                (click)="download(item)"
-                                                class="btn btn-link"
-                                                size="16"
-                                                shape="download"></clr-icon>
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-link btn-icon"
+                                                aria-label="download"
+                                                (click)="download(item)">
+                                                <clr-icon
+                                                    status="info"
+                                                    size="16"
+                                                    shape="download"></clr-icon>
+                                            </button>
                                             }
                                         </span>
                                     </label>

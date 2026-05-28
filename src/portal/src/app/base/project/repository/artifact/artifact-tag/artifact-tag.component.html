@@ -46,16 +46,15 @@
 
         <form
             #tagForm="ngForm"
+            clrForm
             [hidden]="!newTagformShow"
-            class="label-form stack-block-label">
-            <section>
-                <label>
-                    <label for="name">{{ 'TAG.NAME' | translate }}</label>
-                    <label
-                        class="clr-control-container"
-                        [class.clr-error]="
-                            isTagNameExist || name.hasError('pattern')
-                        ">
+            clrLabelSize="3"
+            class="label-form">
+            <div class="clr-row">
+                <!-- Left column -->
+                <div class="clr-col-lg-4 clr-col-md-6">
+                    <clr-input-container class="form-field full-width">
+                        <label for="name">{{ 'TAG.NAME' | translate }}</label>
                         <input
                             clrInput
                             type="text"
@@ -68,24 +67,19 @@
                             #name="ngModel"
                             pattern="^[\w][\w.-]{0,127}$"
                             (keyup)="existValid(newTagName.name)" />
-                        <span
-                            class="spinner spinner-inline spinner-tag"
-                            [hidden]="!tagNameCheckOnGoing"></span>
-
                         @if (isTagNameExist) {
-                        <clr-control-error
-                            class="position-ab white-space-nowrap">
+                        <clr-control-error class="white-space-nowrap">
                             {{ 'TAG.NAME_ALREADY_EXISTS' | translate }}
                         </clr-control-error>
                         } @if (name.hasError('pattern')) {
-                        <clr-control-error
-                            class="position-ab white-space-nowrap">
+                        <clr-control-error class="white-space-nowrap">
                             {{ 'RETAG.TIP_TAG' | translate }}
                         </clr-control-error>
                         }
-                    </label>
-                </label>
-                <label class="ml-1">
+                    </clr-input-container>
+                </div>
+                <!-- Right column -->
+                <div class="clr-col-lg-4 clr-col-md-6">
                     <button
                         type="button"
                         class="btn btn-sm btn-outline"
@@ -105,8 +99,8 @@
                         ">
                         {{ 'BUTTON.OK' | translate }}
                     </button>
-                </label>
-            </section>
+                </div>
+            </div>
         </form>
     </clr-dg-action-bar>
     <clr-dg-column [clrDgField]="'name'">{{

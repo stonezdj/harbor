@@ -36,7 +36,9 @@
         <div class="clr-col-auto clr-form-control form-field">
             <label for="color">
                 <span>{{ 'LABEL.COLOR' | translate }}</span>
-                <clr-dropdown class="dropdown-color" [clrCloseMenuOnItemClick]="false">
+                <clr-dropdown
+                    class="dropdown-color"
+                    [clrCloseMenuOnItemClick]="false">
                     <button
                         clrDropdownTrigger
                         class="btn btn-outline btnColor"
@@ -55,9 +57,9 @@
                             [ngStyle]="{
                                 'background-color': i.color,
                                 color: i.textColor
-                            }"
-                            >Aa</button
-                        >
+                            }">
+                            Aa
+                        </button>
                         }
                     </clr-dropdown-menu>
                 </clr-dropdown>
