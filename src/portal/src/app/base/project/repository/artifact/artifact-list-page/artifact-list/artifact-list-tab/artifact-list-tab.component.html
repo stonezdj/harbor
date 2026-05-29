@@ -577,8 +577,8 @@
                         }}
                     </div>
                 </clr-dg-cell>
-                @if (artifact?.accessories?.length) {
                 <ng-container ngProjectAs="clr-dg-row-detail">
+                    @if (artifact?.accessories?.length) {
                     <sub-accessories
                         [projectName]="projectName"
                         [repositoryName]="repoName"
@@ -586,8 +586,8 @@
                         [total]="artifact?.accessoryNumber"
                         [accessories]="artifact?.accessories"
                         *clrIfExpanded></sub-accessories>
+                    }
                 </ng-container>
-                }
             </clr-dg-row>
             }
             <clr-dg-footer>

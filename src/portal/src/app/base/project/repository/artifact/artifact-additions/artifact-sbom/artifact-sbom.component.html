@@ -20,11 +20,9 @@
                             class="btn btn-secondary"
                             [clrLoading]="downloadSbomBtnState"
                             [disabled]="!canDownloadSbom()">
-                            @if (!isRunningState()) {
                             <clr-icon shape="download" size="16"></clr-icon>
-                            }&nbsp; @if (!isRunningState()) {
+                            &nbsp;
                             <span>{{ 'SBOM.DOWNLOAD' | translate }}</span>
-                            }
                         </button>
                     </div>
                 </div>

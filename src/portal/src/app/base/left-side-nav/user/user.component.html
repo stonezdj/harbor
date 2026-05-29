@@ -47,7 +47,7 @@
                         }}
                     </button>
                     <clr-dropdown
-                        [clrCloseMenuOnItemClick]="false"
+                        [clrCloseMenuOnItemClick]="true"
                         class="btn btn-link"
                         clrDropdownTrigger>
                         <span id="member-action"
@@ -57,32 +57,30 @@
                                 direction="down"></clr-icon
                         ></span>
                         <clr-dropdown-menu *clrIfOpen>
-                            <clr-dropdown>
-                                <button
-                                    type="button"
-                                    class="btn btn-secondary"
-                                    id="changePwd"
-                                    [disabled]="
-                                        !(selectedRow.length === 1) ||
-                                        !canCreateUser
-                                    "
-                                    (click)="openChangePwdModal()">
-                                    <clr-icon shape="edit" size="16"></clr-icon
-                                    >&nbsp;{{ 'RESET_PWD.TITLE' | translate }}
-                                </button>
-                                <div class="dropdown-divider"></div>
-                                <button
-                                    id="deleteUser"
-                                    type="button"
-                                    class="btn btn-secondary"
-                                    (click)="deleteUsers(selectedRow)"
-                                    [disabled]="
-                                        !selectedRow.length || onlySelf
-                                    ">
-                                    <clr-icon shape="times" size="16"></clr-icon
-                                    >&nbsp;{{ 'USER.DEL_ACTION' | translate }}
-                                </button>
-                            </clr-dropdown>
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                id="changePwd"
+                                clrDropdownItem
+                                [disabled]="
+                                    !(selectedRow.length === 1) ||
+                                    !canCreateUser
+                                "
+                                (click)="openChangePwdModal()">
+                                <clr-icon shape="edit" size="16"></clr-icon
+                                >&nbsp;{{ 'RESET_PWD.TITLE' | translate }}
+                            </button>
+                            <div class="dropdown-divider"></div>
+                            <button
+                                id="deleteUser"
+                                type="button"
+                                class="btn btn-secondary"
+                                clrDropdownItem
+                                (click)="deleteUsers(selectedRow)"
+                                [disabled]="!selectedRow.length || onlySelf">
+                                <clr-icon shape="times" size="16"></clr-icon
+                                >&nbsp;{{ 'USER.DEL_ACTION' | translate }}
+                            </button>
                         </clr-dropdown-menu>
                     </clr-dropdown>
                 </clr-dg-action-bar>

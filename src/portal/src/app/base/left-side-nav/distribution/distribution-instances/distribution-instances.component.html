@@ -23,7 +23,7 @@
                                 }}
                             </button>
                             <clr-dropdown
-                                [clrCloseMenuOnItemClick]="false"
+                                [clrCloseMenuOnItemClick]="true"
                                 class="btn btn-link"
                                 clrDropdownTrigger>
                                 <span id="member-action"
@@ -33,101 +33,101 @@
                                         direction="down"></clr-icon
                                 ></span>
                                 <clr-dropdown-menu *clrIfOpen>
-                                    <clr-dropdown>
-                                        <button
-                                            type="button"
-                                            class="btn btn-secondary"
-                                            (click)="editInstance()"
-                                            [disabled]="
-                                                !(
-                                                    selectedRow &&
-                                                    selectedRow.length === 1
-                                                )
-                                            ">
-                                            <clr-icon
-                                                shape="edit"
-                                                size="16"></clr-icon
-                                            >&nbsp;
-                                            <span id="distribution-edit">{{
-                                                'BUTTON.EDIT' | translate
-                                            }}</span>
-                                        </button>
-                                        @if ( selectedRow && selectedRow.length
-                                        === 1 && !selectedRow[0].enabled ) {
-                                        <button
-                                            type="button"
-                                            class="btn btn-secondary"
-                                            (click)="
-                                                operateInstances(
-                                                    'enable',
-                                                    selectedRow
-                                                )
-                                            "
-                                            [disabled]="
-                                                !(
-                                                    selectedRow &&
-                                                    selectedRow.length === 1 &&
-                                                    !selectedRow[0].enabled
-                                                )
-                                            ">
-                                            <clr-icon
-                                                shape="connect"
-                                                size="16"></clr-icon
-                                            >&nbsp;
-                                            <span id="distribution-enable">{{
-                                                'WEBHOOK.ENABLED_BUTTON'
-                                                    | translate
-                                            }}</span>
-                                        </button>
-                                        } @if ( !( selectedRow &&
-                                        selectedRow.length === 1 &&
-                                        !selectedRow[0].enabled ) ) {
-                                        <button
-                                            type="button"
-                                            class="btn btn-secondary"
-                                            (click)="
-                                                operateInstances(
-                                                    'disable',
-                                                    selectedRow
-                                                )
-                                            "
-                                            [disabled]="
-                                                !(
-                                                    selectedRow &&
-                                                    selectedRow.length === 1 &&
-                                                    selectedRow[0].enabled
-                                                )
-                                            ">
-                                            <clr-icon
-                                                shape="disconnect"
-                                                size="16"></clr-icon
-                                            >&nbsp;
-                                            <span id="distribution-disable">{{
-                                                'WEBHOOK.DISABLED_BUTTON'
-                                                    | translate
-                                            }}</span>
-                                        </button>
-                                        }
-                                        <div class="dropdown-divider"></div>
-                                        <button
-                                            type="button"
-                                            class="btn btn-secondary"
-                                            (click)="
-                                                operateInstances(
-                                                    'delete',
-                                                    selectedRow
-                                                )
-                                            "
-                                            [disabled]="selectedRow.length < 1">
-                                            <clr-icon
-                                                shape="window-close"
-                                                size="16"></clr-icon
-                                            >&nbsp;
-                                            <span id="distribution-delete">{{
-                                                'BUTTON.DELETE' | translate
-                                            }}</span>
-                                        </button>
-                                    </clr-dropdown>
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        clrDropdownItem
+                                        (click)="editInstance()"
+                                        [disabled]="
+                                            !(
+                                                selectedRow &&
+                                                selectedRow.length === 1
+                                            )
+                                        ">
+                                        <clr-icon
+                                            shape="edit"
+                                            size="16"></clr-icon
+                                        >&nbsp;
+                                        <span id="distribution-edit">{{
+                                            'BUTTON.EDIT' | translate
+                                        }}</span>
+                                    </button>
+                                    @if ( selectedRow && selectedRow.length ===
+                                    1 && !selectedRow[0].enabled ) {
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        clrDropdownItem
+                                        (click)="
+                                            operateInstances(
+                                                'enable',
+                                                selectedRow
+                                            )
+                                        "
+                                        [disabled]="
+                                            !(
+                                                selectedRow &&
+                                                selectedRow.length === 1 &&
+                                                !selectedRow[0].enabled
+                                            )
+                                        ">
+                                        <clr-icon
+                                            shape="connect"
+                                            size="16"></clr-icon
+                                        >&nbsp;
+                                        <span id="distribution-enable">{{
+                                            'WEBHOOK.ENABLED_BUTTON' | translate
+                                        }}</span>
+                                    </button>
+                                    } @if ( !( selectedRow && selectedRow.length
+                                    === 1 && !selectedRow[0].enabled ) ) {
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        clrDropdownItem
+                                        (click)="
+                                            operateInstances(
+                                                'disable',
+                                                selectedRow
+                                            )
+                                        "
+                                        [disabled]="
+                                            !(
+                                                selectedRow &&
+                                                selectedRow.length === 1 &&
+                                                selectedRow[0].enabled
+                                            )
+                                        ">
+                                        <clr-icon
+                                            shape="disconnect"
+                                            size="16"></clr-icon
+                                        >&nbsp;
+                                        <span id="distribution-disable">{{
+                                            'WEBHOOK.DISABLED_BUTTON'
+                                                | translate
+                                        }}</span>
+                                    </button>
+                                    }
+                                    <div class="dropdown-divider"></div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        clrDropdownItem
+                                        (click)="
+                                            operateInstances(
+                                                'delete',
+                                                selectedRow
+                                            )
+                                        "
+                                        [disabled]="selectedRow.length < 1">
+                                        <clr-icon
+                                            shape="window-close"
+                                            size="16"></clr-icon
+                                        >&nbsp;
+                                        <span id="distribution-delete">{{
+                                            'BUTTON.DELETE' | translate
+                                        }}</span>
+                                    </button>
                                 </clr-dropdown-menu>
                             </clr-dropdown>
                         </div>

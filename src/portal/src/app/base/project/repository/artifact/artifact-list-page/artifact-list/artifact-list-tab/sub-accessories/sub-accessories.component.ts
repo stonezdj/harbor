@@ -210,7 +210,7 @@ export class SubAccessoriesComponent
                             }
                         }
                         item.accessories = res.body;
-                        this.cdf.detectChanges();
+                        this.cdf.markForCheck();
                     });
             });
         }

@@ -37,7 +37,7 @@
                         {{ 'P2P_PROVIDER.NEW_POLICY' | translate }}
                     </button>
                     <clr-dropdown
-                        [clrCloseMenuOnItemClick]="false"
+                        [clrCloseMenuOnItemClick]="true"
                         class="btn btn-link"
                         clrDropdownTrigger>
                         <span id="action-policy"
@@ -374,7 +374,7 @@
                         <clr-icon
                             shape="refresh"
                             (click)="refreshJobs()"
-                            [hidden]="loading"></clr-icon>
+                            [hidden]="jobsLoading"></clr-icon>
                     </span>
                 </div>
             </div>

@@ -35,8 +35,8 @@
     </div>
     }
 </clr-dropdown>
-} @if (isTagMode) {
-<clr-dropdown class="mr-1" [disabled]="!hasPullCommandForTag(artifact)">
+} @if (isTagMode && hasPullCommandForTag(artifact)) {
+<clr-dropdown class="mr-1">
     @if (isImage(artifact)) {
     <hbr-copy-input
         [title]="getPullCommandForRuntimeByTag(artifact)"

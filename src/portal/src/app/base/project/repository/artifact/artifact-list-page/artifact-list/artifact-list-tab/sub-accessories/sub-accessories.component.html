@@ -62,8 +62,8 @@
                 {{ a.creation_time | harborDatetime : 'short' }}
             </div>
         </clr-dg-cell>
-        @if (a?.accessories?.length) {
         <ng-container ngProjectAs="clr-dg-row-detail">
+            @if (a?.accessories?.length) {
             <sub-accessories
                 [projectName]="projectName"
                 [repositoryName]="repositoryName"
@@ -71,8 +71,8 @@
                 [total]="a?.accessoryNumber"
                 [accessories]="a?.accessories"
                 *clrIfExpanded></sub-accessories>
+            }
         </ng-container>
-        }
     </clr-dg-row>
     } @if (total > pageSize) {
     <clr-dg-footer>

@@ -84,7 +84,9 @@
                                 <form
                                     #customruntimeForm="ngForm"
                                     class="clr-form">
-                                    <div class="clr-form-control">
+                                    <div
+                                        class="clr-form-control"
+                                        cds-layout="m-t:none">
                                         <label
                                             for="customPrefix"
                                             class="clr-control-label"
@@ -136,11 +138,14 @@
                                             </div>
                                             }
                                         </div>
-                                        <div class="modal-footer">
+                                    </div>
+                                    <div class="custom-runtime-footer">
+                                        <div
+                                            clrDropdownItem
+                                            class="ok-item-wrapper">
                                             <button
-                                                clrDropdownItem
                                                 type="button"
-                                                class="btn btn-primary"
+                                                class="btn btn-primary btn-sm"
                                                 id="ok-btn"
                                                 [disabled]="!isValid"
                                                 (click)="addCustomRuntime()">

@@ -625,6 +625,7 @@ export class PolicyComponent implements OnInit, OnDestroy {
                 // if datagrid is under control of *ngIf, should add timeout in case of ng changes checking error
                 setTimeout(() => {
                     this.jobsLoading = true;
+                    this.cdr.markForCheck();
                 });
             }
             let params: string;
@@ -675,6 +676,7 @@ export class PolicyComponent implements OnInit, OnDestroy {
         this.totalExecutionCount = 0;
         this.filterKey = 'id';
         this.searchString = null;
+        this.cdr.markForCheck();
         this.clrLoadJobs(chosenPolicy, true);
     }
 

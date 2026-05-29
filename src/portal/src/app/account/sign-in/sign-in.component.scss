@@ -35,12 +35,19 @@
     .login {
         background:transparent;
 
-        .login-group .clr-form-control .error {
-            display: block;
-            border: none;
-            background: none;
-            color: var(--clr-forms-invalid-text-color);
-            padding: var(--clr-base-vertical-offset-m) 0;
+        .login-group {
+
+            .clr-form-control .error {
+                display: flex;
+                border: none;
+                background: none;
+                color: var(--clr-forms-invalid-text-color);
+                padding: var(--clr-base-vertical-offset-m) 0;
+
+                &::before {
+                    content: none;
+                }
+            }
         }
     }
 }
@@ -107,4 +114,12 @@
 
 .oidc-login-button {
     text-transform: unset !important;
+}
+
+:host::ng-deep {
+    .login-group {
+            .clr-input-group {
+                display: block;
+            }
+    }
 }
