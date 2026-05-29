@@ -5,7 +5,7 @@
             @if (license) {
             <div
                 class="yaml-container"
-                [innerHTML]="license | language | markdown"></div>
+                [innerHTML]="license | language | markdown | async"></div>
             }
         </div>
         @if (!license) {

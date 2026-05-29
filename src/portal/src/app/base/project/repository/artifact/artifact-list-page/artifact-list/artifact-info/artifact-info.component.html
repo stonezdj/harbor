@@ -32,7 +32,9 @@
             </div>
             } @if (imageInfo) {
             <div class="info-div">
-                <div class="info-pre" [innerHTML]="imageInfo | markdown"></div>
+                <div
+                    class="info-pre"
+                    [innerHTML]="imageInfo | markdown | async"></div>
             </div>
             } }
         </div>

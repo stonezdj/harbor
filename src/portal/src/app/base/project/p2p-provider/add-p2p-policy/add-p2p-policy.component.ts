@@ -13,6 +13,7 @@
 // limitations under the License.
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     EventEmitter,
     Input,
@@ -136,7 +137,8 @@ export class AddP2pPolicyComponent implements OnInit, OnDestroy {
         private session: SessionService,
         private route: ActivatedRoute,
         private appConfigService: AppConfigService,
-        private projectService: ProjectService
+        private projectService: ProjectService,
+        private cdr: ChangeDetectorRef
     ) {}
 
     ngOnInit() {
@@ -189,6 +191,7 @@ export class AddP2pPolicyComponent implements OnInit, OnDestroy {
                     if (res && res.length > 0) {
                         this.isNameExisting = true;
                     }
+                    this.cdr.markForCheck();
                 });
         }
     }
@@ -206,6 +209,7 @@ export class AddP2pPolicyComponent implements OnInit, OnDestroy {
                     PROJECT_SEVERITY_LEVEL_MAP[this.projectSeverity];
             }
             this.hasInit.emit(true);
+            this.cdr.markForCheck();
         });
     }
 
@@ -353,7 +357,12 @@ export class AddP2pPolicyComponent implements OnInit, OnDestroy {
             policy.enabled = true;
             this.preheatService
                 .CreatePolicy({ projectName: this.projectName, policy: policy })
-                .pipe(finalize(() => (this.loading = false)))
+                .pipe(
+                    finalize(() => {
+                        this.loading = false;
+                        this.cdr.markForCheck();
+                    })
+                )
                 .subscribe(
                     response => {
                         this.buttonStatus = ClrLoadingState.SUCCESS;
@@ -373,7 +382,12 @@ export class AddP2pPolicyComponent implements OnInit, OnDestroy {
                     preheatPolicyName: this.originPolicyForEdit.name,
                     policy: policy,
                 })
-                .pipe(finalize(() => (this.loading = false)))
+                .pipe(
+                    finalize(() => {
+                        this.loading = false;
+                        this.cdr.markForCheck();
+                    })
+                )
                 .subscribe(
                     response => {
                         this.buttonStatus = ClrLoadingState.SUCCESS;

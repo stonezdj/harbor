@@ -57,7 +57,7 @@
     <div class="col-xs-8">
         <div
             class="yaml-container"
-            [innerHTML]="values | language : 'yaml' | markdown"></div>
+            [innerHTML]="values | language : 'yaml' | markdown | async"></div>
     </div>
     }
 </div>
