@@ -40,7 +40,7 @@
         <ng-template clrPageTitle>{{
             'ROBOT_ACCOUNT.BASIC_INFO' | translate
         }}</ng-template>
-        <form #robotForm="ngForm" class="clr-form clr-form-horizontal">
+        <form clrForm #robotForm="ngForm" class="clr-form clr-form-horizontal">
             <section class="form-block">
                 <div class="clr-form-control">
                     <label for="name" class="clr-control-label required"
@@ -117,6 +117,7 @@
                         type="text"
                         id="description"
                         name="description"
+                        [ngModelOptions]="{ standalone: true }"
                         [(ngModel)]="systemRobot.description"></textarea>
                 </clr-textarea-container>
                 <div class="clr-form-control mt-2">

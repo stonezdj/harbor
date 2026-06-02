@@ -167,9 +167,9 @@ export class SubAccessoriesComponent
             .subscribe(
                 res => {
                     this.displayedAccessories = res;
-                    this.cdf.detectChanges();
                     this.getIconFromBackend();
                     this.getAccessoriesAsync(this.displayedAccessories);
+                    this.cdf.detectChanges();
                 },
                 error => {
                     this.errorHandlerService.error(error);
