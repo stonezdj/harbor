@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	awsecrapi "github.com/aws/aws-sdk-go/service/ecr"
+	awsecrapi "github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -195,7 +195,7 @@ func getMockAdapter(t *testing.T, hasCred, health bool) (*adapter, *httptest.Ser
 		URL:  server.URL,
 	}
 
-	var svc *awsecrapi.ECR
+	var svc *awsecrapi.Client
 	if hasCred {
 		registry.Credential = &model.Credential{
 			AccessKey:    "xxx",
