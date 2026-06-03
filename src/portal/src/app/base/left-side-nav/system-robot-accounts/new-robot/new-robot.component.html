@@ -41,6 +41,7 @@
             'ROBOT_ACCOUNT.BASIC_INFO' | translate
         }}</ng-template>
         <form clrForm #robotForm="ngForm" class="clr-form clr-form-horizontal">
+            @if (addRobotOpened) {
             <section class="form-block">
                 <div class="clr-form-control">
                     <label for="name" class="clr-control-label required"
@@ -235,6 +236,7 @@
                     </div>
                 </div>
             </section>
+            }
         </form>
     </clr-wizard-page>
     <clr-wizard-page class="pb-0">
@@ -263,6 +265,7 @@
         }}</ng-template>
         <inline-alert></inline-alert>
         <form class="clr-form clr-form-horizontal pb-0 pt-0">
+            @if (addRobotOpened) {
             <section class="form-block">
                 <div class="clr-form-control mt-1">
                     <label class="clr-control-label">{{
@@ -316,6 +319,7 @@
                 </div>
                 }
             </section>
+            }
         </form>
     </clr-wizard-page>
 </clr-wizard>
