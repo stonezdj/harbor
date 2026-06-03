@@ -263,6 +263,7 @@ Test Case - User View Logs
     Close Browser
 
 Test Case - Manage Project Member
+    [tags]  manage_project_member
     Init Chrome Driver
     ${user}=    Set Variable    user004
     ${pwd}=    Set Variable    Test1@34
@@ -426,6 +427,7 @@ Test Case - Project Admin Add Labels To Repo
     Close Browser
 
 Test Case - Developer Operate Labels
+    [Tags]  developer_operate_labels
     Init Chrome Driver
     ${d}=   Get Current Date    result_format=%m%s
 
