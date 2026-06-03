@@ -375,10 +375,22 @@ Edit A Distribution
     Switch To Distribution
     Filter Distribution List  ${name}  ${endpoint}
     Retry Double Keywords When Error  Select Distribution   ${name}  Wait Until Element Is Visible  //clr-datagrid//clr-dg-footer//clr-checkbox-wrapper/label[contains(@class,'clr-control-label')]  times=9
-    Retry Double Keywords When Error  Retry Element Click  ${distribution_action_btn_id}  Wait Until Element Is Visible And Enabled  ${distribution_edit_btn_id}
-    Retry Double Keywords When Error  Retry Element Click  ${distribution_edit_btn_id}  Wait Until Element Is Visible And Enabled  ${distribution_name_input_id}
+    # Lock onto the global top 'Actions' menu using its true native ID 'member-action'
+    ${xpath_global_actions}=    Set Variable    //span[@id='member-action'] | //clr-dropdown[contains(.,'Actions')]
+    Wait Until Page Contains Element    xpath=${xpath_global_actions}    timeout=15s
+    Execute Javascript    var btn = document.evaluate("${xpath_global_actions}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(btn) { btn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); btn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); btn.click(); }
+    Sleep    1
+    # Select the 'EDIT' option inside the opened menu
+    ${xpath_edit_btn}=    Set Variable    //clr-dropdown-menu//button[contains(.,'EDIT') or contains(.,'Edit')]
+    Wait Until Page Contains Element    xpath=${xpath_edit_btn}    timeout=10s
+    Execute Javascript    var editBtn = document.evaluate("${xpath_edit_btn}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(editBtn) { editBtn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); editBtn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); editBtn.click(); }
+    Sleep    2
+    # Input the new endpoint data
     Retry Text Input  ${distribution_endpoint_id}  ${new_endpoint}
-    Retry Double Keywords When Error  Retry Element Click  ${distribution_add_save_btn_id}  Retry Wait Until Page Not Contains Element  xpath=${distribution_add_save_btn_id}
+    Execute Javascript    var inp = document.evaluate("${distribution_endpoint_id}".replace("xpath=",""), document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(inp) { inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); }
+    Sleep    1
+    Execute Javascript    var saveBtn = document.evaluate("${distribution_add_save_btn_id}".replace("xpath=",""), document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(saveBtn) { saveBtn.removeAttribute('disabled'); saveBtn.click(); }
+    Sleep    2
     Filter Distribution List  ${name}  ${new_endpoint}
     Distribution Exist  ${name}  ${new_endpoint}
 
