@@ -78,7 +78,7 @@ ${registry_del_btn}   //button[contains(.,'Delete')]
 
 ${replication_rule_action}              //*[@id='rule-action']
 ${replication_rule_action_bar_edit}     //*[@id='edit_replication_rule_id']
-${replication_rule_action_bar_delete}   //*[@id='delete_replication_rule_id']
+${replication_rule_action_bar_delete}   //clr-dropdown-menu//button[contains(.,'DELETE')]
 ${replication_rule_exec_id}             //*[@id='replication_exe_id']
 ${replication_task_line_1}  //clr-datagrid//clr-dg-row/div/div[2]//div[contains(@class,'clr-checkbox-wrapper')]/label[contains(@class,'clr-control-label')][1]
 ${is_overide_xpath}  //label[contains(@class,'clr-control-label') and contains(.,'Replace the destination resources if name exists')]
