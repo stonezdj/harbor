@@ -92,7 +92,7 @@ Resource  TestCaseBody.robot
 
 *** Keywords ***
 Wait Until Element Is Visible And Enabled
-    [Arguments]  ${element}  ${timeout}=180s
+    [Arguments]  ${element}  ${timeout}=60s
     Wait Until Element Is Visible  ${element}  timeout=${timeout}
     Wait Until Element Is Enabled  ${element}  timeout=${timeout}
 

@@ -711,130 +711,34 @@ Reset Schedules For Job Service Dashboard Schedules
 Prepare Accessory
     [Arguments]  ${project_name}  ${image}  ${tag}  ${user}  ${pwd}
     Docker Login  ${ip}  ${user}  ${pwd}
-    
-    # 1. Generate keys and push artifacts via background CLI
     Cosign Generate Key Pair
     Cosign Sign  ${ip}/${project_name}/${image}:${tag}
     Cosign Push Sbom  ${ip}/${project_name}/${image}:${tag}
-    
-    # 2. Navigate to Repo UI page
     Go Into Repo  ${project_name}  ${image}
-    
-    # Expand Level 1 main image row to load the first sub-grid layer
-    Wait Until Element Is Visible And Enabled    ${artifact_list_accessory_btn}    timeout=15s
     Retry Button Click  ${artifact_list_accessory_btn}
-    Sleep  2
-    
-    # === Step 1: Get Primary Signature full 64-char digest via Modal (Level 2) ===
-    # Check DOM presence instead of fragile visibility heuristics
-    Wait Until Page Contains Element    xpath=//clr-dg-cell[contains(.,'signature.cosign')]    timeout=15s
-    
-    # 1.1 Trigger ellipsis menu using full MouseEvent dispatch sequence to force Angular lifecycle response
-    Execute Javascript    var btn = document.evaluate("(//clr-dg-row[.//clr-dg-cell[contains(.,'signature.cosign') and not(ancestor::sub-accessories)]])[1]//button[contains(@class,'toggle') or contains(@class,'action-toggle')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(btn) { btn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); btn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); btn.click(); }
-    Sleep    1
-    
-    # 1.2 Wait only for DOM presence of 'Copy Digest' item to bypass headless blindness
-    Wait Until Page Contains Element    xpath=//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]    timeout=10s
-    
-    Execute Javascript    var item = document.evaluate("//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(item) { item.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); item.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); item.click(); }
-    
-    # 1.3 Wait for the full modal DOM tree context to render safely
-    Wait Until Page Contains Element    xpath=//clr-modal//div[contains(@class,'modal-body')]    timeout=10s
-    Sleep    1
-    
-    # 1.4 Grab full un-truncated 64-char hash out of input/textarea box via JS text stream reading
-    ${signature_digest_raw}=    Execute Javascript    var box = document.querySelector('clr-modal .modal-body'); return box ? (box.querySelector('textarea, input') ? box.querySelector('textarea, input').value : box.textContent) : '';
-    
-    # Sift out exact clean hash using Python regex engine
-    ${signature_digest}=    Evaluate    re.search(r'(sha256:[a-f0-9]{64})', '''${signature_digest_raw}''').group(1)    modules=re
-    Log    Successfully Captured First 64-char Digest: ${signature_digest}
-    Set Test Variable    ${signature_digest}    ${signature_digest}
-    
-    # Close current modal dialog safely
-    Retry Button Click    xpath=//clr-modal//button[contains(.,'COPY')] | //button[contains(@class,'btn-primary') and contains(.,'COPY')]
-    Wait Until Element Is Not Visible    xpath=//clr-modal    timeout=10s
-    Sleep  2
-
-    # === Step 2: Get SBOM full 64-char digest via Modal (Level 2) ===
-    Wait Until Page Contains Element    xpath=//clr-dg-cell[contains(.,'subject.accessory')]    timeout=15s
-    
-    # 2.1 Trigger ellipsis menu for the SBOM row via MouseEvent stream emulation
-    Execute Javascript    var btn = document.evaluate("//clr-dg-row[.//clr-dg-cell[contains(.,'subject.accessory')]]//button[contains(@class,'toggle') or contains(@class,'action-toggle')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(btn) { btn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); btn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); btn.click(); }
-    Sleep    1
-    
-    # 2.2 Wait for second row dropdown context
-    Wait Until Page Contains Element    xpath=//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]    timeout=10s
-    
-    # 2.3 Emulate human mouse click to successfully evoke second Modal container
-    Execute Javascript    var item = document.evaluate("//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(item) { item.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); item.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); item.click(); }
-    
-    # 2.4 Wait for second modal DOM presence context
-    Wait Until Page Contains Element    xpath=//clr-modal//div[contains(@class,'modal-body')]    timeout=10s
-    Sleep    1
-    
-    # 2.5 Intercept text safely using JS mapping
-    ${sbom_digest_raw}=    Execute Javascript    var box = document.querySelector('clr-modal .modal-body'); return box ? (box.querySelector('textarea, input') ? box.querySelector('textarea, input').value : box.textContent) : '';
-    
-    ${sbom_digest}=    Evaluate    re.search(r'(sha256:[a-f0-9]{64})', '''${sbom_digest_raw}''').group(1)    modules=re
-    Log    Successfully Captured Second 64-char Digest: ${sbom_digest}
-    Set Test Variable    ${sbom_digest}    ${sbom_digest}
-    
-    # Dismiss the modal and clear context focus
-    Retry Button Click    xpath=//clr-modal//button[contains(.,'COPY')] | //button[contains(@class,'btn-primary') and contains(.,'COPY')]
-    Wait Until Element Is Not Visible    xpath=//clr-modal    timeout=10s
-    Sleep  2
-
-    # === Step 3: Chain-sign the UI captured discrete full digests to build Level 3 tree nodes ===
-    Cosign Sign  ${ip}/${project_name}/${image}@${signature_digest}
+    # Get SBOM digest
+    Retry Double Keywords When Error  Retry Button Click  ${artifact_sbom_accessory_action_btn}  Retry Button Click  ${copy_digest_btn}
+    Wait Until Element Is Visible And Enabled  ${artifact_digest}
+    ${sbom_digest}=  Get Text  ${artifact_digest}
+    Retry Double Keywords When Error  Retry Button Click  ${copy_btn}  Retry Wait Element Not Visible  ${copy_btn}
+    # Get Signature digest
+    Retry Double Keywords When Error  Retry Button Click  ${artifact_cosign_accessory_action_btn}  Retry Button Click  ${copy_digest_btn}
+    Wait Until Element Is Visible And Enabled  ${artifact_digest}
+    ${signature_digest}=  Get Text  ${artifact_digest}
+    Retry Double Keywords When Error  Retry Button Click  ${copy_btn}  Retry Wait Element Not Visible  ${copy_btn}
     Cosign Sign  ${ip}/${project_name}/${image}@${sbom_digest}
-    
-    # Reload grid layout to compile nested tree structures
+    Cosign Sign  ${ip}/${project_name}/${image}@${signature_digest}
     Refresh Artifacts
-    Wait Until Element Is Visible And Enabled    ${artifact_list_accessory_btn}    timeout=15s
     Retry Button Click  ${artifact_list_accessory_btn}
-    Sleep  2
-    
-    # === Step 4: Verify and Get Secondary Signature nested under SBOM container (Level 3) ===
-    Wait Until Element Is Visible And Enabled    ${artifact_list_sbom_accessory_btn}    timeout=10s
-    Retry Button Click  ${artifact_list_sbom_accessory_btn}
-    Sleep  1
-    
-    Wait Until Page Contains Element    xpath=//sub-accessories//clr-dg-row[contains(., 'signature.cosign')]    timeout=10s
-    Execute Javascript    var btn = document.evaluate("//sub-accessories//clr-dg-row[contains(., 'signature.cosign')]//button[contains(@class,'toggle') or contains(@class,'action-toggle')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(btn) { btn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); btn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); btn.click(); }
-    Sleep    1
-    
-    Wait Until Page Contains Element    xpath=//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]    timeout=10s
-    Execute Javascript    var item = document.evaluate("//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(item) { item.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); item.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); item.click(); }
-    
-    Wait Until Page Contains Element    xpath=//clr-modal//div[contains(@class,'modal-body')]    timeout=10s
-    ${signature_of_sbom_digest_raw}=    Execute Javascript    var box = document.querySelector('clr-modal .modal-body'); return box ? (box.querySelector('textarea, input') ? box.querySelector('textarea, input').value : box.textContent) : '';
-    ${signature_of_sbom_digest}=    Evaluate    re.search(r'(sha256:[a-f0-9]{64})', '''${signature_of_sbom_digest_raw}''').group(1)    modules=re
-    Log    Captured Level 3 SBOM Secondary Signature Digest: ${signature_of_sbom_digest}
-    
-    Retry Button Click    xpath=//clr-modal//button[contains(.,'COPY')] | //button[contains(@class,'btn-primary') and contains(.,'COPY')]
-    Wait Until Element Is Not Visible    xpath=//clr-modal    timeout=10s
-    Sleep  1.5
-    
-    # === Step 5: Verify and Get Secondary Signature nested under Primary Signature container (Level 3) ===
-    Wait Until Element Is Visible And Enabled    ${artifact_list_cosign_accessory_btn}    timeout=10s
-    Retry Button Click  ${artifact_list_cosign_accessory_btn}
-    Sleep  1
-    
-    Wait Until Page Contains Element    xpath=//clr-dg-row[.//clr-dg-cell[contains(.,'signature.cosign') and not(ancestor::sub-accessories)]]//sub-accessories    timeout=10s
-    Execute Javascript    var btn = document.evaluate("//clr-dg-row[.//clr-dg-cell[contains(.,'signature.cosign') and not(ancestor::sub-accessories)]]//sub-accessories//button[contains(@class,'toggle') or contains(@class,'action-toggle')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(btn) { btn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); btn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); btn.click(); }
-    Sleep    1
-    
-    Wait Until Page Contains Element    xpath=//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]    timeout=10s
-    Execute Javascript    var item = document.evaluate("//button[contains(.,'Copy Digest')] | //a[contains(.,'Copy Digest')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(item) { item.dispatchEvent(new MouseEvent('mousedown', {bubbles: true})); item.dispatchEvent(new MouseEvent('mouseup', {bubbles: true})); item.click(); }
-    
-    Wait Until Page Contains Element    xpath=//clr-modal//div[contains(@class,'modal-body')]    timeout=10s
-    ${signature_of_signature_digest_raw}=    Execute Javascript    var box = document.querySelector('clr-modal .modal-body'); return box ? (box.querySelector('textarea, input') ? box.querySelector('textarea, input').value : box.textContent) : '';
-    ${signature_of_signature_digest}=    Evaluate    re.search(r'(sha256:[a-f0-9]{64})', '''${signature_of_signature_digest_raw}''').group(1)    modules=re
-    Log    Captured Level 3 Primary Signature Secondary Digest: ${signature_of_signature_digest}
-    
-    Retry Button Click    xpath=//clr-modal//button[contains(.,'COPY')] | //button[contains(@class,'btn-primary') and contains(.,'COPY')]
-    Wait Until Element Is Not Visible    xpath=//clr-modal    timeout=10s
-    
+    # Get Signature of SBOM digest
+    Retry Double Keywords When Error  Retry Button Click  ${artifact_list_sbom_accessory_btn}  Retry Button Click  ${artifact_sbom_cosign_accessory_action_btn}
+    Retry Double Keywords When Error  Retry Button Click  ${copy_digest_btn}  Wait Until Element Is Visible And Enabled  ${artifact_digest}
+    ${signature_of_sbom_digest}=  Get Text  ${artifact_digest}
+    Retry Double Keywords When Error  Retry Button Click  ${copy_btn}  Retry Wait Element Not Visible  ${copy_btn}
+    # Get Signature of Signature digest
+    Retry Double Keywords When Error  Retry Button Click  ${artifact_list_cosign_accessory_btn}  Retry Button Click  ${artifact_cosign_cosign_accessory_action_btn}
+    Retry Double Keywords When Error  Retry Button Click  ${copy_digest_btn}  Wait Until Element Is Visible And Enabled  ${artifact_digest}
+    ${signature_of_signature_digest}=  Get Text  ${artifact_digest}
+    Retry Double Keywords When Error  Retry Button Click  ${copy_btn}  Retry Wait Element Not Visible  ${copy_btn}
     Docker Logout  ${ip}
     [Return]  ${sbom_digest}  ${signature_digest}  ${signature_of_sbom_digest}  ${signature_of_signature_digest}
-
