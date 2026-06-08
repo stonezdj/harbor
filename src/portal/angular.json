@@ -25,7 +25,12 @@
                             "src/images",
                             "src/favicon.ico",
                             "src/setting.json",
-                            "src/i18n"
+                            "src/i18n",
+                            {
+                                "glob": "**/*",
+                                "input": "app-swagger-ui/dist",
+                                "output": "/"
+                            }
                         ],
                         "styles": [
                             "node_modules/@clr/ui/clr-ui.min.css",
