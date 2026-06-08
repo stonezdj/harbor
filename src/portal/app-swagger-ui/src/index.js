@@ -6,12 +6,49 @@ const helpInfo =
     ' please logout Harbor first or manually delete the cookies under the current domain.';
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS', 'TRACE'];
 
+function showError(error) {
+    const container = document.getElementById('swagger-ui-container');
+    if (!container) {
+        return;
+    }
+
+    container.removeAttribute('class');
+    container.innerHTML = '';
+
+    const message = document.createElement('div');
+    message.style.margin = '2rem';
+    message.style.fontFamily = 'Arial, sans-serif';
+
+    const title = document.createElement('h2');
+    title.textContent = 'Failed to load Harbor API documentation';
+
+    const detail = document.createElement('p');
+    detail.textContent = error.message;
+
+    const hint = document.createElement('p');
+    hint.textContent = 'Please verify that /swagger.json is reachable from this portal.';
+
+    message.appendChild(title);
+    message.appendChild(detail);
+    message.appendChild(hint);
+    container.appendChild(message);
+}
+
 // get swagger.json from portal container then render swagger ui
 // before rendering, the ui shows a loading style
-fetch('/swagger.json').then(value => value.json()).then(res => {
+fetch('/swagger.json').then(value => {
+    if (!value.ok) {
+        throw new Error(`Request to /swagger.json failed with status ${value.status}`);
+    }
+    return value.json();
+}).then(res => {
+    if (!res || !res.info) {
+        throw new Error('The response from /swagger.json is not a valid Harbor Swagger document.');
+    }
+
     res['host'] = window.location.host;
-    const protocal = window.location.protocol;
-    res['schemes'] = [protocal.replace(':', '')];
+    const protocol = window.location.protocol;
+    res['schemes'] = [protocol.replace(':', '')];
     res.info.description = res.info.description + helpInfo;
         // start to render
         SwaggerUI({
@@ -52,4 +89,5 @@ fetch('/swagger.json').then(value => value.json()).then(res => {
     })
     .catch((err) => {
         console.error(err);
+        showError(err);
     });
