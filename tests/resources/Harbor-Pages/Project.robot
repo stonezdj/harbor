@@ -142,7 +142,8 @@ Delete Repo
 Delete Repo on CardView
     [Arguments]  ${reponame}
     Retry Element Click  //hbr-gridview//span[contains(.,'${reponame}')]//clr-dropdown/button
-    Retry Element Click  //hbr-gridview//span[contains(.,'${reponame}')]//clr-dropdown/clr-dropdown-menu/button[contains(.,'Delete')]
+    # Only one Delete button is displayed here, so selecting the first match is safe.
+    Retry Element Click  (//button[normalize-space()='Delete'])[1]
     Retry Element Click  ${repo_delete_on_card_view_btn}
 
 Delete Project
@@ -176,19 +177,19 @@ Do Log Advanced Search
     Retry Element Click  xpath=//project-audit-log//button[contains(., 'Advanced')]
     Retry Element Click  xpath=//project-audit-log//button[contains(., 'Operations')]
     #pull log
-    Retry Element Click  xpath=//project-audit-log//clr-dropdown//a[contains(.,'Pull')]
+    Retry Element Click  xpath=//clr-dropdown-menu/a[normalize-space(.)='Pull']
     Retry Wait Until Page Not Contains Element  xpath=//clr-dg-row[contains(.,'pull')]
     #create log
     Retry Element Click  xpath=//project-audit-log//button[contains(., 'Operations')]
-    Retry Element Click  xpath=//project-audit-log//clr-dropdown//a[contains(.,'Create')]
+    Retry Element Click  xpath=//clr-dropdown-menu/a[normalize-space(.)='Create']
     Retry Wait Until Page Not Contains Element  xpath=//clr-dg-row[contains(.,'create')]
     #delete log
     Retry Element Click  xpath=//project-audit-log//button[contains(., 'Operations')]
-    Retry Element Click  xpath=//project-audit-log//clr-dropdown//a[contains(.,'Delete')]
+    Retry Element Click  xpath=//clr-dropdown-menu/a[normalize-space(.)='Delete']
     Retry Wait Until Page Not Contains Element  xpath=//clr-dg-row[contains(.,'delete')]
     #others
     Retry Element Click  xpath=//project-audit-log//button[contains(., 'Operations')]
-    Retry Element Click  xpath=//project-audit-log//clr-dropdown//a[contains(.,'Others')]
+    Retry Element Click  xpath=//clr-dropdown-menu/a[normalize-space(.)='Others']
     Retry Element Click  xpath=//project-audit-log//hbr-filter//clr-icon
     Retry Text Input  xpath=//project-audit-log//hbr-filter//input  harbor-jobservice
     Retry Wait Until Page Not Contains Element   //audit-log//clr-dg-row[2]

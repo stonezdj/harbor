@@ -81,7 +81,7 @@ Test Case - Harbor Endpoint Delete
     Close Browser
 
 Test Case - Replication Rule Edit
-    [tags]  replication_rule_edit
+    [Tags]  replication_rule_edit
     Init Chrome Driver
     ${d}=    Get Current Date    result_format=%m%s
     ${endpoint1}=    Set Variable    e1${d}
@@ -177,7 +177,7 @@ Test Case - Replication Of Push Images from Self To Harbor
     Close Browser
 
 Test Case - Replication Exclusion Mode And Set Bandwidth
-    [tags]  replication_exclusion_set_bandwidth
+    [Tags]  replication_exclusion_set_bandwidth
     Init Chrome Driver
     ${d}=  Get Current Date  result_format=%m%s
     # login source
@@ -289,7 +289,7 @@ Test Case - Replication Of Pull Manifest List and CNAB from Harbor To Self
     Body Of Replication Of Pull Images from Registry To Self   harbor  https://${LOCAL_REGISTRY}  ${null}  ${null}  nightly/{${image1},${image2},${image3}}  ${null}  Y  Flatten 1 Level  @{target_images}
 
 Test Case - Image Namespace Level Flattening
-    [tags]  flattening
+    [Tags]  flattening
     ${src_endpoint}=  Set Variable  ${ip1}
 
     #Test only for <Flatten All Levels>
@@ -321,7 +321,7 @@ Test Case - Image Namespace Level Flattening
     Replication With Flattening  ${src_endpoint}  20  Flatten 3 Levels  level_1/level_2/  @{src_images}
 
 Test Case - Robot Account Do Replication
-    [tags]  robot_account_do_replication
+    [Tags]  robot_account_do_replication
     Init Chrome Driver
     ${d}=  Get Current Date  result_format=%m%s
     ${image1}=  Set Variable  hello-world
