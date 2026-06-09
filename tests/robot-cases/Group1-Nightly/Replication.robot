@@ -177,6 +177,7 @@ Test Case - Replication Of Push Images from Self To Harbor
     Close Browser
 
 Test Case - Replication Exclusion Mode And Set Bandwidth
+    [tags]  replication_exclusion_set_bandwidth
     Init Chrome Driver
     ${d}=  Get Current Date  result_format=%m%s
     # login source
