@@ -390,22 +390,6 @@ Should Not Be Signed
     [Arguments]  ${tag}
     Retry Wait Element Visible  //clr-dg-row[contains(.,'${tag}')]//clr-icon[contains(@class,'color-red')]
 
-# Should Be Signed By Cosign
-#     [Arguments]  ${tag}=${null}  ${digest}=${null}
-#     IF  '${tag}' != '${null}'
-#         Retry Wait Element Visible  //clr-dg-row[./clr-expandable-animation/div/div/div/clr-dg-cell/div/clr-tooltip/div/div/span[contains(.,'${tag}')] and .//clr-dg-row[.//img[@title='signature.cosign']]]
-#     ELSE
-#         Retry Wait Element Visible  //clr-dg-row[./clr-expandable-animation/div/div/div/clr-dg-cell/div/a[contains(.,'${digest}')] and .//clr-dg-row[.//img[@title='signature.cosign']]]
-#     END
-
-# Should Be Signed By Notation
-#     [Arguments]  ${tag}=${null}  ${digest}=${null}
-#     IF  '${tag}' != '${null}'
-#         Retry Wait Element Visible  //clr-dg-row[./clr-expandable-animation/div/div/div/clr-dg-cell/div/clr-tooltip/div/div/span[contains(.,'${tag}')] and .//clr-dg-row[.//img[@title='signature.notation']]]
-#     ELSE
-#         Retry Wait Element Visible  //clr-dg-row[./clr-expandable-animation/div/div/div/clr-dg-cell/div/a[contains(.,'${digest}')] and .//clr-dg-row[.//img[@title='signature.notation']]]
-#     END
-
 Should Be Signed By Cosign
     [Arguments]  ${tag}=${null}  ${digest}=${null}
     IF  '${tag}' != '${null}'
