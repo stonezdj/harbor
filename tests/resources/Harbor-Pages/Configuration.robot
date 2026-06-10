@@ -358,11 +358,10 @@ Delete A Distribution
     Filter Distribution List  ${name}  ${endpoint}
     # 1. Select the row checkbox
     Retry Double Keywords When Error  Select Distribution   ${name}  Wait Until Element Is Visible  //clr-datagrid//clr-dg-footer//clr-checkbox-wrapper/label[contains(@class,'clr-control-label')]
-    Sleep  1.5
+    Sleep  2
     Wait Until Element Is Visible    xpath=//clr-dropdown/*[@id='member-action']    timeout=10s
     # 2. Click the global "ACTIONS" dropdown menu above the datagrid
     Retry Double Keywords When Error  Retry Element Click  xpath=//clr-dropdown/*[@id='member-action']  Wait Until Element Is Visible And Enabled  xpath=//clr-dropdown-menu//button[contains(., 'DELETE')]
-    # Retry Double Keywords When Error  Retry Element Click  xpath=//clr-dropdown/button[contains(., 'ACTIONS')]  Wait Until Element Is Visible And Enabled  xpath=//clr-dropdown-menu//button[contains(., 'DELETE')]
     Sleep  1
     # 3. Click the "DELETE" option inside the active actions menu overlay
     Retry Double Keywords When Error  Retry Element Click  xpath=//clr-dropdown-menu//button[contains(., 'DELETE')]  Wait Until Element Is Visible And Enabled  ${delete_confirm_btn}
