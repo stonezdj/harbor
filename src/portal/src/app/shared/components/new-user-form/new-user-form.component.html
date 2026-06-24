@@ -61,16 +61,16 @@
                     <span
                         class="spinner spinner-inline spinner-pos"
                         [hidden]="isChecking('email')"></span>
-                    @if (isSelfRegistration) {
-                    <clr-control-helper>{{
-                        'TOOLTIP.SIGN_UP_MAIL' | translate
-                    }}</clr-control-helper>
-                    } @if (getValidationState('email')) {
-                    <clr-control-error>
-                        {{ emailTooltip | translate }}
-                    </clr-control-error>
-                    }
                 </div>
+                @if (isSelfRegistration) {
+                <clr-control-helper>{{
+                    'TOOLTIP.SIGN_UP_MAIL' | translate
+                }}</clr-control-helper>
+                } @if (getValidationState('email')) {
+                <clr-control-error>
+                    {{ emailTooltip | translate }}
+                </clr-control-error>
+                }
             </div>
         </div>
         <clr-input-container>
