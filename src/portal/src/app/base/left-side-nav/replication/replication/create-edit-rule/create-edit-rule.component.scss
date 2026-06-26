@@ -367,3 +367,36 @@ clr-modal {
 .event-label {
     width: unset;
 }
+
+.clr-control-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+
+    + .clr-control-inline {
+        margin-top: 0.5rem;
+    }
+
+    .clr-checkbox-wrapper {
+        .clr-control-label {
+            width: auto;
+
+            .override-tooltip {
+                margin-left: 0.25rem;
+            }
+        }
+    }
+}
+
+.clr-checkbox-wrapper:not(.speed) {
+    display: inline-flex;
+    align-items: center;
+
+    .clr-control-label {
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+
