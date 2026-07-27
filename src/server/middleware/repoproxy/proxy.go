@@ -100,6 +100,11 @@ func handleBlob(w http.ResponseWriter, r *http.Request, next http.Handler) error
 		return nil
 	}
 
+	// Apply repository filter: if proxy_cache_filter_pattern is set, the repository must match
+	if err := checkRepositoryFilter(p, art); err != nil {
+		return err
+	}
+
 	if !canProxy(r.Context(), p) || proxyCtl.UseLocalBlob(ctx, art) {
 		next.ServeHTTP(w, r)
 		return nil
@@ -210,6 +215,24 @@ func matchRepositoryFilter(repository, filterPattern, filterKind string) bool {
 	return matched
 }
 
+// checkRepositoryFilter returns a NotFoundError if the project has a proxy_cache_filter_pattern
+// set and the artifact's repository does not match it. It is enforced for both manifest and
+// blob requests so the filter acts as an access boundary rather than a manifest-only convenience,
+// since a client that knows a blob digest out-of-band could otherwise bypass the filter.
+func checkRepositoryFilter(p *proModels.Project, art lib.ArtifactInfo) error {
+	filterPattern, ok := p.GetMetadata(proModels.ProMetaProxyCacheFilterPattern)
+	if !ok || filterPattern == "" {
+		return nil
+	}
+	filterKind, _ := p.GetMetadata(proModels.ProMetaProxyCacheFilterKind)
+	remoteRepo := strings.TrimPrefix(art.Repository, art.ProjectName+"/")
+	if !matchRepositoryFilter(remoteRepo, filterPattern, filterKind) {
+		log.Infof("blocked proxy cache pull for project %q repository %q: repository does not match filter %q (kind: %s)", p.Name, remoteRepo, filterPattern, filterKind)
+		return errors.NotFoundError(fmt.Errorf("repository %q does not match project repository filter %q (kind: %s)", remoteRepo, filterPattern, filterKind))
+	}
+	return nil
+}
+
 // upstreamRegistryConnectionKey get upstream registry connection key
 func upstreamRegistryConnectionKey(art lib.ArtifactInfo) string {
 	limitOnProject := os.Getenv(upstreamRegistryLimitOnProject)
@@ -237,13 +260,8 @@ func handleManifest(w http.ResponseWriter, r *http.Request, next http.Handler) e
 	}
 
 	// Apply repository filter: if proxy_cache_filter_pattern is set, the repository must match
-	if filterPattern, ok := p.GetMetadata(proModels.ProMetaProxyCacheFilterPattern); ok && filterPattern != "" {
-		filterKind, _ := p.GetMetadata(proModels.ProMetaProxyCacheFilterKind)
-		remoteRepo := strings.TrimPrefix(art.Repository, art.ProjectName+"/")
-		if !matchRepositoryFilter(remoteRepo, filterPattern, filterKind) {
-			log.Infof("blocked proxy cache pull for project %q repository %q: repository does not match filter %q (kind: %s)", p.Name, remoteRepo, filterPattern, filterKind)
-			return errors.NotFoundError(fmt.Errorf("repository %q does not match project repository filter %q (kind: %s)", remoteRepo, filterPattern, filterKind))
-		}
+	if err := checkRepositoryFilter(p, art); err != nil {
+		return err
 	}
 
 	if !canProxy(r.Context(), p) {
