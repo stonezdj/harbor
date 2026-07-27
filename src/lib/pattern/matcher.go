@@ -64,7 +64,15 @@ func ValidateRepositoryFilter(filterPattern, kind string) error {
 	if rf.Kind != "" && rf.Kind != KindRegex && rf.Kind != KindDoublestar {
 		return errors.Errorf("unsupported repository filter kind %q", kind)
 	}
-	_, err := rf.Match("")
+	// To ensure doublestar parses and validates the pattern segments,
+	// we should match against a dummy path with the same number of segments.
+	segments := strings.Split(rf.Filter, "/")
+	dummySegments := make([]string, len(segments))
+	for i := range dummySegments {
+		dummySegments[i] = "dummy"
+	}
+	dummyPath := strings.Join(dummySegments, "/")
+	_, err := rf.Match(dummyPath)
 	return err
 }
 

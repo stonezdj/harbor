@@ -45,7 +45,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/lib/pattern"
-	"github.com/goharbor/harbor/src/lib/pattern"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg"
 	"github.com/goharbor/harbor/src/pkg/audit"
@@ -868,27 +867,6 @@ func (a *projectAPI) validateProjectReq(ctx context.Context, req *models.Project
 		}
 	}
 
-	return nil
-}
-
-func validateProxyCacheRepositoryFilter(metadata *models.ProjectMetadata) error {
-	if metadata == nil {
-		return nil
-	}
-
-	filterKind := lib.StringValue(metadata.ProxyCacheFilterKind)
-	if filterKind == "" {
-		filterKind = pattern.KindDoublestar
-	}
-	if filterKind != pattern.KindRegex && filterKind != pattern.KindDoublestar {
-		return errors.BadRequestError(nil).
-			WithMessagef("metadata.proxy_cache_filter_kind should be %q or %q, but got: %q", pattern.KindDoublestar, pattern.KindRegex, filterKind)
-	}
-
-	if err := pattern.ValidateRepositoryFilter(lib.StringValue(metadata.ProxyCacheFilterPattern), filterKind); err != nil {
-		return errors.BadRequestError(nil).
-			WithMessagef("metadata.proxy_cache_filter_pattern is invalid for kind %q: %v", filterKind, err)
-	}
 	return nil
 }
 
