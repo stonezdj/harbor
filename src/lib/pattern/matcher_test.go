@@ -192,6 +192,12 @@ func TestRegexMatcher(t *testing.T) {
 			want:    true,
 		},
 		{
+			name:    "alternation with leftmost-first issue",
+			value:   "ab",
+			pattern: "a|ab",
+			want:    true,
+		},
+		{
 			name:    "invalid regex returns error",
 			value:   "library/nginx",
 			pattern: "[invalid",

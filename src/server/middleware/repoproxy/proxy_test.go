@@ -23,6 +23,9 @@ import (
 	"github.com/goharbor/harbor/src/common/security/local"
 	"github.com/goharbor/harbor/src/common/security/proxycachesecret"
 	securitySecret "github.com/goharbor/harbor/src/common/security/secret"
+	"github.com/goharbor/harbor/src/lib"
+	"github.com/goharbor/harbor/src/lib/errors"
+	proModels "github.com/goharbor/harbor/src/pkg/project/models"
 )
 
 func TestIsProxySession(t *testing.T) {
@@ -202,6 +205,49 @@ func TestMatchRepositoryFilter(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("matchRepositoryFilter(%q, %q, %q) = %v; want %v",
 					tt.repository, tt.filterPattern, tt.filterKind, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestCheckRepositoryFilterAppliesToBlobAndManifest ensures the repository filter
+// is enforced regardless of whether the request is for a manifest or a blob, so
+// a blob digest known out-of-band can't be used to bypass the project's filter.
+func TestCheckRepositoryFilterAppliesToBlobAndManifest(t *testing.T) {
+	art := lib.ArtifactInfo{ProjectName: "proxy_project", Repository: "proxy_project/other/nginx"}
+
+	cases := []struct {
+		name      string
+		metadata  map[string]string
+		wantBlock bool
+	}{
+		{
+			name:      "no filter configured",
+			metadata:  map[string]string{},
+			wantBlock: false,
+		},
+		{
+			name:      "matching filter allows",
+			metadata:  map[string]string{proModels.ProMetaProxyCacheFilterPattern: "other/**"},
+			wantBlock: false,
+		},
+		{
+			name:      "non-matching filter blocks",
+			metadata:  map[string]string{proModels.ProMetaProxyCacheFilterPattern: "library/**"},
+			wantBlock: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &proModels.Project{Name: art.ProjectName, Metadata: tt.metadata}
+			err := checkRepositoryFilter(p, art)
+			if tt.wantBlock {
+				if err == nil || !errors.IsNotFoundErr(err) {
+					t.Errorf("checkRepositoryFilter() = %v; want NotFoundError", err)
+				}
+			} else if err != nil {
+				t.Errorf("checkRepositoryFilter() = %v; want nil", err)
 			}
 		})
 	}

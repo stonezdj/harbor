@@ -74,21 +74,25 @@ type Matcher interface {
 	Match(value, pattern string) (bool, error)
 }
 
-// RegexMatcher implements Matcher using regular expressions
+// RegexMatcher implements Matcher using regular expressions.
+// The patterns are always auto-anchored to match the full string (e.g., ^(?:pattern)$).
+// This ensures correct Go regexp alternation behavior (which is leftmost-first)
+// and guarantees that patterns must match the full repository path (e.g., ^library/
+// matches nothing because it does not match the full repository path).
 type RegexMatcher struct{}
 
-// Match matches value against a regular expression pattern
+// Match matches value against a regular expression pattern.
+// The pattern is compiled as ^(?:pattern)$ to enforce full-string matching.
 func (r *RegexMatcher) Match(value, pattern string) (bool, error) {
 	pattern = strings.TrimSpace(pattern)
 	if pattern == "" {
 		return true, nil
 	}
-	re, err := regexp.Compile(pattern)
+	re, err := regexp.Compile("^(?:" + pattern + ")$")
 	if err != nil {
 		return false, err
 	}
-	match := re.FindStringIndex(value)
-	return match != nil && match[0] == 0 && match[1] == len(value), nil
+	return re.MatchString(value), nil
 }
 
 // DoublestarMatcher implements Matcher using doublestar (glob) patterns
