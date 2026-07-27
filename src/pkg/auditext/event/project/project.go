@@ -27,6 +27,7 @@ import (
 	"github.com/goharbor/harbor/src/controller/event/model"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/lib/config"
+	"github.com/goharbor/harbor/src/lib/orm"
 	"github.com/goharbor/harbor/src/pkg/notifier/event"
 	"github.com/goharbor/harbor/src/pkg/project/models"
 )
@@ -53,7 +54,12 @@ func (r *resolver) Resolve(ce *commonevent.Metadata, evt *event.Event) error {
 		return fmt.Errorf("failed to parse project name or ID from URL: %s", ce.RequestURL)
 	}
 
-	proj, err := getProject(ce.Ctx, projStr)
+	ctx := ce.Ctx
+	if _, err := orm.FromContext(ctx); err == nil {
+		ctx = orm.Clone(ctx)
+	}
+
+	proj, err := getProject(ctx, projStr)
 	if err != nil {
 		return fmt.Errorf("failed to get project: %v", err)
 	}
