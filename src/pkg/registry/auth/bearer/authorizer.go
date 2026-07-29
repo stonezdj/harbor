@@ -138,6 +138,8 @@ func (a *authorizer) fetchToken(scopes []*scope) (*token, error) {
 			code = errors.UnAuthorizedCode
 		case http.StatusForbidden:
 			code = errors.ForbiddenCode
+		case http.StatusBadRequest:
+			code = errors.BadRequestCode
 		}
 		return nil, errors.New(nil).WithCode(code).
 			WithMessagef("http status code: %d, body: %s", resp.StatusCode, string(body))

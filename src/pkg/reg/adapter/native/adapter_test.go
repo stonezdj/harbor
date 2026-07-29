@@ -24,8 +24,20 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/goharbor/harbor/src/common/utils/test"
+	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/pkg/reg/model"
+	"github.com/goharbor/harbor/src/pkg/registry"
 )
+
+// fakePingClient stubs registry.Client to control the error Ping() returns
+type fakePingClient struct {
+	registry.Client
+	err error
+}
+
+func (f *fakePingClient) Ping() error {
+	return f.err
+}
 
 func Test_native_Info(t *testing.T) {
 	var registry = &model.Registry{URL: "abc"}
@@ -83,6 +95,19 @@ func mockNativeRegistry() (mock *httptest.Server) {
 		},
 	)
 }
+func Test_native_PingSimple(t *testing.T) {
+	// a strict token service (e.g. registry.istio.io) rejects the scope-less
+	// token request issued for a base "/v2/" ping with 400, but the registry
+	// is actually reachable, so PingSimple should tolerate it.
+	adapter := &Adapter{registry: &model.Registry{URL: "https://registry.istio.io"}}
+	adapter.Client = &fakePingClient{err: errors.New(nil).WithCode(errors.BadRequestCode).WithMessage("scope is required")}
+	assert.Nil(t, adapter.PingSimple())
+
+	// an unrelated error must still surface as unhealthy
+	adapter.Client = &fakePingClient{err: errors.New(nil).WithCode(errors.GeneralCode).WithMessage("connection refused")}
+	assert.NotNil(t, adapter.PingSimple())
+}
+
 func Test_native_FetchArtifacts(t *testing.T) {
 	var mock = mockNativeRegistry()
 	defer mock.Close()

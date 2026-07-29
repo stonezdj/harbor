@@ -56,3 +56,23 @@ func TestModify(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, fmt.Sprintf("Bearer %s", token), req.Header.Get("Authorization"))
 }
+
+func TestModifyScopeRequired(t *testing.T) {
+	// simulates a strict token service (e.g. registry.istio.io) that rejects
+	// a scope-less token request with 400 "scope is required"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("scope") == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"scope is required"}`))
+			return
+		}
+		w.Write([]byte(`{"token": "t", "expires_in": 3600,"issued_at": "2009-11-10T23:00:00Z"}`))
+	}))
+	defer server.Close()
+
+	authorizer := NewAuthorizer(server.URL, "service", nil, commonhttp.NewTransport())
+	req, _ := http.NewRequest(http.MethodGet, "/v2/", nil)
+	err := authorizer.Modify(req)
+	require.NotNil(t, err)
+	assert.True(t, errors.IsErr(err, errors.BadRequestCode))
+}

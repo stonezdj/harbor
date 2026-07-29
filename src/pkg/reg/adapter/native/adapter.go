@@ -228,13 +228,17 @@ func (a *Adapter) listArtifacts(repository string, filters []*model.Filter) ([]*
 }
 
 // PingSimple checks whether the registry is available. It checks the connectivity and certificate (if TLS enabled)
-// only, regardless of 401/403 error.
+// only, regardless of 401/403/400 error.
 func (a *Adapter) PingSimple() error {
 	err := a.Ping()
 	if err == nil {
 		return nil
 	}
-	if errors.IsErr(err, errors.UnAuthorizedCode) || errors.IsErr(err, errors.ForbiddenCode) {
+	// some token services (e.g. registry.istio.io) reject the scope-less token
+	// request issued for a bare "/v2/" ping with 400 "scope is required". The
+	// registry itself is reachable, so tolerate this alongside 401/403.
+	if errors.IsErr(err, errors.UnAuthorizedCode) || errors.IsErr(err, errors.ForbiddenCode) ||
+		errors.IsErr(err, errors.BadRequestCode) {
 		return nil
 	}
 	return err
