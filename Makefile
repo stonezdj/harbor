@@ -82,20 +82,34 @@ EXPORTERFLAG=false
 HTTPPROXY=
 BUILDREG=true
 BUILDTRIVYADP=true
-NPM_REGISTRY=https://registry.npmjs.org
+NPM_REGISTRY ?= https://registry.npmjs.org
+PIP_INDEX_URL ?= https://pypi.org/simple
+# Override when Maven Central returns 429 (rate limit), e.g. a mirror or cached URL:
+#   make swagger_client OPENAPI_GENERATOR_CLI_URL=https://...
+#   export OPENAPI_GENERATOR_CLI_URL=https://... ; make swagger_client
+OPENAPI_GENERATOR_CLI_URL ?= https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar
+# Pass PIP_INDEX_URL to pip only when it is defined in the environment:
+#   export PIP_INDEX_URL=https://pypi.org/simple
+#   make swagger_client
+ifdef PIP_INDEX_URL
+PIP_INDEX_URL_ENV = PIP_INDEX_URL=$(PIP_INDEX_URL)
+else
+PIP_INDEX_URL_ENV =
+endif
 BUILDTARGET=build
 GEN_TLS=
 
 # version prepare
 # for docker image tag
-VERSIONTAG=dev
+VERSIONTAG=dev-legacy
 # for base docker image tag
 BUILD_BASE=true
 PUSHBASEIMAGE=false
-BASEIMAGETAG=dev
+# use dev-legacy to decouple the 2.15 base images from the dev tag built on the main branch
+BASEIMAGETAG=dev-legacy
 # for skip build prepare and log container while BUILD_INSTALLER=false
 BUILD_INSTALLER=true
-BUILDBASETARGET=trivy-adapter core db jobservice nginx portal redis registry registryctl exporter
+BUILDBASETARGET=trivy-adapter core db jobservice nginx portal valkey registry registryctl exporter
 ifeq ($(BUILD_INSTALLER), true)
 	BUILDBASETARGET += prepare log
 endif
@@ -105,18 +119,18 @@ BASEIMAGENAMESPACE=goharbor
 PULL_BASE_FROM_DOCKERHUB=true
 
 # for harbor package name
-PKGVERSIONTAG=dev
+PKGVERSIONTAG=dev-legacy
 
 PREPARE_VERSION_NAME=versions
 
 #versions
 REGISTRYVERSION=v2.8.3-patch-redis
-TRIVYVERSION=v0.69.3
-TRIVYADAPTERVERSION=v0.35.1
-NODEBUILDIMAGE=node:16.18.0
+TRIVYVERSION=v0.72.0
+TRIVYADAPTERVERSION=v0.38.0
+NODEBUILDIMAGE=node:22.22.3
 
 # version of registry for pulling the source code
-REGISTRY_SRC_TAG=v2.8.3-harbor.1-rc.1
+REGISTRY_SRC_TAG=v2.8.3-harbor.1
 # source of upstream distribution code
 DISTRIBUTION_SRC=https://github.com/goharbor/distribution.git
 
@@ -151,7 +165,7 @@ GOINSTALL=$(GOCMD) install
 GOTEST=$(GOCMD) test
 GODEP=$(GOTEST) -i
 GOFMT=gofmt -w
-GOBUILDIMAGE=golang:1.25.7
+GOBUILDIMAGE=golang:1.26.4
 GOBUILDPATHINCONTAINER=/harbor
 
 # go build
@@ -250,7 +264,7 @@ DOCKERSAVE_PARA=$(DOCKERIMAGENAME_PORTAL):$(VERSIONTAG) \
 		$(DOCKERIMAGENAME_DB):$(VERSIONTAG) \
 		$(DOCKERIMAGENAME_JOBSERVICE):$(VERSIONTAG) \
 		$(DOCKERIMAGENAME_REGCTL):$(VERSIONTAG) \
-		$(IMAGENAMESPACE)/redis-photon:$(VERSIONTAG) \
+		$(IMAGENAMESPACE)/valkey-photon:$(VERSIONTAG) \
 		$(IMAGENAMESPACE)/nginx-photon:$(VERSIONTAG) \
 		$(IMAGENAMESPACE)/registry-photon:$(VERSIONTAG)
 
@@ -296,18 +310,22 @@ endef
 # lint swagger doc
 SPECTRAL_IMAGENAME=$(IMAGENAMESPACE)/spectral
 SPECTRAL_VERSION=v6.14.2
-SPECTRAL_IMAGE_BUILD_CMD=${DOCKERBUILD} -f ${TOOLSPATH}/spectral/Dockerfile --build-arg NODE=${NODEBUILDIMAGE} --build-arg SPECTRAL_VERSION=${SPECTRAL_VERSION} -t ${SPECTRAL_IMAGENAME}:$(SPECTRAL_VERSION) .
-SPECTRAL=$(RUNCONTAINER) $(SPECTRAL_IMAGENAME):$(SPECTRAL_VERSION)
+# use a -legacy suffixed image tag to decouple the helper image from the one built on the main branch
+SPECTRAL_IMAGETAG=$(SPECTRAL_VERSION)-legacy
+SPECTRAL_IMAGE_BUILD_CMD=${DOCKERBUILD} -f ${TOOLSPATH}/spectral/Dockerfile --build-arg NODE=${NODEBUILDIMAGE} --build-arg SPECTRAL_VERSION=${SPECTRAL_VERSION} -t ${SPECTRAL_IMAGENAME}:$(SPECTRAL_IMAGETAG) .
+SPECTRAL=$(RUNCONTAINER) $(SPECTRAL_IMAGENAME):$(SPECTRAL_IMAGETAG)
 
 lint_apis:
-	$(call prepare_docker_image,${SPECTRAL_IMAGENAME},${SPECTRAL_VERSION},${SPECTRAL_IMAGE_BUILD_CMD})
+	$(call prepare_docker_image,${SPECTRAL_IMAGENAME},${SPECTRAL_IMAGETAG},${SPECTRAL_IMAGE_BUILD_CMD})
 	$(SPECTRAL) lint ./api/v2.0/swagger.yaml
 
 SWAGGER_IMAGENAME=$(IMAGENAMESPACE)/swagger
 SWAGGER_VERSION=v0.33.1
-SWAGGER=$(RUNCONTAINER) ${SWAGGER_IMAGENAME}:${SWAGGER_VERSION}
+# use a -legacy suffixed image tag to decouple the helper image from the one built on the main branch
+SWAGGER_IMAGETAG=$(SWAGGER_VERSION)-legacy
+SWAGGER=$(RUNCONTAINER) ${SWAGGER_IMAGENAME}:${SWAGGER_IMAGETAG}
 SWAGGER_GENERATE_SERVER=${SWAGGER} generate server --template-dir=$(TOOLSPATH)/swagger/templates --exclude-main --additional-initialism=CVE --additional-initialism=GC --additional-initialism=OIDC
-SWAGGER_IMAGE_BUILD_CMD=${DOCKERBUILD} -f ${TOOLSPATH}/swagger/Dockerfile --build-arg GOLANG=${GOBUILDIMAGE} --build-arg SWAGGER_VERSION=${SWAGGER_VERSION} -t ${SWAGGER_IMAGENAME}:$(SWAGGER_VERSION) .
+SWAGGER_IMAGE_BUILD_CMD=${DOCKERBUILD} -f ${TOOLSPATH}/swagger/Dockerfile --build-arg GOLANG=${GOBUILDIMAGE} --build-arg SWAGGER_VERSION=${SWAGGER_VERSION} -t ${SWAGGER_IMAGENAME}:$(SWAGGER_IMAGETAG) .
 
 # $1 the path of swagger spec
 # $2 the path of base directory for generating the files
@@ -320,17 +338,19 @@ define swagger_generate_server
 endef
 
 gen_apis:
-	$(call prepare_docker_image,${SWAGGER_IMAGENAME},${SWAGGER_VERSION},${SWAGGER_IMAGE_BUILD_CMD})
+	$(call prepare_docker_image,${SWAGGER_IMAGENAME},${SWAGGER_IMAGETAG},${SWAGGER_IMAGE_BUILD_CMD})
 	$(call swagger_generate_server,api/v2.0/swagger.yaml,src/server/v2.0,harbor)
 
 
 MOCKERY_IMAGENAME=$(IMAGENAMESPACE)/mockery
 MOCKERY_VERSION=v2.53.3
-MOCKERY=$(RUNCONTAINER)/src ${MOCKERY_IMAGENAME}:${MOCKERY_VERSION}
-MOCKERY_IMAGE_BUILD_CMD=${DOCKERBUILD} -f ${TOOLSPATH}/mockery/Dockerfile --build-arg GOLANG=${GOBUILDIMAGE} --build-arg MOCKERY_VERSION=${MOCKERY_VERSION} -t ${MOCKERY_IMAGENAME}:$(MOCKERY_VERSION) .
+# use a -legacy suffixed image tag to decouple the helper image from the one built on the main branch
+MOCKERY_IMAGETAG=$(MOCKERY_VERSION)-legacy
+MOCKERY=$(RUNCONTAINER)/src ${MOCKERY_IMAGENAME}:${MOCKERY_IMAGETAG}
+MOCKERY_IMAGE_BUILD_CMD=${DOCKERBUILD} -f ${TOOLSPATH}/mockery/Dockerfile --build-arg GOLANG=${GOBUILDIMAGE} --build-arg MOCKERY_VERSION=${MOCKERY_VERSION} -t ${MOCKERY_IMAGENAME}:$(MOCKERY_IMAGETAG) .
 
 gen_mocks:
-	$(call prepare_docker_image,${MOCKERY_IMAGENAME},${MOCKERY_VERSION},${MOCKERY_IMAGE_BUILD_CMD})
+	$(call prepare_docker_image,${MOCKERY_IMAGENAME},${MOCKERY_IMAGETAG},${MOCKERY_IMAGE_BUILD_CMD})
 	${MOCKERY} mockery
 
 mocks_check: gen_mocks
@@ -402,7 +422,7 @@ build:
 	 -e DOCKERNETWORK=$(DOCKERNETWORK) \
 	 -e BUILDREG=$(BUILDREG) -e BUILDTRIVYADP=$(BUILDTRIVYADP) \
 	 -e BUILD_INSTALLER=$(BUILD_INSTALLER) \
-	 -e NPM_REGISTRY=$(NPM_REGISTRY) -e BASEIMAGETAG=$(BASEIMAGETAG) -e IMAGENAMESPACE=$(IMAGENAMESPACE) -e BASEIMAGENAMESPACE=$(BASEIMAGENAMESPACE) \
+	 -e NPM_REGISTRY=$(NPM_REGISTRY) -e PIP_INDEX_URL=$(PIP_INDEX_URL) -e BASEIMAGETAG=$(BASEIMAGETAG) -e IMAGENAMESPACE=$(IMAGENAMESPACE) -e BASEIMAGENAMESPACE=$(BASEIMAGENAMESPACE) \
 	 -e REGISTRYURL=$(REGISTRYURL) \
 	 -e TRIVY_DOWNLOAD_URL=$(TRIVY_DOWNLOAD_URL) -e TRIVY_ADAPTER_DOWNLOAD_URL=$(TRIVY_ADAPTER_DOWNLOAD_URL) \
 	 -e PULL_BASE_FROM_DOCKERHUB=$(PULL_BASE_FROM_DOCKERHUB) -e BUILD_BASE=$(BUILD_BASE) \
@@ -487,7 +507,7 @@ misspell:
 	@find . -type d \( -path ./tests \) -prune -o -name '*.go' -print | xargs misspell -error
 
 # golangci-lint binary installation or refer to https://golangci-lint.run/usage/install/#local-installation
-# curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.8.0
+# curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.9.0
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 lint:
 	@echo checking lint
@@ -551,12 +571,12 @@ restart: down prepare start
 
 swagger_client:
 	@echo "Generate swagger client"
-	wget https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/4.3.1/openapi-generator-cli-4.3.1.jar -O openapi-generator-cli.jar
+	wget "$(OPENAPI_GENERATOR_CLI_URL)" -O openapi-generator-cli.jar
 	rm -rf harborclient
 	mkdir  -p harborclient/harbor_v2_swagger_client
 	java -jar openapi-generator-cli.jar generate -i api/v2.0/swagger.yaml -g python -o harborclient/harbor_v2_swagger_client --package-name v2_swagger_client
-	cd harborclient/harbor_v2_swagger_client; pip install .
-	pip install docker -q
+	cd harborclient/harbor_v2_swagger_client; $(PIP_INDEX_URL_ENV) pip install .
+	$(PIP_INDEX_URL_ENV) pip install docker -q
 	pip freeze
 
 cleanbinary:
