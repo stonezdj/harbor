@@ -294,7 +294,9 @@ func (_m *mockTaskDAO) Update(ctx context.Context, _a1 *dao.Task, props ...strin
 }
 
 // UpdateStatus provides a mock function with given fields: ctx, id, status, statusRevision, statusMessage
-func (_m *mockTaskDAO) UpdateStatus(ctx context.Context, id int64, status string, statusRevision int64, statusMessage ...string) error {
+func (_m *mockTaskDAO) UpdateStatus(
+	ctx context.Context, id int64, status string, statusRevision int64, statusMessage ...string,
+) error {
 	_va := make([]interface{}, len(statusMessage))
 	for _i := range statusMessage {
 		_va[_i] = statusMessage[_i]

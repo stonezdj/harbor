@@ -278,7 +278,8 @@ func TestExtractLastLogLines(t *testing.T) {
 	assert.Equal(t, expected, extractLastLogLines(log5, 3))
 
 	// UTF-8 log lines truncation exceeding 4096 bytes (last 3 lines exceed 4096 bytes)
-	longLine := strings.Repeat("这是一段包含中文字符的非常长的日志内容。", 50) + "\n" // ~3000 bytes per line
+	// ~3000 bytes per line
+	longLine := strings.Repeat("这是一段包含中文字符的日志内容。", 50) + "\n"
 	longLogUTF8 := []byte(strings.Repeat(longLine, 3))
 	resUTF8 := extractLastLogLines(longLogUTF8, 3)
 	assert.True(t, len(resUTF8) <= 4096)
