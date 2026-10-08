@@ -24,6 +24,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker/distribution"
@@ -165,6 +166,28 @@ type client struct {
 	authorizer   lib.Authorizer
 	interceptors []interceptor.Interceptor
 	client       *http.Client
+
+	mu sync.Mutex
+	// uploadOrigins are the hosts blob uploads were actually initiated on, which differ from the
+	// endpoint when the authorizer retargets requests (e.g. AWS ECR's API vs dkr.ecr hosts).
+	uploadOrigins []*url.URL
+}
+
+func (c *client) trustUploadOrigin(u *url.URL) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, o := range c.uploadOrigins {
+		if sameRegistryOrigin(o, u) {
+			return
+		}
+	}
+	c.uploadOrigins = append(c.uploadOrigins, &url.URL{Scheme: u.Scheme, Host: u.Host})
+}
+
+func (c *client) trustedUploadOrigins() []*url.URL {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return append([]*url.URL(nil), c.uploadOrigins...)
 }
 
 func (c *client) Ping() error {
@@ -457,7 +480,7 @@ func (c *client) PushBlobChunk(repository, digest string, blobSize int64, chunk 
 
 	// the range is from 0 to (blobSize-1), so (end == blobSize-1) means it is last chunk
 	lastChunk := end == blobSize-1
-	url, err := buildChunkBlobUploadURL(c.url, location, digest, lastChunk)
+	url, err := buildChunkBlobUploadURL(c.url, location, digest, lastChunk, c.trustedUploadOrigins()...)
 	if err != nil {
 		return location, end, err
 	}
@@ -539,11 +562,14 @@ func (c *client) initiateBlobUpload(repository string) (string, string, error) {
 		return "", "", err
 	}
 	defer resp.Body.Close()
+	// req.URL reflects any host rewrite done by the authorizer but not redirects, so only a host
+	// Harbor itself chose to send the request to becomes trusted.
+	c.trustUploadOrigin(req.URL)
 	return resp.Header.Get("Location"), resp.Header.Get("Docker-Upload-UUID"), nil
 }
 
 func (c *client) monolithicBlobUpload(location, digest string, size int64, data io.Reader) error {
-	url, err := buildMonolithicBlobUploadURL(c.url, location, digest)
+	url, err := buildMonolithicBlobUploadURL(c.url, location, digest, c.trustedUploadOrigins()...)
 	if err != nil {
 		return err
 	}
@@ -759,8 +785,8 @@ func buildInitiateBlobUploadURL(endpoint, repository string) string {
 	return fmt.Sprintf("%s/v2/%s/blobs/uploads/", endpoint, repository)
 }
 
-func buildChunkBlobUploadURL(endpoint, location, digest string, lastChunk bool) (string, error) {
-	u, err := resolveUploadLocation(endpoint, location)
+func buildChunkBlobUploadURL(endpoint, location, digest string, lastChunk bool, trusted ...*url.URL) (string, error) {
+	u, err := resolveUploadLocation(endpoint, location, trusted...)
 	if err != nil {
 		return "", err
 	}
@@ -772,8 +798,8 @@ func buildChunkBlobUploadURL(endpoint, location, digest string, lastChunk bool) 
 	return u.String(), nil
 }
 
-func buildMonolithicBlobUploadURL(endpoint, location, digest string) (string, error) {
-	u, err := resolveUploadLocation(endpoint, location)
+func buildMonolithicBlobUploadURL(endpoint, location, digest string, trusted ...*url.URL) (string, error) {
+	u, err := resolveUploadLocation(endpoint, location, trusted...)
 	if err != nil {
 		return "", err
 	}
@@ -790,8 +816,9 @@ func buildMonolithicBlobUploadURL(endpoint, location, digest string) (string, er
 // follow-up PATCH/PUT would send blob bytes — and the Authorization header the client attaches to
 // every request via c.do — to the attacker-chosen host (CWE-918 SSRF / CWE-601). Relative Location
 // values are resolved against the endpoint (the registry's "relativeurls" mode); absolute values are
-// accepted only when their scheme, host and port match the endpoint. Fails closed.
-func resolveUploadLocation(endpoint, location string) (*url.URL, error) {
+// accepted only when their scheme, host and port match the endpoint or one of the trusted origins
+// the upload was actually initiated on. Fails closed.
+func resolveUploadLocation(endpoint, location string, trusted ...*url.URL) (*url.URL, error) {
 	base, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
@@ -814,10 +841,15 @@ func resolveUploadLocation(endpoint, location string) (*url.URL, error) {
 		}
 	}
 	next := base.ResolveReference(ref)
-	if !sameRegistryOrigin(base, next) {
-		return nil, fmt.Errorf("registry upload Location %q resolves to a different origin than %q", location, base.Redacted())
+	if sameRegistryOrigin(base, next) {
+		return next, nil
 	}
-	return next, nil
+	for _, t := range trusted {
+		if sameRegistryOrigin(t, next) {
+			return next, nil
+		}
+	}
+	return nil, fmt.Errorf("registry upload Location %q resolves to a different origin than %q", location, base.Redacted())
 }
 
 func sameRegistryOrigin(a, b *url.URL) bool {

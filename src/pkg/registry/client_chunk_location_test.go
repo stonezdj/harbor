@@ -156,3 +156,68 @@ func TestBuildBlobUploadURL_EndpointPathPrefix(t *testing.T) {
 		}
 	}
 }
+
+// retargetAuthorizer mimics the AWS ECR authorizer, which sends every registry request to the
+// account's dkr.ecr host instead of the configured api.ecr endpoint.
+type retargetAuthorizer struct{ host string }
+
+func (a *retargetAuthorizer) Modify(req *http.Request) error {
+	req.Host = a.host
+	req.URL.Host = a.host
+	return nil
+}
+
+// TestPushBlobRetargetedByAuthorizer covers registries whose authorizer moves requests to another
+// host: the absolute upload Location returned by that host must be accepted, while a Location on
+// any other host is still refused.
+func TestPushBlobRetargetedByAuthorizer(t *testing.T) {
+	var attackerHits int64
+	attacker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atomic.AddInt64(&attackerHits, 1)
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer attacker.Close()
+
+	var evilLocation atomic.Bool
+	var registry *httptest.Server
+	registry = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost, http.MethodPatch:
+			if evilLocation.Load() {
+				w.Header().Set("Location", attacker.URL+"/v2/evil")
+			} else {
+				w.Header().Set("Location", registry.URL+"/v2/repo/blobs/uploads/uuid?_state=s")
+			}
+			w.WriteHeader(http.StatusAccepted)
+		default:
+			w.WriteHeader(http.StatusCreated)
+		}
+	}))
+	defer registry.Close()
+
+	newClient := func() Client {
+		host := strings.TrimPrefix(registry.URL, "http://")
+		return NewClientWithAuthorizer("http://api.registry.invalid", &retargetAuthorizer{host: host}, true, "")
+	}
+
+	if err := newClient().PushBlob("repo", "sha256:deadbeef", 4, strings.NewReader("ABCD")); err != nil {
+		t.Fatalf("monolithic upload on the retargeted host should succeed: %v", err)
+	}
+
+	c := newClient()
+	loc, _, err := c.PushBlobChunk("repo", "sha256:deadbeef", 4, strings.NewReader("AB"), 0, 1, "")
+	if err != nil {
+		t.Fatalf("first chunk on the retargeted host should succeed: %v", err)
+	}
+	if _, _, err = c.PushBlobChunk("repo", "sha256:deadbeef", 4, strings.NewReader("CD"), 2, 3, loc); err != nil {
+		t.Fatalf("last chunk on the retargeted host should succeed: %v", err)
+	}
+
+	evilLocation.Store(true)
+	if err := newClient().PushBlob("repo", "sha256:deadbeef", 4, strings.NewReader("ABCD")); err == nil {
+		t.Fatal("upload Location on an unrelated host must be refused")
+	}
+	if got := atomic.LoadInt64(&attackerHits); got != 0 {
+		t.Fatalf("attacker host was contacted %d time(s)", got)
+	}
+}
