@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/docker/distribution"
@@ -34,6 +35,48 @@ import (
 const defaultHandler = "default"
 
 const pendingManifestList = "pendingmanifestlist:"
+
+// manifestListPushLocks serializes the decide-and-write phase of push() per manifest
+// list (repo+digest). Child manifests of the same list can be reconciled concurrently
+// (e.g. when they are pulled/synced in parallel), and without this lock the goroutine
+// that finishes last can overwrite a more complete manifest list already written by
+// another goroutine with its own, staler, partial reference set.
+var manifestListPushLocks = &keyedMutex{locks: make(map[string]*refCountedMutex)}
+
+type refCountedMutex struct {
+	mu  sync.Mutex
+	ref int
+}
+
+type keyedMutex struct {
+	mu    sync.Mutex
+	locks map[string]*refCountedMutex
+}
+
+// lock blocks until the mutex associated with key is free, acquires it and returns a
+// function that releases it. Mutexes are reference counted and removed once unused so
+// the map does not grow unbounded.
+func (k *keyedMutex) lock(key string) func() {
+	k.mu.Lock()
+	rm, ok := k.locks[key]
+	if !ok {
+		rm = &refCountedMutex{}
+		k.locks[key] = rm
+	}
+	rm.ref++
+	k.mu.Unlock()
+
+	rm.mu.Lock()
+	return func() {
+		rm.mu.Unlock()
+		k.mu.Lock()
+		rm.ref--
+		if rm.ref == 0 {
+			delete(k.locks, key)
+		}
+		k.mu.Unlock()
+	}
+}
 
 type pendingManifestListState struct {
 	Repository  string
@@ -223,6 +266,15 @@ func (m *ManifestListCache) push(ctx context.Context, art lib.ArtifactInfo, man 
 	// if time exceed, then push a updated manifest list which contains existing manifest
 	repo := art.Repository
 	reference := getReference(art)
+
+	// Child manifests of the same list can be reconciled concurrently (e.g. pulled or
+	// synced in parallel). Serialize the whole wait-check-write sequence per manifest
+	// list so a goroutine that finishes last always sees, and builds on, the result of
+	// any goroutine that finished before it rather than overwriting it with a stale,
+	// partial reference set.
+	unlock := manifestListPushLocks.lock(repo + ":" + art.Digest)
+	defer unlock()
+
 	var newMan distribution.Manifest
 	var err error
 	for range maxManifestListWait {

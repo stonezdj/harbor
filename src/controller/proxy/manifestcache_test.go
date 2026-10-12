@@ -18,7 +18,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
@@ -271,6 +274,83 @@ func (suite *CacheTestSuite) TestPushManifestList_RegistersPendingWhenChildrenMi
 	trimmedKey := TrimmedManifestlist + parentDigest
 	err = suite.mListCache.cache.Fetch(ctx, trimmedKey, new(string))
 	suite.ErrorIs(err, libCache.ErrNotFound)
+}
+
+// TestPushManifestList_ConcurrentReconcile_NoLostUpdate simulates two child manifests of
+// the same manifest list being reconciled concurrently (e.g. pulled/synced in parallel).
+// Without serializing push() per manifest list, whichever goroutine finishes last can
+// overwrite the tag/digest with a stale reference set that only contains its own child,
+// losing the other child that a concurrent, now-superseded, write already recorded.
+func (suite *CacheTestSuite) TestPushManifestList_ConcurrentReconcile_NoLostUpdate() {
+	ctx := context.Background()
+	repo := "library/hello-world"
+	amdDig := "sha256:1a9ec845ee94c202b2d5da74a24f0ed2058318bfa9879fa541efaecba272e86b"
+	armDig := "sha256:92c7f9c92844bbbb5d0a101b22f7c2a7949e40f8ea90c8b3bc396879d95e899a"
+	manifestDescriptors := []manifestlist.ManifestDescriptor{{
+		Descriptor: distribution.Descriptor{Digest: digest.Digest(amdDig), Size: 3253, MediaType: schema2.MediaTypeManifest},
+		Platform:   manifestlist.PlatformSpec{Architecture: "amd64", OS: "linux"},
+	}, {
+		Descriptor: distribution.Descriptor{Digest: digest.Digest(armDig), Size: 3253, MediaType: schema2.MediaTypeManifest},
+		Platform:   manifestlist.PlatformSpec{Architecture: "arm", OS: "linux"},
+	}}
+	manList := buildTestManifestList(manifestDescriptors...)
+	_, payload, err := manList.Payload()
+	suite.Require().NoError(err)
+	parentDigest := string(digest.FromBytes(payload))
+
+	amdArt := lib.ArtifactInfo{Repository: repo, Digest: amdDig}
+	armArt := lib.ArtifactInfo{Repository: repo, Digest: armDig}
+	ar := &artifact.Artifact{}
+
+	var inFlight, maxInFlight atomic.Int32
+	track := func(testifymock.Arguments) {
+		cur := inFlight.Add(1)
+		defer inFlight.Add(-1)
+		for {
+			m := maxInFlight.Load()
+			if cur <= m {
+				break
+			}
+			if maxInFlight.CompareAndSwap(m, cur) {
+				break
+			}
+		}
+		// give a concurrent, unsynchronized caller a chance to interleave
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	suite.local.On("GetManifest", ctx, amdArt).Run(track).Return(ar, nil)
+	// A child's existence only ever becomes true, never false: the first observer sees
+	// arm missing, every later observer sees it present.
+	suite.local.On("GetManifest", ctx, armArt).Run(track).Return(nil, nil).Once()
+	suite.local.On("GetManifest", ctx, armArt).Run(track).Return(ar, nil)
+
+	suite.local.On("PushManifest", repo, testifymock.Anything, testifymock.Anything).Run(track).Return(nil)
+	suite.local.On("DeleteManifest", repo, testifymock.Anything).Return()
+	suite.local.On("UpdatePullTime", ctx, testifymock.Anything).Return(nil)
+
+	art := lib.ArtifactInfo{Repository: repo, Digest: parentDigest, Tag: "latest"}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	for range 2 {
+		go func() {
+			defer wg.Done()
+			suite.NoError(suite.mListCache.push(ctx, art, manList, manifestlist.MediaTypeManifestList))
+		}()
+	}
+	wg.Wait()
+
+	suite.LessOrEqual(maxInFlight.Load(), int32(1), "push() must serialize concurrent reconciliation for the same manifest list")
+
+	suite.local.AssertCalled(suite.T(), "PushManifest", repo, "latest", testifymock.MatchedBy(func(m distribution.Manifest) bool {
+		return len(m.References()) == 2
+	}))
+	for _, childDigest := range []string{amdDig, armDig} {
+		var state pendingManifestListState
+		err := suite.mListCache.cache.Fetch(ctx, pendingManifestListKey(repo, childDigest, parentDigest), &state)
+		suite.ErrorIs(err, libCache.ErrNotFound, "pending entry should be cleared once the manifest list is complete")
+	}
 }
 
 func (suite *CacheTestSuite) TestManifestListCache_CacheContent_EmptyReference() {
