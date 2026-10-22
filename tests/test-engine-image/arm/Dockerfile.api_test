@@ -39,7 +39,18 @@ RUN git -c http.sslVerify=false clone --depth 1 --branch v0.1.2 https://github.c
     cd wasm-to-oci && CGO_ENABLED=0 make build && \
     cp bin/wasm-to-oci /tool/binary/
 
-RUN tar -czf /tool/tools.tar.gz -C /tool/binary .
+RUN chmod +x /tool/binary/* && \
+    strip -s /tool/binary/* 2>/dev/null || true && \
+    tar -czf /tool/tools.tar.gz -C /tool/binary .
+
+# Download and strip static Docker binaries
+RUN DOCKER_VERSION=20.10.3 && \
+    curl -k -fL "https://download.docker.com/linux/static/stable/aarch64/docker-${DOCKER_VERSION}.tgz" -o docker.tgz && \
+    mkdir -p /tool/docker && \
+    tar --strip-components=1 -xzf docker.tgz -C /tool/docker && \
+    strip -s /tool/docker/* 2>/dev/null || true && \
+    chmod +x /tool/docker/* && \
+    rm docker.tgz
 
 # The checked-in busybox.tar contains an AMD64 image.
 RUN skopeo --override-os linux --override-arch arm64 copy \
@@ -59,9 +70,10 @@ ENV NOTATION_EXPERIMENTAL=1
 RUN tdnf update -y && tdnf install -y \
     wget \
     git \
-    openjdk8 \
+    openjre8 \
     iproute2 \
     iptables \
+    podman \
     build-essential \
     sed \
     openssl-devel \
@@ -73,22 +85,21 @@ RUN tdnf update -y && tdnf install -y \
     procps-ng \
     gzip && \
     tdnf erase -y toybox && \
-    tdnf install -y python3 python3-pip python3-setuptools httpd && \
+    tdnf install -y python3 python3-pip python3-setuptools && \
     if [ -n "$PIP_INDEX_URL" ]; then \
         pip3 config set global.index-url "$PIP_INDEX_URL"; \
     elif curl -s --connect-timeout 2 -k https://packages.vcfd.broadcom.net >/dev/null 2>&1; then \
         pip3 config set global.index-url "https://packages.vcfd.broadcom.net/artifactory/api/pypi/pypi-virtual/simple"; \
     fi && \
-    pip3 install --upgrade pip pyasn1 google-apitools==0.5.31 gsutil python-dateutil \
+    pip3 install --no-cache-dir --upgrade pip pyasn1 google-apitools==0.5.31 gsutil python-dateutil \
     robotframework==6.0.1 robotframework-sshlibrary robotframework-httplibrary \
     requests dbbot robotframework-seleniumlibrary robotframework-pabot \
     robotframework-JSONLibrary hurry.filesize --upgrade && \
-    tdnf clean all
+    tdnf erase -y build-essential gcc binutils python3-devel openssl-devel libffi-devel libstdc++-devel glibc-devel linux-api-headers && \
+    tdnf clean all && \
+    rm -rf /root/.cache /var/cache/tdnf /usr/share/man /usr/share/doc
 
-RUN DOCKER_VERSION=20.10.3 && wget --no-check-certificate https://download.docker.com/linux/static/stable/aarch64/docker-$DOCKER_VERSION.tgz && \
-    tar --strip-components=1 -xvzf docker-$DOCKER_VERSION.tgz -C /usr/bin &&  \
-    rm docker-$DOCKER_VERSION.tgz
-
+COPY --from=tool_builder /tool/docker/ /usr/bin/
 COPY --from=tool_builder /tool/tools.tar.gz /usr/local/bin/
 COPY containerd_config.toml /etc/containerd/config.toml
 COPY --from=tool_builder /tool/busybox.tar /
@@ -99,7 +110,5 @@ RUN chmod +x /usr/local/bin/dockerd-entrypoint.sh && \
     mkdir -p $HOME/.pki/nssdb && \
     echo Harbor12345 > password.ca && \
     certutil -d sql:$HOME/.pki/nssdb -N -f password.ca
-
-RUN tdnf install -y podman
 
 VOLUME /var/lib/docker
