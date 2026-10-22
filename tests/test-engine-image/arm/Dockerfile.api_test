@@ -1,0 +1,99 @@
+# Build from tests/test-engine-image (do not prepend Dockerfile.common):
+# docker build --platform linux/arm64 -f arm/Dockerfile.api_test -t harbor-e2e-engine:arm64-api .
+FROM golang:1.27.3 AS tool_builder
+ARG TARGETARCH
+WORKDIR /tool
+
+RUN test "$TARGETARCH" = arm64 && \
+    apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl git make skopeo && \
+    rm -rf /var/lib/apt/lists/* && mkdir -p /tool/binary
+
+RUN CONTAINERD_VERSION=1.7.20 && \
+    curl -fL "https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/containerd-${CONTAINERD_VERSION}-linux-arm64.tar.gz" -o containerd.tar.gz && \
+    tar -xzf containerd.tar.gz && cp bin/containerd bin/ctr /tool/binary/ && \
+    curl -fL https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-aarch64 -o /tool/binary/docker-compose && \
+    HELM_VERSION=3.15.3 && \
+    curl -fL "https://get.helm.sh/helm-v${HELM_VERSION}-linux-arm64.tar.gz" -o helm.tar.gz && \
+    tar -xzf helm.tar.gz && mv linux-arm64/helm /tool/binary/ && \
+    ORAS_VERSION=1.2.0 && \
+    curl -fL "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_arm64.tar.gz" -o oras.tar.gz && \
+    tar -xzf oras.tar.gz -C /tool/binary oras && \
+    IMGPKG_VERSION=0.43.0 && \
+    curl -fL "https://github.com/vmware-tanzu/carvel-imgpkg/releases/download/v${IMGPKG_VERSION}/imgpkg-linux-arm64" -o /tool/binary/imgpkg && \
+    COSIGN_VERSION=2.4.0 && \
+    curl -fL "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-arm64" -o /tool/binary/cosign && \
+    NOTATION_VERSION=1.1.1 && \
+    curl -fL "https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_arm64.tar.gz" -o notation.tar.gz && \
+    tar -xzf notation.tar.gz -C /tool/binary notation && \
+    DIND_COMMIT=3b5fac462d21ca164b3778647420016315289034 && \
+    curl -fL "https://raw.githubusercontent.com/docker/docker/${DIND_COMMIT}/hack/dind" -o /tool/binary/dind && \
+    chmod +x /tool/binary/*
+
+# These releases do not publish ARM64 binaries. Build static binaries for Photon.
+RUN git clone --depth 1 --branch v0.4.0 https://github.com/cnabio/cnab-to-oci.git && \
+    cd cnab-to-oci && CGO_ENABLED=0 make build && \
+    cp bin/cnab-to-oci /tool/binary/
+
+RUN git clone --depth 1 --branch v0.1.2 https://github.com/engineerd/wasm-to-oci.git && \
+    cd wasm-to-oci && CGO_ENABLED=0 make build && \
+    cp bin/wasm-to-oci /tool/binary/
+
+RUN tar -czf /tool/tools.tar.gz -C /tool/binary .
+
+# The checked-in busybox.tar contains an AMD64 image.
+RUN skopeo --override-os linux --override-arch arm64 copy \
+    docker://docker.io/library/busybox:1.37.0 \
+    docker-archive:/tool/busybox.tar:busybox:latest
+
+# Photon provides a native ARM64 base image.
+FROM photon:4.0
+ENV LANG=C.UTF-8
+ENV HELM_EXPERIMENTAL_OCI=1
+ENV COSIGN_PASSWORD=Harbor12345
+ENV COSIGN_EXPERIMENTAL=1
+ENV COSIGN_OCI_EXPERIMENTAL=1
+ENV NOTATION_EXPERIMENTAL=1
+
+RUN tdnf update -y && tdnf install -y \
+    wget \
+    git \
+    openjdk8 \
+    iproute2 \
+    iptables \
+    build-essential \
+    sed \
+    openssl-devel \
+    libffi-devel \
+    python3-devel \
+    nss \
+    tar \
+    which \
+    procps-ng \
+    gzip && \
+    tdnf erase -y toybox && \
+    tdnf install -y python3 python3-pip python3-setuptools httpd && \
+    pip3 install --upgrade pip pyasn1 google-apitools==0.5.31 gsutil python-dateutil \
+    robotframework==6.0.1 robotframework-sshlibrary robotframework-httplibrary \
+    requests dbbot robotframework-seleniumlibrary robotframework-pabot \
+    robotframework-JSONLibrary hurry.filesize --upgrade && \
+    tdnf clean all
+
+RUN DOCKER_VERSION=20.10.3 && wget https://download.docker.com/linux/static/stable/aarch64/docker-$DOCKER_VERSION.tgz && \
+    tar --strip-components=1 -xvzf docker-$DOCKER_VERSION.tgz -C /usr/bin &&  \
+    rm docker-$DOCKER_VERSION.tgz
+
+COPY --from=tool_builder /tool/tools.tar.gz /usr/local/bin/
+COPY containerd_config.toml /etc/containerd/config.toml
+COPY --from=tool_builder /tool/busybox.tar /
+# This container needs to be run in privileged mode(run with --privileged option) to make it work
+COPY dockerd-entrypoint.sh /usr/local/bin/dockerd-entrypoint.sh
+
+RUN chmod +x /usr/local/bin/dockerd-entrypoint.sh && \
+    mkdir -p $HOME/.pki/nssdb && \
+    echo Harbor12345 > password.ca && \
+    certutil -d sql:$HOME/.pki/nssdb -N -f password.ca
+
+RUN tdnf install -y podman
+
+VOLUME /var/lib/docker
