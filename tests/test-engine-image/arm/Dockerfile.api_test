@@ -87,6 +87,23 @@ RUN tdnf update -y && tdnf install -y \
     libffi-devel \
     python3-devel \
     nss \
+    at-spi2-core \
+    atk \
+    cups \
+    libdrm \
+    libxkbcommon \
+    libXcomposite \
+    libXdamage \
+    libXfixes \
+    libXrandr \
+    mesa-libgbm \
+    alsa-lib \
+    pango \
+    cairo \
+    nss \
+    nspr \
+    glib \
+    fontconfig \
     libxcb \
     tar \
     which \
