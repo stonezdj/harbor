@@ -6,7 +6,7 @@ WORKDIR /tool
 
 RUN test "$TARGETARCH" = arm64 && \
     apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl git make skopeo && \
+    ca-certificates curl git make skopeo unzip && \
     rm -rf /var/lib/apt/lists/* && mkdir -p /tool/binary
 
 RUN CONTAINERD_VERSION=1.7.20 && \
@@ -42,6 +42,13 @@ RUN git -c http.sslVerify=false clone --depth 1 --branch v0.1.2 https://github.c
 RUN chmod +x /tool/binary/* && \
     strip -s /tool/binary/* 2>/dev/null || true && \
     tar -czf /tool/tools.tar.gz -C /tool/binary .
+
+# Install the Linux ARM64 Selenium driver used by the ARM UI test image.
+ARG CHROMEDRIVER_VERSION=156.0.8078.47
+RUN curl -fL "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux-arm64/chromedriver-linux-arm64.zip" -o chromedriver.zip && \
+    unzip -j chromedriver.zip chromedriver-linux-arm64/chromedriver -d /tool/ && \
+    chmod +x /tool/chromedriver && \
+    rm chromedriver.zip
 
 # Download and strip static Docker binaries
 RUN DOCKER_VERSION=20.10.3 && \
@@ -80,6 +87,7 @@ RUN tdnf update -y && tdnf install -y \
     libffi-devel \
     python3-devel \
     nss \
+    libxcb \
     tar \
     which \
     procps-ng \
@@ -101,6 +109,8 @@ RUN tdnf update -y && tdnf install -y \
 
 COPY --from=tool_builder /tool/docker/ /usr/bin/
 COPY --from=tool_builder /tool/tools.tar.gz /usr/local/bin/
+COPY --from=tool_builder /tool/chromedriver /usr/local/bin/chromedriver
+RUN chromedriver --version
 COPY containerd_config.toml /etc/containerd/config.toml
 COPY --from=tool_builder /tool/busybox.tar /
 # This container needs to be run in privileged mode(run with --privileged option) to make it work
