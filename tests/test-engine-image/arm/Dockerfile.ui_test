@@ -12,7 +12,7 @@ ENV NOTATION_EXPERIMENTAL=1
 RUN apt-get update && apt-get install -y --no-install-recommends wget curl gnupg2
 RUN apt-get install libseccomp2
 RUN wget  --no-check-certificate -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+RUN sh -c 'echo "deb [arch=arm64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
 
 COPY --from=tool_builder /tool/tools.tar.gz /usr/local/bin
 
@@ -36,14 +36,14 @@ RUN apt-get update -y; apt-get install -y python3.9 && \
     rm /usr/bin/python; ln -s /usr/bin/python3.9 /usr/bin/python; apt-get install -y python3-pip && \
     python -m pip install --upgrade pip
 
-RUN pip3 install --upgrade pip pyasn1 google-apitools==0.5.31 gsutil \
+RUN pip3 install --upgrade pip pyasn1 google-apitools==0.5.31 \
     robotframework==6.0.1 robotframework-sshlibrary robotframework-httplibrary \
     requests dbbot robotframework-seleniumlibrary robotframework-pabot \
     robotframework-JSONLibrary hurry.filesize --upgrade && \
     apt-get clean all
-# Upgrade chromedriver version to 127.0.6533.99
-RUN wget -N https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.99/linux64/chromedriver-linux64.zip && \
-    unzip -j chromedriver-linux64.zip && \
+# Install Linux ARM64 chromedriver version 156.0.8078.47.
+RUN wget -N https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.47/linux-arm64/chromedriver-linux-arm64.zip && \
+    unzip -j chromedriver-linux-arm64.zip && \
     chmod +x chromedriver && \
     mv -f chromedriver /usr/local/share/chromedriver && \
     ln -s /usr/local/share/chromedriver /usr/local/bin/chromedriver && \
@@ -51,7 +51,7 @@ RUN wget -N https://storage.googleapis.com/chrome-for-testing-public/127.0.6533.
 
 RUN pwd && ls && \
     # Install docker
-    DOCKER_VERSION=27.1.1 && wget https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_VERSION.tgz && \
+    DOCKER_VERSION=27.1.1 && wget https://download.docker.com/linux/static/stable/aarch64/docker-$DOCKER_VERSION.tgz && \
     tar --strip-components=1 -xvzf docker-$DOCKER_VERSION.tgz -C /usr/bin &&  \
     rm docker-$DOCKER_VERSION.tgz
 
@@ -61,7 +61,7 @@ COPY busybox.tar /
 COPY dockerd-entrypoint.sh /usr/local/bin/dockerd-entrypoint.sh
 
 RUN chmod +x /usr/local/bin/dockerd-entrypoint.sh && \
-    mkdir -p $HOME/.pki/nssdb && \
+    mkdir -p $HOME/.pki/nssdb /usr/local/share/ca-certificates/ && \
     echo Harbor12345 > password.ca && \
     certutil -d sql:$HOME/.pki/nssdb -N -f password.ca
 

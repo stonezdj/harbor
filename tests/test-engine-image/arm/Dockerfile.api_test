@@ -91,7 +91,7 @@ RUN tdnf update -y && tdnf install -y \
     elif curl -s --connect-timeout 2 -k https://packages.vcfd.broadcom.net >/dev/null 2>&1; then \
         pip3 config set global.index-url "https://packages.vcfd.broadcom.net/artifactory/api/pypi/pypi-virtual/simple"; \
     fi && \
-    pip3 install --no-cache-dir --upgrade pip pyasn1 google-apitools==0.5.31 gsutil python-dateutil \
+    pip3 install --no-cache-dir --upgrade pip pyasn1 python-dateutil \
     robotframework==6.0.1 robotframework-sshlibrary robotframework-httplibrary \
     requests dbbot robotframework-seleniumlibrary robotframework-pabot \
     robotframework-JSONLibrary hurry.filesize --upgrade && \
@@ -107,7 +107,7 @@ COPY --from=tool_builder /tool/busybox.tar /
 COPY dockerd-entrypoint.sh /usr/local/bin/dockerd-entrypoint.sh
 
 RUN chmod +x /usr/local/bin/dockerd-entrypoint.sh && \
-    mkdir -p $HOME/.pki/nssdb && \
+    mkdir -p $HOME/.pki/nssdb /usr/local/share/ca-certificates/ && \
     echo Harbor12345 > password.ca && \
     certutil -d sql:$HOME/.pki/nssdb -N -f password.ca
 
