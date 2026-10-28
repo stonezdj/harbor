@@ -8,7 +8,7 @@ Complete the categories in order. Use administrator authentication for API reque
 
 ### 1. Environment and test data
 
-1. Install a Harbor build containing PR #24028 and prepare a second Harbor instance as the remote registry. Log in to both instances as an administrator. Record the tested build versions.
+1. Install a Harbor v2.16.0-rc1, and prepare a second Harbor instance as the remote registry. Log in to both instances as an administrator. Record the tested build versions.
 2. On the remote registry, create project `error-source` and push a single-platform image with one tag into `error-source/image-a`. Use an image with compressed layers larger than 1 MiB. On the Harbor instance under test, create an empty project named `error-destination` with a storage quota of 1 MiB.
 3. Go to Administration → Registries, add the remote Harbor endpoint with valid credentials, and verify that its connection test succeeds. Go to Administration → Replications and create a manual pull rule matching only `error-source/image-a` and its tag. Set the destination namespace and flattening so the image maps to `error-destination/image-a`.
 

@@ -4,7 +4,7 @@
 
 **Steps**
 
-1. Install a Harbor build containing PR #23863 and log in as an administrator.
+1. Install a Harbor v2.16.0-rc1, and log in as an administrator.
 2. Go to Administration → Registries, add an upstream registry containing a small tagged test image, and verify that the connection succeeds. Use the same endpoint for all projects below.
 3. Go to Projects → New Project. Verify that **Retention period (days)** appears after enabling **Proxy Cache** and defaults to **7**. Select the endpoint and create project `cache-default` without changing the retention period.
 4. Open `cache-default` → **Tag Retention**. Verify that the generated rule retains artifacts pulled within the last **7 days**, matches all repositories and tags (`**`), and runs **daily**.

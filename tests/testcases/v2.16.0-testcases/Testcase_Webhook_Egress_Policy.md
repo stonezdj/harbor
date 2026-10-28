@@ -6,64 +6,7 @@
 
 Complete the categories in order. Use IPv4 addresses and DNS A records throughout this testcase. Expected results describe a build containing both commits; the second commit changes the original default from `block_restricted` to `allow_all`.
 
-For every address-validation check below, use either the UI or API method described here. API status codes correspond to the UI results in the table. After a rejected update, reopen or retrieve the policy and verify that its original target remains unchanged. Restricted addresses, including loopback and cloud metadata addresses, are validation-only targets and require no receivers.
-
-**UI method:** Log in as an administrator and open Projects → `webhook-egress` → Webhooks → **New Webhook**. Enter a unique name, select Notify Type **http**, Payload Format **Default**, and Event Type **Artifact pushed**. Enter the address under test in **Endpoint URL** and click **Add**. To verify an update, select an existing webhook, choose **Action → Edit**, change **Endpoint URL**, and click **Save**. For a blocked-update check, first create a webhook with an allowed address, then attempt to change it to the blocked address.
-
-**API method:** Use the following JSON request body for both creation and update. Save it as `webhook.json`, replacing `targets[0].address` with the address under test, including the receiver's port and path when needed. For the CIDR check in category 5, `http://10.20.0.10/hook` is allowed and `http://10.21.0.10/hook` is blocked under `public_only` with allowlist `10.20.0.0/16`.
-
-```json
-{
-  "name": "egress-address-check",
-  "description": "Verify webhook destination policy",
-  "enabled": false,
-  "event_types": ["PUSH_ARTIFACT"],
-  "targets": [
-    {
-      "type": "http",
-      "address": "http://10.20.0.10/hook",
-      "auth_header": "",
-      "skip_cert_verify": false,
-      "payload_format": "Default"
-    }
-  ]
-}
-```
-
-Create the policy with this HTTP POST request. Replace `<harbor-host>` with the Harbor hostname; `--user admin` prompts for the administrator password. Use a unique policy name for each new policy, or delete the previous test policy before reusing its name.
-
-```bash
-curl -i --user admin --request POST \
-  'https://<harbor-host>/api/v2.0/projects/webhook-egress/webhook/policies' \
-  --header 'Content-Type: application/json' \
-  --data-binary @webhook.json
-```
-
-For the update check, first create a policy with an allowed address and record `<policy-id>` from the successful response's `Location` header. Change `targets[0].address` in the same JSON file to the address under test, keep the other fields, and send this HTTP PUT request:
-
-```bash
-curl -i --user admin --request PUT \
-  'https://<harbor-host>/api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>' \
-  --header 'Content-Type: application/json' \
-  --data-binary @webhook.json
-```
-
-For example, after creating the allowed CIDR target, change the payload address to `http://10.21.0.10/hook` and verify that the PUT is rejected. A POST with that address and a new policy name must also be rejected. Use `GET /api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>` to confirm that a rejected update preserved the original address.
-
-| Address result | UI expectation | API expectation |
-| --- | --- | --- |
-| Allowed on creation | Webhook is saved and appears in the list. | HTTP 201 with a `Location` header. |
-| Allowed on update | Changed address is saved. | HTTP 200. |
-| Blocked on creation or update | An error describes the blocked target; the new address is not saved. | HTTP 400 with a network-policy error. |
-
-For validation-only checks, keep `enabled: false` in API payloads. The UI creates enabled webhooks, so do not push artifacts during these checks; immediately deactivate a successfully created webhook using **Action → Deactivate**, or delete it. Remove validation-only policies after checking them. For delivery checks, set `enabled: true` in the API payload or enable the webhook in the UI. Saving an address verifies validation; delivery steps below additionally verify jobservice behavior.
-
-To enable or deactivate a policy through the API, reuse the complete `webhook.json` body and the PUT request above, changing only `enabled` to `true` or `false`. To delete a validation-only policy or perform notification cleanup, send the following DELETE request. It has **no request body**; omit `--data` and `--data-binary`.
-
-```bash
-curl -i --user admin --request DELETE \
-  'https://<harbor-host>/api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>'
-```
+For every address-validation check below, use the UI or API methods in category 2, steps 2 and 3. API status codes correspond to the UI results in the table in step 3. After a rejected update, reopen or retrieve the policy and verify that its original target remains unchanged. Restricted addresses, including loopback and cloud metadata addresses, are validation-only targets and require no receivers.
 
 Use notification type `http` for all policies. For delivery checks, enable only the notification policy being tested, select the artifact-push event, and push an image with a new tag. Check the webhook execution/task log and the receiver's request log. Successful delivery requires a received payload and a successful task; blocked delivery requires a policy error and no request reaching the receiver. Wait for retries to finish before changing settings.
 
@@ -73,7 +16,7 @@ Each YAML block below is a `harbor.yml` fragment. Replace the existing `webhook_
 
 ### 1. Environment and configuration
 
-1. Install a Harbor build containing both referenced commits, record its version, and log in as an administrator. Create project `webhook-egress` and prepare an image for repeated pushes.
+1. Install a Harbor v2.16.0-rc1, and log in as an administrator. Create project `webhook-egress` and prepare an image for repeated pushes.
 2. Prepare controlled HTTP receivers with a public IPv4 address and a private IPv4 address such as `10.20.0.10`. Each receiver must log POST requests and return HTTP 200 for Harbor webhook payloads. Prepare DNS names resolving to these receivers. Use an actual reachable public address for delivery checks, rather than a documentation-only address.
 3. Back up `harbor.yml` and any deployment environment overrides. Apply this fragment to exclude core and jobservice from proxy configuration, and clear any direct proxy environment overrides for those services. Confirm that both services can resolve the test DNS names, and that jobservice can reach each receiver before applying restrictive policies.
 
@@ -102,7 +45,88 @@ Each YAML block below is a `harbor.yml` fragment. Replace the existing `webhook_
    ```
 
 2. In Projects → `webhook-egress` → Webhooks, create notifications to the public and private receivers, testing one enabled policy at a time. Verify that saving and delivery succeed for both receivers through their IP addresses and DNS names.
+
+   Log in as an administrator and open Projects → `webhook-egress` → Webhooks → **New Webhook**. Enter a unique name, select Notify Type **http**, Payload Format **Default**, and Event Type **Artifact pushed**. Enter the address under test in **Endpoint URL** and click **Add**. To verify an update, select an existing webhook, choose **Action → Edit**, change **Endpoint URL**, and click **Save**. For a blocked-update check, first create a webhook with an allowed address, then attempt to change it to the blocked address.
+
+   For API creation, save this body as `webhook.json`, replacing the address with the controlled public or private receiver's URL. Use a unique policy name for each new policy:
+
+   ```json
+   {
+     "name": "egress-address-check",
+     "description": "Verify webhook destination policy",
+     "enabled": true,
+     "event_types": [
+       "PUSH_ARTIFACT"
+     ],
+     "targets": [
+       {
+         "type": "http",
+         "address": "http://<receiver-host>:<port>/hook",
+         "auth_header": "",
+         "skip_cert_verify": false,
+         "payload_format": "Default"
+       }
+     ]
+   }
+   ```
+
+   Replace `<harbor-host>` with Harbor's hostname; `--user admin` prompts for the administrator password:
+
+   ```bash
+   curl -i --user admin --request POST \
+     'https://<harbor-host>/api/v2.0/projects/webhook-egress/webhook/policies' \
+     --header 'Content-Type: application/json' \
+     --data-binary @webhook.json
+   ```
+
+   To enable or deactivate an existing policy, send `PUT /api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>` with this complete body, changing only `enabled` to `true` or `false`. Enable only the policy under test.
+
 3. Using either method above, create and update validation-only policies targeting `http://169.254.169.254/hook`, `http://metadata.google.internal/hook`, and a syntactically valid hostname with no DNS record. Verify that target validation succeeds without requiring DNS resolution under the default policy. Delete these policies without triggering delivery.
+
+   For API validation, use the following body with `enabled: false`, replacing `targets[0].address` with each address under test. Save it as `webhook.json` and use a unique name for each new policy. Submit it with the POST command in step 2:
+
+   ```json
+   {
+     "name": "egress-address-check",
+     "description": "Verify webhook destination policy",
+     "enabled": false,
+     "event_types": ["PUSH_ARTIFACT"],
+     "targets": [
+       {
+         "type": "http",
+         "address": "http://10.20.0.10/hook",
+         "auth_header": "",
+         "skip_cert_verify": false,
+         "payload_format": "Default"
+       }
+     ]
+   }
+   ```
+
+   For the update check, first create a policy with an allowed address and record `<policy-id>` from its `Location` header. Change only `targets[0].address` in the body and send:
+
+   ```bash
+   curl -i --user admin --request PUT \
+     'https://<harbor-host>/api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>' \
+     --header 'Content-Type: application/json' \
+     --data-binary @webhook.json
+   ```
+
+   Use `GET /api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>` after a rejected update to confirm the original address is unchanged. Apply these expectations to address-validation checks in later categories:
+
+   | Address result | UI expectation | API expectation |
+   | --- | --- | --- |
+   | Allowed on creation | Webhook is saved and appears in the list. | HTTP 201 with a `Location` header. |
+   | Allowed on update | Changed address is saved. | HTTP 200. |
+   | Blocked on creation or update | An error describes the blocked target; the new address is not saved. | HTTP 400 with a network-policy error. |
+
+   The UI creates enabled webhooks. For validation-only checks, do not push artifacts; immediately deactivate a saved policy using **Action → Deactivate**, or delete it. For API deletion, send the following request with **no request body**; omit `--data` and `--data-binary`:
+
+   ```bash
+   curl -i --user admin --request DELETE \
+     'https://<harbor-host>/api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>'
+   ```
+
 4. Apply this empty-policy fragment, repeat steps 2 and 3, and verify the `allow_all` default.
 
    ```yaml
@@ -199,6 +223,8 @@ Each YAML block below is a `harbor.yml` fragment. Replace the existing `webhook_
 
 2. Create an enabled notification targeting the private receiver by its IP address `10.20.0.10`, which is within the allowed range. Verify that saving and delivery succeed.
 3. Using either method above, attempt to create a validation-only policy targeting `http://10.21.0.10/hook`, which is outside the allowed range, and attempt to update an existing policy to that address. Verify that both attempts are rejected: an error in the UI or HTTP 400 through the API. No receiver is required for this validation check.
+
+   Start with the complete body from category 2, step 3. The allowed target is `http://10.20.0.10/hook`; change `targets[0].address` to `http://10.21.0.10/hook` for both the rejected POST and PUT. Keep `enabled: false` and use a new name for POST. Submit the bodies to `POST /api/v2.0/projects/webhook-egress/webhook/policies` and `PUT /api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>`, respectively.
 
 ### 6. Deprecated setting and precedence
 
@@ -316,6 +342,13 @@ Each YAML block below is a `harbor.yml` fragment. Replace the existing `webhook_
 
    ```bash
    cp harbor.yml.webhook-egress.bak harbor.yml
+   ```
+
+   Delete each test notification with this request, which has no body:
+
+   ```bash
+   curl -i --user admin --request DELETE \
+     'https://<harbor-host>/api/v2.0/projects/webhook-egress/webhook/policies/<policy-id>'
    ```
 
 3. Record failures with the Harbor build, effective policy and allowlist, target URL, API response, execution/task log, service log, and receiver observations.
