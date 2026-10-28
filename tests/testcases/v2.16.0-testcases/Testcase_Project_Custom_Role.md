@@ -4,7 +4,7 @@
 
 **Steps**
 
-Complete the categories in order. Substep numbering restarts within each category.
+Complete the categories in order. Substep numbering restarts within each category. For non-GET API checks, use the [sample request payloads](#sample-request-payloads) below with the actor specified in the step.
 
 1. **Environment setup**
 
@@ -78,3 +78,247 @@ Complete the categories in order. Substep numbering restarts within each categor
 
    1. On a separate upgrade test environment, install a supported predecessor release and record user/group assignments for all five built-in roles, representative allowed and denied actions, and existing robot permissions. Upgrade through the supported procedure to the feature build. Verify that the assignments, built-in role IDs and permissions, robot permissions, and existing member API behavior are preserved. Verify that built-in roles are protected and that a newly created custom role can be assigned and enforced after the upgrade.
    2. Remove the disposable users, group memberships, robot accounts, images, projects, and unassigned custom roles created by this testcase. Verify that cleanup succeeds without modifying built-in roles or unrelated resources. Record any failures with the Harbor build, actor, project, role ID, selected permissions, request/response, and expected result.
+
+### Sample request payloads
+
+Use `Content-Type: application/json` for requests with JSON bodies. Replace `<harbor-host>` and path placeholders with values from the test environment. Numeric IDs in the examples, such as custom role ID `101`, are illustrative; replace them with actual IDs and keep them as JSON numbers. Use the credentials of the actor named in each step; for unauthenticated checks, omit authentication entirely.
+
+Save the relevant JSON body to a file and submit it using this pattern, changing the method, endpoint, user, and filename for each check. `--user admin` prompts for the password.
+
+```bash
+curl -i --user admin --request POST \
+  'https://<harbor-host>/api/v2.0/roles' \
+  --header 'Content-Type: application/json' \
+  --data-binary @role-create.json
+```
+
+**Role creation, update, and validation — categories 2, 3, 6, and 7**
+
+`POST /api/v2.0/roles`: save this body as `role-create.json` to create the additional unassigned role. Role definitions use `kind: "project-role"` and namespace `"*"`; choose resource/action pairs from the `role` array returned by `GET /api/v2.0/permissions`. Project access is granted only when the role is assigned to a project member. Basic project visibility comes from membership, so do not add an empty-resource permission to this body.
+
+```json
+{
+  "name": "API Test Reader",
+  "description": "Unassigned role for API lifecycle checks",
+  "permissions": [
+    {
+      "kind": "project-role",
+      "namespace": "*",
+      "access": [
+        {"resource": "repository", "action": "list", "effect": "allow"},
+        {"resource": "repository", "action": "read", "effect": "allow"},
+        {"resource": "repository", "action": "pull", "effect": "allow"},
+        {"resource": "artifact", "action": "list", "effect": "allow"},
+        {"resource": "artifact", "action": "read", "effect": "allow"},
+        {"resource": "tag", "action": "list", "effect": "allow"}
+      ]
+    }
+  ]
+}
+```
+
+`PUT /api/v2.0/roles/<role-id>`: save the following as `role-update.json`. This changes the description and adds permission to read artifact additions. Send the complete intended permissions array on every update, including permissions that must remain granted. Use this same valid body for unauthorized-update and missing-role checks.
+
+```json
+{
+  "name": "API Test Reader",
+  "description": "Updated reader with access to artifact additions",
+  "permissions": [
+    {
+      "kind": "project-role",
+      "namespace": "*",
+      "access": [
+        {"resource": "repository", "action": "list", "effect": "allow"},
+        {"resource": "repository", "action": "read", "effect": "allow"},
+        {"resource": "repository", "action": "pull", "effect": "allow"},
+        {"resource": "artifact", "action": "list", "effect": "allow"},
+        {"resource": "artifact", "action": "read", "effect": "allow"},
+        {"resource": "tag", "action": "list", "effect": "allow"},
+        {"resource": "artifact-addition", "action": "read", "effect": "allow"}
+      ]
+    }
+  ]
+}
+```
+
+For each invalid creation check, start from `role-create.json`, use a fresh name unless testing the name itself, and apply only the indicated change. For the invalid update in category 6, apply an invalid permission change to `role-update.json` and PUT it to the existing unassigned role.
+
+| Validation case | Change to the sample body |
+| --- | --- |
+| Empty name | Set `name` to `""`. |
+| Duplicate name | Keep `name: "API Test Reader"` after successfully creating that role. |
+| Reserved character | Set `name` to `"API+Reader"`. |
+| Name longer than 255 ASCII characters | Generate a body with `jq '.name = ("a" * 256)' role-create.json > role-invalid.json`. |
+| No permissions | Set `permissions` to `[]`. Also test `permissions[0].access: []` separately. |
+| Unknown resource | Set `permissions[0].access[0].resource` to `"unknown-resource"`. |
+| Unknown action | Set `permissions[0].access[0].action` to `"unknown-action"`. |
+| System resource in a project role | Replace `permissions[0].access` with `[{"resource":"user","action":"create","effect":"allow"}]`. |
+| System permission scope | Replace `permissions` with `[{"kind":"system","namespace":"/","access":[{"resource":"user","action":"create","effect":"allow"}]}]`. |
+
+For the built-in role protection check, save the built-in role's GET response for comparison afterward. Start with `role-update.json`, replace its name with the built-in role's exact name, and PUT it to `/api/v2.0/roles/<builtin-role-id>`. Repeat with `is_builtin: false`. The sample permissions are valid role-catalog entries, so the request can reach the built-in protection check. Generate the flag-clearing body below, replacing `<builtin-role-name>` with the recorded name, and verify that neither request changes the stored role:
+
+```bash
+jq --arg name '<builtin-role-name>' '.name = $name | .is_builtin = false' \
+  role-update.json > builtin-role-update.json
+```
+
+For category 6's permission revocation checks, save the current `DevOps Engineer` GET response as `devops-role-original.json`. These examples produce separate PUT bodies, each based on the original role. Restore the original body with PUT between checks and after completion.
+
+```bash
+jq '.description = "Robot creation temporarily revoked" |
+  .permissions[].access |= map(select(.resource != "robot" or .action != "create"))' \
+  devops-role-original.json > devops-role-no-robot-create.json
+
+jq '.permissions[].access |= map(select(.resource != "repository" or .action != "push"))' \
+  devops-role-original.json > devops-role-no-push.json
+```
+
+**User and group membership — categories 4–8**
+
+`POST /api/v2.0/projects/custom-role-a/members`: assign an existing user a custom role. Replace `101` with the ID of the role being tested and `api-user` with the intended user, such as `target-user` for delegation checks. Change the project path for project B.
+
+```json
+{
+  "role_id": 101,
+  "member_user": {"username": "api-user"}
+}
+```
+
+`PUT /api/v2.0/projects/custom-role-a/members/<member-id>`: change the membership to built-in Developer. Use the project membership ID from the member list, not the user's ID. To restore a custom role or test another assignment, replace `2` with that role's actual numeric ID. Use an ID confirmed not to exist for the invalid-role check and the recorded deleted role ID for the deleted-role check. For escalation checks, use the actual `DevOps Engineer` ID or built-in Project Admin ID `1` in both POST and PUT bodies.
+
+```json
+{
+  "role_id": 2
+}
+```
+
+For LDAP group assignment through the same POST endpoint, use `member_group` instead of `member_user` and replace the DN with the test directory's actual group DN:
+
+```json
+{
+  "role_id": 101,
+  "member_group": {
+    "group_name": "custom-role-team",
+    "group_type": 1,
+    "ldap_group_dn": "cn=custom-role-team,ou=groups,dc=example,dc=com"
+  }
+}
+```
+
+For OIDC group assignment, use the configured group claim value and group type `3`:
+
+```json
+{
+  "role_id": 101,
+  "member_group": {
+    "group_name": "custom-role-team",
+    "group_type": 3
+  }
+}
+```
+
+Group role changes use the same PUT body as user role changes, with the group's project membership ID. Replace the group name and role ID for `custom-role-readers`.
+
+**Robot creation, update, and excessive grants — categories 4–6 and 8**
+
+`POST /api/v2.0/robots`: save this as `robot-create.json`. Use a unique robot name for each creation attempt, especially when retesting after role permission changes. For project B, change `permissions[0].namespace` to `custom-role-b`.
+
+```json
+{
+  "name": "custom-role-pull-check",
+  "description": "Project robot for custom role permission checks",
+  "level": "project",
+  "duration": 1,
+  "disable": false,
+  "permissions": [
+    {
+      "kind": "project",
+      "namespace": "custom-role-a",
+      "access": [
+        {"resource": "repository", "action": "pull", "effect": "allow"}
+      ]
+    }
+  ]
+}
+```
+
+`PUT /api/v2.0/robots/<robot-id>`: save the robot's GET response as `robot-current.json` and generate this update body to add push permission. Preserve the exact returned name, including its prefix, and the existing level and project namespace; they cannot be changed by an update.
+
+```bash
+jq '{name, description, level, duration, disable, permissions} |
+  .permissions[0].access = [
+    {"resource":"repository","action":"pull","effect":"allow"},
+    {"resource":"repository","action":"push","effect":"allow"}
+  ]' robot-current.json > robot-update.json
+```
+
+For each excessive-grant check, use a fresh copy of the valid create or update body and apply one of these changes. Send it with the same POST or PUT endpoint and verify rejection and unchanged stored permissions.
+
+| Excessive grant | Change to the sample body |
+| --- | --- |
+| Repository deletion | Append `{"resource":"repository","action":"delete","effect":"allow"}` to `permissions[0].access`. |
+| Access to project C | Append `{"kind":"project","namespace":"custom-role-c","access":[{"resource":"repository","action":"pull","effect":"allow"}]}` to `permissions`. |
+| System permission | Append `{"kind":"system","namespace":"/","access":[{"resource":"user","action":"create","effect":"allow"}]}` to `permissions`. Also test POST with `level: "system"` and this system permission alone to verify that `devops-user` cannot create system robots. |
+
+**Other permission-enforcement requests — category 4**
+
+| Operation | Method and endpoint | Sample JSON body |
+| --- | --- | --- |
+| Change project configuration | `PUT /api/v2.0/projects/custom-role-a` | `{"metadata":{"auto_scan":"true"}}` |
+| Change system configuration | `PUT /api/v2.0/configurations` | `{"read_only":true}` |
+| Trigger a vulnerability scan | `POST /api/v2.0/projects/custom-role-a/repositories/<repository>/artifacts/<reference>/scan` | `{"scan_type":"vulnerability"}` |
+| Add a tag to an existing artifact | `POST /api/v2.0/projects/custom-role-a/repositories/<repository>/artifacts/<reference>/tags` | `{"name":"release-check"}` |
+
+Run the configuration requests as the denied users specified in category 4 and verify that the original settings remain unchanged. For artifact endpoints, use an existing repository and artifact digest or tag in the selected project; encode path values as required by the API.
+
+`POST /api/v2.0/users`: use a unique username for the denied user-creation check. Send the request with the tested user's Basic authentication, as in the curl pattern above, without browser session cookies.
+
+```json
+{
+  "username": "custom-role-denied-user",
+  "email": "custom-role-denied-user@example.com",
+  "realname": "Custom Role Denied User",
+  "password": "Test-Only-Password-123!",
+  "comment": "Must not be created by a project custom role"
+}
+```
+
+`POST /api/v2.0/projects/custom-role-a/immutabletagrules`: use this body to protect only the test tags. For `PUT /api/v2.0/projects/custom-role-a/immutabletagrules/<rule-id>`, reuse the complete body and change the tag pattern to `immutable-check-updated-*`; verify that the updated pattern is enforced.
+
+```json
+{
+  "priority": 0,
+  "disabled": false,
+  "action": "immutable",
+  "template": "immutable_template",
+  "tag_selectors": [
+    {"kind": "doublestar", "decoration": "matches", "pattern": "immutable-check-*"}
+  ],
+  "scope_selectors": {
+    "repository": [
+      {"kind": "doublestar", "decoration": "repoMatches", "pattern": "**"}
+    ]
+  }
+}
+```
+
+**DELETE requests — categories 3–9**
+
+These requests have **no request body**. Omit `--data` and `--data-binary`; use the actor specified by the testcase for allowed, forbidden, in-use, and missing-resource checks.
+
+| Operation | Endpoint for `DELETE` |
+| --- | --- |
+| Delete a role | `/api/v2.0/roles/<role-id>` |
+| Remove a user or group membership | `/api/v2.0/projects/custom-role-a/members/<member-id>` |
+| Delete a robot | `/api/v2.0/robots/<robot-id>` |
+| Delete an artifact | `/api/v2.0/projects/custom-role-a/repositories/<repository>/artifacts/<reference>` |
+| Delete a repository | `/api/v2.0/projects/custom-role-a/repositories/<repository>` |
+| Delete a tag | `/api/v2.0/projects/custom-role-a/repositories/<repository>/artifacts/<reference>/tags/<tag-name>` |
+| Delete an immutability rule | `/api/v2.0/projects/custom-role-a/immutabletagrules/<rule-id>` |
+| Delete a disposable user during cleanup | `/api/v2.0/users/<user-id>` |
+| Delete an empty test project during cleanup | `/api/v2.0/projects/<project-name>` |
+
+```bash
+curl -i --user admin --request DELETE \
+  'https://<harbor-host>/api/v2.0/roles/<role-id>'
+```
