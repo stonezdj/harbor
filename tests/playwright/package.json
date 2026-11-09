@@ -1,0 +1,16 @@
+{
+  "name": "harbor-playwright-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright end-to-end tests for Harbor (ported from robot-cases)",
+  "scripts": {
+    "test": "playwright test",
+    "test:db": "playwright test tests/db.spec.ts",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0"
+  }
+}
