@@ -1,0 +1,13 @@
+{
+  "name": "harbor-playwright-tests",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:db": "playwright test tests/group1-nightly/db.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}
